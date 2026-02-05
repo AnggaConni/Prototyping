@@ -16,7 +16,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <!-- HTML2PDF & HTML2CANVAS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <!-- Explicit html2canvas for map snapshots -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <!-- Custom Styles -->
@@ -87,11 +86,23 @@
         
         /* Animations */
         @keyframes breath {
-            0% { transform: scale(1); filter: drop-shadow(0 0 2px rgba(255, 27, 45, 0.3)); }
-            50% { transform: scale(1.1); filter: drop-shadow(0 0 10px rgba(255, 27, 45, 0.8)); }
-            100% { transform: scale(1); filter: drop-shadow(0 0 2px rgba(255, 27, 45, 0.3)); }
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.8; }
         }
         .logo-breath { animation: breath 3s infinite ease-in-out; }
+        
+        /* NEW: Glowing Animation (No Jumping) - Only changes opacity/stroke */
+        @keyframes glow {
+            0% { stroke-opacity: 0.6; fill-opacity: 0.8; }
+            50% { stroke-opacity: 1; fill-opacity: 1; }
+            100% { stroke-opacity: 0.6; fill-opacity: 0.8; }
+        }
+        
+        /* Applied only to Main Map nodes, NOT export maps */
+        .node-pulse {
+            animation: glow 2s infinite ease-in-out;
+        }
 
         .btn-opera {
             background-color: var(--opera-red); color: white; transition: all 0.3s;
@@ -138,9 +149,16 @@
             color: var(--opera-red);
             border-bottom-color: var(--opera-red);
         }
-        .tab-content { display: none; animation: fadeIn 0.3s ease-out; }
+        /* FIX: REMOVED TRANSLATEY TO PREVENT PDF JUMPING */
+        .tab-content { display: none; animation: fadeIn 0.4s ease-out; }
         .tab-content.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Utility to kill animations during export */
+        body.exporting * {
+            transition: none !important;
+            animation: none !important;
+        }
 
         /* Skeleton Loading */
         .skeleton {
@@ -444,13 +462,13 @@
                 <div><label class="text-xs text-gray-500 font-bold block mb-1">Description</label><textarea id="inp-desc" rows="3" class="input-light w-full rounded-lg p-3"></textarea></div>
 
                 <div class="grid grid-cols-2 gap-6">
-                     <div><label class="text-xs text-gray-500 font-bold block mb-1">UNESCO Status</label><input type="text" id="inp-unesco" class="input-light w-full rounded-lg p-3"></div>
-                     <div><label class="text-xs text-gray-500 font-bold block mb-1">Research Links</label><input type="text" id="inp-research" class="input-light w-full rounded-lg p-3"></div>
+                      <div><label class="text-xs text-gray-500 font-bold block mb-1">UNESCO Status</label><input type="text" id="inp-unesco" class="input-light w-full rounded-lg p-3"></div>
+                      <div><label class="text-xs text-gray-500 font-bold block mb-1">Research Links</label><input type="text" id="inp-research" class="input-light w-full rounded-lg p-3"></div>
                 </div>
                 
                 <div class="grid grid-cols-1 gap-4">
-                     <div><label class="text-xs text-gray-500 font-bold block mb-1">Image URLs (Comma separated)</label><input type="text" id="inp-image" class="input-light w-full rounded-lg p-3" placeholder="https://img1.jpg, https://img2.jpg"></div>
-                     <div><label class="text-xs text-gray-500 font-bold block mb-1">YouTube URLs (Comma separated)</label><input type="text" id="inp-youtube" class="input-light w-full rounded-lg p-3" placeholder="https://youtube.com/v1, https://youtube.com/v2"></div>
+                      <div><label class="text-xs text-gray-500 font-bold block mb-1">Image URLs (Comma separated)</label><input type="text" id="inp-image" class="input-light w-full rounded-lg p-3" placeholder="https://img1.jpg, https://img2.jpg"></div>
+                      <div><label class="text-xs text-gray-500 font-bold block mb-1">YouTube URLs (Comma separated)</label><input type="text" id="inp-youtube" class="input-light w-full rounded-lg p-3" placeholder="https://youtube.com/v1, https://youtube.com/v2"></div>
                 </div>
                 
                 <div class="bg-gray-100 p-6 rounded-xl border border-gray-200">
@@ -717,15 +735,26 @@
                         const mapDiv = document.getElementById('detail-geo-map');
                         if (mapDiv) {
                             if (!mapDiv._leaflet_map) {
-                                // Init
-                                const map = L.map('detail-geo-map', { zoomControl: false, attributionControl: false }).setView([d.lat, d.lng], 6);
+                                // Init - Disable Animation & Inertia STRICTLY for screenshot accuracy
+                                const map = L.map('detail-geo-map', { 
+                                    zoomControl: false, 
+                                    attributionControl: false,
+                                    zoomAnimation: false, 
+                                    fadeAnimation: false, 
+                                    markerZoomAnimation: false,
+                                    inertia: false, // Prevent kinetic scrolling
+                                    zoomSnap: 0, // Disable snapping to integers for perfect fits
+                                }).setView([d.lat, d.lng], 6);
                                 L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
                                 if(d.geometry_json) {
                                     try {
                                         const pts = JSON.parse(d.geometry_json);
                                         L.polygon(pts, {color:'#ff1b2d', fillOpacity:0.2}).addTo(map);
-                                        map.fitBounds(pts);
+                                        // Animate: false ensures INSTANT snap for accurate screenshot
+                                        map.fitBounds(pts, { animate: false, duration: 0 });
                                     } catch(e) { console.error("Geo JSON error", e); }
+                                } else {
+                                    map.setView([d.lat, d.lng], 6, { animate: false });
                                 }
                                 mapDiv._leaflet_map = map;
                             } else {
@@ -739,7 +768,16 @@
                         const mapDiv2 = document.getElementById('detail-conn-map');
                         if (mapDiv2) {
                             if (!mapDiv2._leaflet_map) {
-                                const map2 = L.map('detail-conn-map', { zoomControl: false, attributionControl: false });
+                                // Disable Animation here too
+                                const map2 = L.map('detail-conn-map', { 
+                                    zoomControl: false, 
+                                    attributionControl: false,
+                                    zoomAnimation: false,
+                                    fadeAnimation: false,
+                                    markerZoomAnimation: false,
+                                    inertia: false,
+                                    zoomSnap: 0
+                                });
                                 L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map2);
                                 
                                 const bounds = L.latLngBounds();
@@ -811,11 +849,12 @@
                                 uniqueNodes.forEach(node => {
                                     // Draw Line (from Origin to Node)
                                     if(node.origin_lat && node.origin_lng && node.lat && node.lng) {
+                                         // SOLID STATIC LINE (User request: No shifting animation)
                                          L.polyline([[node.origin_lat, node.origin_lng], [node.lat, node.lng]], {
                                             color: '#fca5a5', 
-                                            weight: 1,
+                                            weight: 2,
                                             opacity: 0.6,
-                                            dashArray: '5, 5'
+                                            dashArray: '5, 5' // Dashed but no CSS animation
                                         }).addTo(map2);
                                         
                                         // Draw small dot at origin point (Hub)
@@ -834,6 +873,7 @@
                                         fillOpacity: 1, 
                                         radius: isCurrent ? 6 : 4,
                                         weight: isCurrent ? 0 : 1
+                                        // NO ANIMATION CLASS HERE
                                     }).addTo(map2);
 
                                     // Tooltip Logic: Only Current is Permanent (Fix overlapping)
@@ -845,14 +885,12 @@
                                         className: isCurrent ? 'z-50 custom-tooltip' : 'text-xs bg-white text-gray-500 border border-gray-200 p-1 shadow-sm'
                                     });
                                     
-                                    // Removed explicit bringToFront() call to prevent race condition error
-                                    // Sorting ensures 'current' marker is added last (on top)
-                                    
                                     bounds.extend([node.lat, node.lng]);
                                 });
 
-                                if(bounds.isValid()) map2.fitBounds(bounds, {padding: [50, 50]});
-                                else map2.setView([20, 0], 2);
+                                // Animate: false ensures INSTANT snap for accurate screenshot
+                                if(bounds.isValid()) map2.fitBounds(bounds, {padding: [50, 50], animate: false, duration: 0});
+                                else map2.setView([20, 0], 2, { animate: false, duration: 0 });
 
                                 mapDiv2._leaflet_map = map2;
                             } else {
@@ -928,7 +966,10 @@
                             mapLogic.markers.push(origin); mapLogic.layers.push(origin);
                         }
                     }
-                    const m = L.circleMarker([d.lat, d.lng], { color: '#ff1b2d', fillColor: '#ff1b2d', fillOpacity: 0.8, radius: 6 }).addTo(mapLogic.map);
+                    const m = L.circleMarker([d.lat, d.lng], { 
+                        color: '#ff1b2d', fillColor: '#ff1b2d', fillOpacity: 0.8, radius: 6,
+                        className: 'node-pulse' // KEEP ANIMATION FOR MAIN MAP ONLY
+                    }).addTo(mapLogic.map);
                     m.on('click', () => dashboard.showDetail(d));
                     m.bindTooltip(d.food_name, { direction: 'top', className: 'custom-tooltip' });
                     mapLogic.layers.push(m);
@@ -1490,109 +1531,187 @@
                 setTimeout(() => URL.revokeObjectURL(url), 100); 
             },
             
-            // --- UPDATED: EXPORT TO PDF FUNCTION ---
+            // --- UPDATED: EXPORT TO PDF FUNCTION WITH GHOST MAP TECHNIQUE ---
             exportToPDF: async (btnElement) => {
                 if(!state.currentDetail) return;
                 const d = state.currentDetail;
                 const btn = btnElement || event.target;
                 
-                // Set loading state for button
                 const originalText = btn.innerHTML;
                 btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Generating PDF...';
                 btn.disabled = true;
+                document.body.classList.add('exporting');
 
                 try {
-                    // ==============================================================
-                    // FIX: MAP VISIBILITY HACK
-                    // html2canvas can only capture visible elements. 
-                    // Maps are hidden in Tab 2. We must show them briefly.
-                    // ==============================================================
-                    
-                    const wasMultimediaActive = document.getElementById('tab-content-multimedia').classList.contains('active');
-                    
-                    // 1. Force Activate Multimedia Tab
-                    document.getElementById('tab-content-overview').classList.remove('active');
-                    document.getElementById('tab-content-multimedia').classList.add('active');
-
-                    // 2. Initialize or Refresh Maps
-                    const map1 = document.getElementById('detail-geo-map');
-                    const map2 = document.getElementById('detail-conn-map');
-                    
-                    // If maps not initialized, trigger standard init logic
-                    if ((map1 && !map1._leaflet_map) || (map2 && !map2._leaflet_map)) {
-                         ui.switchModalTab('multimedia'); 
-                         await new Promise(r => setTimeout(r, 1500)); // Wait longer for full load
-                    } else {
-                        // Just resize if already there
-                        if(map1 && map1._leaflet_map) map1._leaflet_map.invalidateSize();
-                        if(map2 && map2._leaflet_map) map2._leaflet_map.invalidateSize();
-                        await new Promise(r => setTimeout(r, 500)); // Wait for render
+                    // --- GHOST MAP SETUP ---
+                    const ghostId = 'ghost-map-container';
+                    let ghost = document.getElementById(ghostId);
+                    if (!ghost) {
+                        ghost = document.createElement('div');
+                        ghost.id = ghostId;
+                        // Position off-screen but keep in DOM flow to ensure rendering
+                        ghost.style.position = 'fixed';
+                        ghost.style.left = '-9999px'; 
+                        ghost.style.top = '0';
+                        ghost.style.width = '800px'; 
+                        ghost.style.height = '400px';
+                        ghost.style.zIndex = '-9999';
+                        document.body.appendChild(ghost);
                     }
 
-                    // 3. CAPTURE MAP SNAPSHOTS (Now visible)
-                    let map1Img = await captureElement('detail-geo-map');
-                    let map2Img = await captureElement('detail-conn-map');
+                    // --- GENERATE SNAPSHOT HELPER ---
+                    const generateMapSnapshot = async (type) => {
+                        // Reset Container
+                        if (ghost._leaflet_id) { ghost._leaflet_id = null; }
+                        ghost.innerHTML = ''; 
 
-                    // 4. Restore Original Tab State
-                    if (!wasMultimediaActive) {
-                        document.getElementById('tab-content-multimedia').classList.remove('active');
-                        document.getElementById('tab-content-overview').classList.add('active');
-                        // Reset visual state of buttons
-                        document.getElementById('tab-btn-multimedia').classList.remove('active');
-                        document.getElementById('tab-btn-overview').classList.add('active');
-                    }
+                        const map = L.map(ghostId, {
+                            zoomControl: false, attributionControl: false,
+                            fadeAnimation: false, zoomAnimation: false, preferCanvas: true
+                        });
+                        
+                        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
 
-                    // 5. Prepare CLEAN GeoJSON Feature (No Description)
+                        const bounds = L.latLngBounds();
+                        let hasLayer = false;
+
+                        if (type === 'geo') {
+                            // Distribution Map Logic
+                            if (d.geometry_json) {
+                                try {
+                                    const pts = JSON.parse(d.geometry_json);
+                                    L.polygon(pts, {color:'#ff1b2d', fillOpacity:0.2}).addTo(map);
+                                    bounds.extend(pts);
+                                    hasLayer = true;
+                                } catch(e){}
+                            } else {
+                                L.circleMarker([d.lat, d.lng], {color:'#ff1b2d'}).addTo(map);
+                                bounds.extend([d.lat, d.lng]);
+                                hasLayer = true;
+                            }
+                        } else {
+                            // Influence Map Logic
+                            // Use main map logic to draw lines
+                            let rootName = d.food_name;
+                            let curr = d;
+                            const pathUp = new Set([d.id]);
+
+                            // Find Root
+                            while(curr && curr.origin_food_name) {
+                                const parentName = curr.origin_food_name;
+                                const parentNode = state.data.find(n => n.food_name.toLowerCase().trim() === parentName.toLowerCase().trim());
+                                rootName = parentName;
+                                if(parentNode) {
+                                    if(pathUp.has(parentNode.id)) break; 
+                                    pathUp.add(parentNode.id);
+                                    curr = parentNode;
+                                } else break;
+                            }
+
+                            // Collect Family
+                            const familyNodes = [];
+                            const queue = [rootName];
+                            const visitedNames = new Set();
+                            const childrenMap = {};
+                            state.data.forEach(item => {
+                                if(item.origin_food_name) {
+                                    const pName = item.origin_food_name.toLowerCase().trim();
+                                    if(!childrenMap[pName]) childrenMap[pName] = [];
+                                    childrenMap[pName].push(item);
+                                }
+                            });
+
+                            while(queue.length > 0) {
+                                const pName = queue.shift();
+                                const lowerP = pName.toLowerCase().trim();
+                                if(visitedNames.has(lowerP)) continue;
+                                visitedNames.add(lowerP);
+                                const realNode = state.data.find(n => n.food_name.toLowerCase().trim() === lowerP);
+                                if(realNode) familyNodes.push(realNode);
+                                if(childrenMap[lowerP]) {
+                                    childrenMap[lowerP].forEach(child => {
+                                        familyNodes.push(child); queue.push(child.food_name);
+                                    });
+                                }
+                            }
+
+                            const uniqueNodes = Array.from(new Map(familyNodes.map(item => [item.id, item])).values());
+                            if(!uniqueNodes.find(n => n.id === d.id)) uniqueNodes.push(d); 
+                            uniqueNodes.sort((a, b) => (a.id === d.id) ? 1 : (b.id === d.id) ? -1 : 0);
+
+                            uniqueNodes.forEach(node => {
+                                if(node.origin_lat && node.origin_lng && node.lat && node.lng) {
+                                     L.polyline([[node.origin_lat, node.origin_lng], [node.lat, node.lng]], {
+                                        color: '#fca5a5', weight: 2, opacity: 0.6, dashArray: '5, 5'
+                                    }).addTo(map);
+                                    L.circleMarker([node.origin_lat, node.origin_lng], { 
+                                        color: '#fb923c', fillColor: '#fff', fillOpacity: 1, radius: 3, weight: 1
+                                    }).addTo(map);
+                                    bounds.extend([node.origin_lat, node.origin_lng]);
+                                    hasLayer = true;
+                                }
+                                const isCurrent = node.id === d.id;
+                                const m = L.circleMarker([node.lat, node.lng], { 
+                                    color: isCurrent ? '#ff1b2d' : '#ef4444', 
+                                    fillColor: isCurrent ? '#ff1b2d' : '#fee2e2', 
+                                    fillOpacity: 1, radius: isCurrent ? 6 : 4, weight: isCurrent ? 0 : 1
+                                }).addTo(map);
+                                if (isCurrent) {
+                                     m.bindTooltip(node.food_name, { permanent: true, direction: 'top', className: 'z-50 custom-tooltip' });
+                                }
+                                bounds.extend([node.lat, node.lng]);
+                                hasLayer = true;
+                            });
+                        }
+
+                        // --- CRITICAL FIX FOR ZOOM ---
+                        if (hasLayer && bounds.isValid()) {
+                            map.fitBounds(bounds, { 
+                                animate: false, 
+                                padding: [50, 50], 
+                                maxZoom: 4 // FORCE WIDER VIEW
+                            });
+                        } else {
+                            map.setView([20, 0], 2, { animate: false });
+                        }
+
+                        await new Promise(r => setTimeout(r, 1000)); // Wait for tile load
+
+                        const canvas = await html2canvas(ghost, { useCORS: true, allowTaint: true, logging: false, scale: 2 });
+                        map.remove();
+                        return canvas.toDataURL('image/png');
+                    };
+
+                    // Generate Maps off-screen
+                    const map1Img = await generateMapSnapshot('geo');
+                    const map2Img = await generateMapSnapshot('conn');
+
+                    // 5. Prepare CLEAN GeoJSON Feature
                     const geoFeature = {
                         "type": "Feature",
                         "properties": {
-                            "name": d.food_name,
-                            "country": d.country,
-                            "origin": d.origin_food_name || null,
-                            "type": d.connection_type || null
+                            "name": d.food_name, "country": d.country,
+                            "origin": d.origin_food_name || null, "type": d.connection_type || null
                         },
                         "geometry": {
                             "type": "GeometryCollection",
-                            "geometries": [
-                                { "type": "Point", "coordinates": [d.lng, d.lat] }
-                            ]
+                            "geometries": [ { "type": "Point", "coordinates": [d.lng, d.lat] } ]
                         }
                     };
-                    
-                    // Add LineString if origin exists
                     if(d.origin_lat && d.origin_lng) {
-                        geoFeature.geometry.geometries.push({
-                            "type": "LineString",
-                            "coordinates": [[d.origin_lng, d.origin_lat], [d.lng, d.lat]]
-                        });
-                        geoFeature.geometry.geometries.push({
-                            "type": "Point",
-                            "coordinates": [d.origin_lng, d.origin_lat]
-                        });
+                        geoFeature.geometry.geometries.push({ "type": "LineString", "coordinates": [[d.origin_lng, d.origin_lat], [d.lng, d.lat]] });
                     }
-                    
-                    // Add Polygon if exists
                     if(d.geometry_json) {
                         try {
                             const polyCoords = JSON.parse(d.geometry_json);
-                            // Leaflet uses [Lat, Lng], GeoJSON uses [Lng, Lat]. Need to swap.
                             const geoJsonCoords = polyCoords.map(pt => [pt[1], pt[0]]);
-                            // Close polygon if needed
-                            if(geoJsonCoords.length > 0 && (geoJsonCoords[0][0] !== geoJsonCoords[geoJsonCoords.length-1][0])) {
-                                geoJsonCoords.push(geoJsonCoords[0]);
-                            }
-                            geoFeature.geometry.geometries.push({
-                                "type": "Polygon",
-                                "coordinates": [geoJsonCoords]
-                            });
+                            if(geoJsonCoords.length > 0 && (geoJsonCoords[0][0] !== geoJsonCoords[geoJsonCoords.length-1][0])) geoJsonCoords.push(geoJsonCoords[0]);
+                            geoFeature.geometry.geometries.push({ "type": "Polygon", "coordinates": [geoJsonCoords] });
                         } catch(e) {}
                     }
-
                     const geoJsonString = JSON.stringify(geoFeature, null, 2);
 
-                    // ====================================================================
-                    // PRELOAD IMAGES TO BASE64 (BYPASS CORS)
-                    // ====================================================================
+                    // Image Loading
                     let processedImages = [];
                     if(d.image_url) {
                         const rawUrls = d.image_url.split(',').filter(u => u.trim());
@@ -1601,35 +1720,23 @@
                             if (base64) processedImages.push(base64);
                         }
                     }
+                    let imagesHtml = processedImages.length > 0 ? 
+                        `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
+                            ${processedImages.map(imgData => `<img src="${imgData}" style="width: 100%; height: 160px; object-fit: cover; border-radius: 6px; border: 1px solid #ddd;">`).join('')}
+                        </div>` : 
+                        `<div style="background:#f9fafb; color:#999; padding:20px; text-align:center; border:1px dashed #ccc; border-radius:6px; margin-bottom:20px; font-size:10px;">No Images Available</div>`;
 
-                    let imagesHtml = '';
-                    if(processedImages.length > 0) {
-                        imagesHtml = `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
-                            ${processedImages.map(imgData => 
-                                `<img src="${imgData}" style="width: 100%; height: 160px; object-fit: cover; border-radius: 6px; border: 1px solid #ddd;">`
-                            ).join('')}
-                        </div>`;
-                    } else {
-                        imagesHtml = `<div style="background:#f9fafb; color:#999; padding:20px; text-align:center; border:1px dashed #ccc; border-radius:6px; margin-bottom:20px; font-size:10px;">No Images Available or Loaded</div>`;
-                    }
-
-                    // 3. Susun Template HTML (Single Column Layout)
+                    // HTML Template
                     const content = `
                         <div style="font-family: 'Helvetica', sans-serif; color: #333; width: 750px; margin: 0 auto; padding: 40px; position: relative;">
-                            
                             <div style="text-align: center; border-bottom: 4px solid #ff1b2d; padding-bottom: 20px; margin-bottom: 30px;">
-                                <h1 style="font-size: 36px; font-weight: 900; margin: 0; text-transform: uppercase; line-height: 1.1; color: #000;">
-                                    ${d.food_name}
-                                </h1>
+                                <h1 style="font-size: 36px; font-weight: 900; margin: 0; text-transform: uppercase; line-height: 1.1; color: #000;">${d.food_name}</h1>
                                 <div style="margin-top: 8px; font-size: 14px; font-weight: bold; color: #555;">
-                                    📍 ${d.country} 
-                                    ${d.unesco_status ? `<span style="margin: 0 10px; color: #ccc;">|</span> 🏆 <span style="color: #d97706;">${d.unesco_status}</span>` : ''}
+                                    📍 ${d.country} ${d.unesco_status ? `<span style="margin: 0 10px; color: #ccc;">|</span> 🏆 <span style="color: #d97706;">${d.unesco_status}</span>` : ''}
                                 </div>
                             </div>
-
                             <h3 style="border-left: 4px solid #ff1b2d; padding-left: 10px; font-size: 12px; font-weight: bold; text-transform: uppercase; margin-bottom: 10px;">Visual Archive</h3>
                             ${imagesHtml}
-
                             ${d.origin_food_name ? `
                             <div style="background: #fff7ed; border: 1px dashed #f97316; border-radius: 8px; padding: 15px; margin-bottom: 25px; text-align: center;">
                                 <div style="font-size: 9px; font-weight: bold; color: #c2410c; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px;">Evolution Path (${d.connection_type || 'Unknown'})</div>
@@ -1639,49 +1746,31 @@
                                     <div><span style="font-weight: bold;">${d.food_name}</span> <span style="font-size: 10px; color: #666;">(${d.country})</span></div>
                                 </div>
                             </div>` : ''}
-
                             <h3 style="border-left: 4px solid #ff1b2d; padding-left: 10px; font-size: 12px; font-weight: bold; text-transform: uppercase; margin-bottom: 10px;">Historical Narrative</h3>
-                            <div style="font-size: 11px; line-height: 1.6; text-align: justify; margin-bottom: 30px; white-space: pre-line; color: #444;">
-                                ${d.description || 'No detailed history available.'}
-                            </div>
-
+                            <div style="font-size: 11px; line-height: 1.6; text-align: justify; margin-bottom: 30px; white-space: pre-line; color: #444;">${d.description || 'No detailed history available.'}</div>
                             <h3 style="border-left: 4px solid #ff1b2d; padding-left: 10px; font-size: 12px; font-weight: bold; text-transform: uppercase; margin-bottom: 10px;">Geographic Mapping</h3>
-                            
                             <div style="margin-bottom: 15px;">
                                 <div style="font-size: 9px; font-weight: bold; color: #2563eb; margin-bottom: 4px;">FIG 1. DISTRIBUTION MAP</div>
-                                ${map1Img ? `<img src="${map1Img}" style="width: 100%; height: auto; border: 1px solid #ccc; border-radius: 4px;">` : '<div style="height:80px; background:#eee; text-align:center; padding-top:30px; font-size:10px;">Map Snapshot Unavailable</div>'}
+                                <img src="${map1Img}" style="width: 100%; height: auto; border: 1px solid #ccc; border-radius: 4px;">
                             </div>
-
                             <div style="margin-bottom: 30px;">
                                 <div style="font-size: 9px; font-weight: bold; color: #ea580c; margin-bottom: 4px;">FIG 2. INFLUENCE PATH</div>
-                                ${map2Img ? `<img src="${map2Img}" style="width: 100%; height: auto; border: 1px solid #ccc; border-radius: 4px;">` : '<div style="height:80px; background:#eee; text-align:center; padding-top:30px; font-size:10px;">Map Snapshot Unavailable</div>'}
+                                <img src="${map2Img}" style="width: 100%; height: auto; border: 1px solid #ccc; border-radius: 4px;">
                             </div>
-
                             <div style="border-top: 4px double #ddd; padding-top: 20px; margin-top: 40px;">
-                                
                                 <div style="margin-bottom: 15px;">
                                     <h4 style="font-size: 10px; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; color: #000;">Research Sources</h4>
-                                    <div style="font-size: 8px; color: #0056b3; overflow-wrap: break-word;">
-                                        ${d.research_links ? d.research_links.split(',').map(l => `<div>• ${l.trim()}</div>`).join('') : 'No sources listed.'}
-                                    </div>
+                                    <div style="font-size: 8px; color: #0056b3; overflow-wrap: break-word;">${d.research_links ? d.research_links.split(',').map(l => `<div>• ${l.trim()}</div>`).join('') : 'No sources listed.'}</div>
                                 </div>
-
                                 <div>
                                     <h4 style="font-size: 10px; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; color: #000;">GeoJSON Data (Spatial)</h4>
-                                    <div style="background: #f1f5f9; padding: 10px; font-family: 'Courier New', monospace; font-size: 7px; color: #475569; border: 1px solid #e2e8f0; border-radius: 4px; white-space: pre-wrap; overflow-wrap: break-word;">
-                                        ${geoJsonString}
-                                    </div>
+                                    <div style="background: #f1f5f9; padding: 10px; font-family: 'Courier New', monospace; font-size: 7px; color: #475569; border: 1px solid #e2e8f0; border-radius: 4px; white-space: pre-wrap; overflow-wrap: break-word;">${geoJsonString}</div>
                                 </div>
-
-                                <div style="text-align: center; margin-top: 20px; font-size: 8px; color: #999;">
-                                    Foodways Shared Heritage Project • Generated on ${new Date().toLocaleDateString()}
-                                </div>
+                                <div style="text-align: center; margin-top: 20px; font-size: 8px; color: #999;">Foodways Shared Heritage Project • Generated on ${new Date().toLocaleDateString()}</div>
                             </div>
-
                         </div>
                     `;
 
-                    // 5. Render PDF
                     const opt = {
                         margin:       0,
                         filename:     `${d.food_name.replace(/\s+/g, '_')}_Profile.pdf`,
@@ -1693,10 +1782,8 @@
                     const tempDiv = document.createElement('div');
                     tempDiv.innerHTML = content;
                     document.body.appendChild(tempDiv);
-                    
                     await html2pdf().set(opt).from(tempDiv).save();
-                    
-                    document.body.removeChild(tempDiv); // Cleanup
+                    document.body.removeChild(tempDiv);
 
                 } catch(e) {
                     console.error(e);
@@ -1704,6 +1791,7 @@
                 } finally {
                     btn.innerHTML = originalText;
                     btn.disabled = false;
+                    document.body.classList.remove('exporting');
                 }
             }
         };
