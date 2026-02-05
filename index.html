@@ -504,7 +504,7 @@
         // Updated URL
         const GAS_URL = 'https://script.google.com/macros/s/AKfycbw5XZBvqGjPbjB_nE2ZeJ27Ppib9-9DjSKDeVzNF-HDQU0pes9rzVn6jI9uYYjfTac/exec';
         const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTuPArVU91axob82CTzIgfmODCpa43OrFNIymoOVfV6UwtzUH7Yzb-yzorb3yBooJikXvsKSv10z3fV/pub?output=csv';
-        const state = { 
+        var state = { 
             data: [], 
             role: 'guest', 
             editId: null, 
@@ -514,6 +514,36 @@
             pagination: { page: 1, limit: 10 },
             detailCache: {}, // New Cache Object
             loadingId: null
+        };
+
+        // --- HELPER FOR PDF GENERATION (Avoid CORS Issues) ---
+        const getBase64FromUrl = async (url) => {
+            try {
+                const res = await fetch(url);
+                if (!res.ok) throw new Error('Network response was not ok');
+                const blob = await res.blob();
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result);
+                    reader.readAsDataURL(blob);
+                });
+            } catch (error) {
+                console.warn("CORS/Network error for image:", url, error);
+                return null; // Return null so we can show a placeholder instead of crashing
+            }
+        };
+
+        const captureElement = async (elementId) => {
+            const el = document.getElementById(elementId);
+            if (!el) return null;
+            // Use standard canvas capture
+            try {
+                const canvas = await html2canvas(el, { useCORS: true, allowTaint: true, logging: false });
+                return canvas.toDataURL('image/png');
+            } catch (e) {
+                console.warn("Map capture failed:", e);
+                return null;
+            }
         };
 
         // --- ROBUST PARSER ---
@@ -626,7 +656,7 @@
             };
         }
 
-        const ui = {
+        var ui = {
             renderAuth: () => {
                 const sGuest = document.getElementById('status-guest');
                 const sAdmin = document.getElementById('status-admin');
@@ -834,7 +864,7 @@
             }
         };
 
-        const mapLogic = {
+        var mapLogic = {
             map: null, layers: [], lines: [], markers: [],
             init: () => {
                 mapLogic.map = L.map('map-container', { zoomControl: false, attributionControl: false, maxBounds: [[-90, -180], [90, 180]], maxBoundsViscosity: 1.0, minZoom: 2 }).setView([20, 0], 2);
@@ -922,7 +952,7 @@
             }
         };
 
-        const geoEditor = {
+        var geoEditor = {
             map: null, layer: null, points: [], markers: [],
             start: () => {
                 ui.closeModal('input-modal');
@@ -960,7 +990,7 @@
             }
         };
 
-        const dashboard = {
+        var dashboard = {
             chartCountry: null, chartType: null, chartUnesco: null,
             init: () => { dashboard.render(); dashboard.listeners(); }, 
             render: () => {
@@ -1134,7 +1164,7 @@
                             
                             <div class="flex gap-2 items-start mt-2">
                                 <!-- PDF EXPORT BUTTON -->
-                                <button onclick="app.exportToPDF()" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-bold text-xs transition flex items-center gap-2 shadow-sm">
+                                <button onclick="app.exportToPDF(this)" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-bold text-xs transition flex items-center gap-2 shadow-sm">
                                     <i class="fas fa-file-pdf"></i> Export to PDF
                                 </button>
 
@@ -1240,7 +1270,7 @@
             }
         };
 
-        const app = {
+        var app = {
             init: () => {
                 ui.renderAuth();
                 window.addEventListener('keydown', (e) => { if (e.key === 'Enter') { const landing = document.getElementById('landing-page'); if (landing && landing.style.display !== 'none' && !document.getElementById('loading-container').classList.contains('hidden') === false) { app.enterAsGuest(); } } });
@@ -1461,17 +1491,58 @@
             },
             
             // --- UPDATED: EXPORT TO PDF FUNCTION ---
-            exportToPDF: async () => {
+            exportToPDF: async (btnElement) => {
                 if(!state.currentDetail) return;
                 const d = state.currentDetail;
-                const btn = event.target;
+                const btn = btnElement || event.target;
                 
                 // Set loading state for button
+                const originalText = btn.innerHTML;
                 btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Generating PDF...';
                 btn.disabled = true;
 
                 try {
-                    // 1. Prepare CLEAN GeoJSON Feature (No Description)
+                    // ==============================================================
+                    // FIX: MAP VISIBILITY HACK
+                    // html2canvas can only capture visible elements. 
+                    // Maps are hidden in Tab 2. We must show them briefly.
+                    // ==============================================================
+                    
+                    const wasMultimediaActive = document.getElementById('tab-content-multimedia').classList.contains('active');
+                    
+                    // 1. Force Activate Multimedia Tab
+                    document.getElementById('tab-content-overview').classList.remove('active');
+                    document.getElementById('tab-content-multimedia').classList.add('active');
+
+                    // 2. Initialize or Refresh Maps
+                    const map1 = document.getElementById('detail-geo-map');
+                    const map2 = document.getElementById('detail-conn-map');
+                    
+                    // If maps not initialized, trigger standard init logic
+                    if ((map1 && !map1._leaflet_map) || (map2 && !map2._leaflet_map)) {
+                         ui.switchModalTab('multimedia'); 
+                         await new Promise(r => setTimeout(r, 1500)); // Wait longer for full load
+                    } else {
+                        // Just resize if already there
+                        if(map1 && map1._leaflet_map) map1._leaflet_map.invalidateSize();
+                        if(map2 && map2._leaflet_map) map2._leaflet_map.invalidateSize();
+                        await new Promise(r => setTimeout(r, 500)); // Wait for render
+                    }
+
+                    // 3. CAPTURE MAP SNAPSHOTS (Now visible)
+                    let map1Img = await captureElement('detail-geo-map');
+                    let map2Img = await captureElement('detail-conn-map');
+
+                    // 4. Restore Original Tab State
+                    if (!wasMultimediaActive) {
+                        document.getElementById('tab-content-multimedia').classList.remove('active');
+                        document.getElementById('tab-content-overview').classList.add('active');
+                        // Reset visual state of buttons
+                        document.getElementById('tab-btn-multimedia').classList.remove('active');
+                        document.getElementById('tab-btn-overview').classList.add('active');
+                    }
+
+                    // 5. Prepare CLEAN GeoJSON Feature (No Description)
                     const geoFeature = {
                         "type": "Feature",
                         "properties": {
@@ -1519,24 +1590,28 @@
 
                     const geoJsonString = JSON.stringify(geoFeature, null, 2);
 
-                   // ====================================================================
-                    // [START] BAGIAN KODE BARU EXPORTPDF (1 HEADER - 1 COLUMN - 1 FOOTER)
-                    // ===================================================================
-
-                    // 2. Siapkan Logika Gambar (Ambil Semua Gambar untuk Grid)
-                    let imagesHtml = '';
+                    // ====================================================================
+                    // PRELOAD IMAGES TO BASE64 (BYPASS CORS)
+                    // ====================================================================
+                    let processedImages = [];
                     if(d.image_url) {
-                        const urls = d.image_url.split(',').filter(u => u.trim());
-                        if(urls.length > 0) {
-                            // Buat Grid 2 Kolom untuk gambar
-                            imagesHtml = `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
-                                ${urls.slice(0, 4).map(u => 
-                                    `<img src="${u.trim()}" style="width: 100%; height: 160px; object-fit: cover; border-radius: 6px; border: 1px solid #ddd;" crossorigin="anonymous">`
-                                ).join('')}
-                            </div>`;
+                        const rawUrls = d.image_url.split(',').filter(u => u.trim());
+                        for (let url of rawUrls.slice(0, 4)) {
+                            const base64 = await getBase64FromUrl(url.trim());
+                            if (base64) processedImages.push(base64);
                         }
                     }
-                    if(!imagesHtml) imagesHtml = `<div style="background:#f9fafb; color:#999; padding:20px; text-align:center; border:1px dashed #ccc; border-radius:6px; margin-bottom:20px; font-size:10px;">No Images Available</div>`;
+
+                    let imagesHtml = '';
+                    if(processedImages.length > 0) {
+                        imagesHtml = `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
+                            ${processedImages.map(imgData => 
+                                `<img src="${imgData}" style="width: 100%; height: 160px; object-fit: cover; border-radius: 6px; border: 1px solid #ddd;">`
+                            ).join('')}
+                        </div>`;
+                    } else {
+                        imagesHtml = `<div style="background:#f9fafb; color:#999; padding:20px; text-align:center; border:1px dashed #ccc; border-radius:6px; margin-bottom:20px; font-size:10px;">No Images Available or Loaded</div>`;
+                    }
 
                     // 3. Susun Template HTML (Single Column Layout)
                     const content = `
@@ -1574,12 +1649,12 @@
                             
                             <div style="margin-bottom: 15px;">
                                 <div style="font-size: 9px; font-weight: bold; color: #2563eb; margin-bottom: 4px;">FIG 1. DISTRIBUTION MAP</div>
-                                ${map1Img ? `<img src="${map1Img}" style="width: 100%; height: auto; border: 1px solid #ccc; border-radius: 4px;">` : '<div style="height:80px; background:#eee; text-align:center; padding-top:30px; font-size:10px;">Map Unavailable</div>'}
+                                ${map1Img ? `<img src="${map1Img}" style="width: 100%; height: auto; border: 1px solid #ccc; border-radius: 4px;">` : '<div style="height:80px; background:#eee; text-align:center; padding-top:30px; font-size:10px;">Map Snapshot Unavailable</div>'}
                             </div>
 
                             <div style="margin-bottom: 30px;">
                                 <div style="font-size: 9px; font-weight: bold; color: #ea580c; margin-bottom: 4px;">FIG 2. INFLUENCE PATH</div>
-                                ${map2Img ? `<img src="${map2Img}" style="width: 100%; height: auto; border: 1px solid #ccc; border-radius: 4px;">` : '<div style="height:80px; background:#eee; text-align:center; padding-top:30px; font-size:10px;">Map Unavailable</div>'}
+                                ${map2Img ? `<img src="${map2Img}" style="width: 100%; height: auto; border: 1px solid #ccc; border-radius: 4px;">` : '<div style="height:80px; background:#eee; text-align:center; padding-top:30px; font-size:10px;">Map Snapshot Unavailable</div>'}
                             </div>
 
                             <div style="border-top: 4px double #ddd; padding-top: 20px; margin-top: 40px;">
@@ -1605,9 +1680,6 @@
 
                         </div>
                     `;
-                    // ============================================================
-                    // [END] SELESAI KODE BARU
-                    // ============================================================
 
                     // 5. Render PDF
                     const opt = {
@@ -1628,9 +1700,9 @@
 
                 } catch(e) {
                     console.error(e);
-                    alert("PDF Generation Failed. Ensure images allow CORS or try again.");
+                    alert("PDF Generation Failed: " + e.message);
                 } finally {
-                    btn.innerHTML = '<i class="fas fa-file-pdf"></i> Export to PDF';
+                    btn.innerHTML = originalText;
                     btn.disabled = false;
                 }
             }
