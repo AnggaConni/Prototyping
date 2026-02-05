@@ -969,10 +969,17 @@
                             weight: 1.5, opacity: 0.4, dashArray: '4, 8', className: 'leaflet-interactive' 
                         }).addTo(mapLogic.map);
                         
-                         line.on('mouseover', function() {
+                        // Bind Tooltip ONCE (Fixed Bug: Sticky Tooltips on Hover)
+                        line.bindTooltip(`${d.origin_food_name} ➔ ${d.food_name}`, { 
+                            sticky: true, // Follow mouse
+                            direction: 'top',
+                            className: 'bg-white text-gray-800 text-[10px] font-bold px-2 py-1 rounded border border-gray-300 shadow-lg'
+                        });
+
+                        line.on('mouseover', function() {
                             this.setStyle({ color: '#d40012', weight: 4, opacity: 1, dashArray: null });
                             this.bringToFront();
-                            this.bindTooltip(`${d.origin_food_name} ➔ ${d.food_name}`, { sticky: true }).openTooltip();
+                            this.openTooltip();
                         });
                         line.on('mouseout', function() {
                             this.setStyle({ color: '#ff1b2d', weight: 1.5, opacity: 0.4, dashArray: '4, 8' });
