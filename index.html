@@ -1291,10 +1291,17 @@
                             </div>
                         </div>
                         
-                        <!-- TABS -->
-                        <div class="flex gap-6 border-b border-gray-200 mt-4">
-                            <button onclick="ui.switchModalTab('overview')" id="tab-btn-overview" class="tab-btn active">Overview</button>
-                            <button onclick="ui.switchModalTab('multimedia')" id="tab-btn-multimedia" class="tab-btn">Multimedia & Data</button>
+                        <!-- TABS & GEOJSON BUTTON (Option Red) -->
+                        <div class="flex justify-between items-end border-b border-gray-200 mt-4">
+                            <div class="flex gap-6">
+                                <button onclick="ui.switchModalTab('overview')" id="tab-btn-overview" class="tab-btn active">Overview</button>
+                                <button onclick="ui.switchModalTab('multimedia')" id="tab-btn-multimedia" class="tab-btn">Multimedia & Data</button>
+                            </div>
+                            
+                            <!-- GEOJSON EXPORT BUTTON -->
+                            <button onclick="app.exportGeoJSON()" class="mb-2 bg-black hover:bg-gray-800 text-white px-3 py-1.5 rounded text-[10px] font-bold transition shadow-lg flex items-center gap-2" title="Download for ArcGIS/QGIS">
+                                <i class="fas fa-globe-americas"></i> Download GeoJSON
+                            </button>
                         </div>
                     </div>
 
@@ -1605,6 +1612,45 @@
                 setTimeout(() => URL.revokeObjectURL(url), 100); 
             },
             
+            // --- NEW: EXPORT SINGLE GEOJSON (ARCGIS READY) ---
+            exportGeoJSON: () => {
+                if (!state.currentDetail) return;
+                const d = state.currentDetail;
+                
+                // Gunakan logika yang sama dengan footer PDF (ArcGIS Compatible)
+                let content = "";
+                
+                if (d.geometry_json) {
+                    content = generateArcGISReadyFooter(d.geometry_json);
+                } else {
+                    // Fallback jika tidak ada poligon, buat Point Feature sederhana
+                    const simpleFeature = {
+                        "type": "FeatureCollection",
+                        "features": [{
+                            "type": "Feature",
+                            "properties": { 
+                                "name": d.food_name, 
+                                "info": "Point Data Only (No Polygon Available)",
+                                "timestamp": new Date().toISOString()
+                            },
+                            "geometry": { "type": "Point", "coordinates": [d.lng, d.lat] }
+                        }]
+                    };
+                    content = JSON.stringify(simpleFeature, null, 2);
+                }
+
+                // Create Blob & Download
+                const blob = new Blob([content], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${d.food_name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_arcgis.json`; 
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(() => URL.revokeObjectURL(url), 100);
+            },
+
             // --- UPDATED: EXPORT TO PDF FUNCTION WITH LOADING OVERLAY ---
             updatePdfProgress: (percent, text) => {
                 const bar = document.getElementById('pdf-progress-bar');
