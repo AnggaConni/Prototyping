@@ -168,6 +168,28 @@
             border-radius: 8px;
         }
         @keyframes loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        
+        /* Markdown Styles for Display */
+        .markdown-body h3 { font-size: 1.1em; font-weight: bold; margin-top: 1em; margin-bottom: 0.5em; color: #111; border-bottom: 2px solid #f3f4f6; padding-bottom: 4px; }
+        .markdown-body p { margin-bottom: 1em; line-height: 1.6; }
+        .markdown-body ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 1em; }
+        .markdown-body li { margin-bottom: 0.25em; }
+        .markdown-body a { color: #2563eb; text-decoration: underline; }
+        .markdown-body strong { font-weight: 700; color: #000; }
+        .markdown-body em { font-style: italic; color: #4b5563; }
+
+        /* Editor Toolbar Styles */
+        .editor-btn {
+            padding: 6px 10px;
+            border-radius: 4px;
+            color: #4b5563;
+            transition: all 0.2s;
+            font-size: 12px;
+        }
+        .editor-btn:hover {
+            background-color: #e5e7eb;
+            color: var(--opera-text);
+        }
 
     </style>
 </head>
@@ -202,7 +224,7 @@
             </div>
             
             <div id="dataset-info" class="hidden mt-6 pt-4 border-t border-gray-700 w-full text-center text-gray-400 text-xs">
-                <div>v52.0 (Smart Sync) • <span id="record-count" class="text-white font-bold">0</span> Records</div>
+                <div>v54.0 (Smart Sync) • <span id="record-count" class="text-white font-bold">0</span> Records</div>
                 <div class="mt-1 font-bold">Angga Conni Saputra 2026</div>
             </div>
         </div>
@@ -484,7 +506,26 @@
                     <textarea id="inp-geometry" rows="2" class="input-light w-full rounded-lg p-3 text-xs font-mono text-gray-400" placeholder="Geometry JSON (Auto-filled)" readonly></textarea>
                 </div>
 
-                <div><label class="text-xs text-gray-500 font-bold block mb-1">Description</label><textarea id="inp-desc" rows="3" class="input-light w-full rounded-lg p-3"></textarea></div>
+                <!-- UPDATE: Mini Word-Like Editor -->
+                <div>
+                    <label class="text-xs text-gray-500 font-bold block mb-1">Description (Rich Editor)</label>
+                    <div class="border border-gray-300 rounded-lg overflow-hidden focus-within:ring-1 focus-within:ring-[var(--opera-red)] focus-within:border-[var(--opera-red)] bg-white">
+                        <!-- Toolbar -->
+                        <div class="flex items-center gap-1 bg-gray-50 border-b border-gray-200 p-2">
+                            <button type="button" onclick="ui.insertFormat('**', '**')" class="editor-btn" title="Bold"><i class="fas fa-bold"></i></button>
+                            <button type="button" onclick="ui.insertFormat('*', '*')" class="editor-btn" title="Italic"><i class="fas fa-italic"></i></button>
+                            <button type="button" onclick="ui.insertFormat('# ', '')" class="editor-btn" title="Header"><i class="fas fa-heading"></i></button>
+                            <div class="w-px h-4 bg-gray-300 mx-1"></div>
+                            <button type="button" onclick="ui.insertFormat('- ', '')" class="editor-btn" title="List"><i class="fas fa-list-ul"></i></button>
+                            <button type="button" onclick="ui.insertFormat('[', '](url)')" class="editor-btn" title="Link"><i class="fas fa-link"></i></button>
+                        </div>
+                        <!-- Textarea (Stretched 1.5x - 2x) -->
+                        <textarea id="inp-desc" rows="10" class="input-light w-full border-none rounded-none p-3 font-mono text-sm resize-y outline-none focus:ring-0" placeholder="Write history here..."></textarea>
+                    </div>
+                    <div class="text-[10px] text-gray-400 mt-1 pl-1">
+                        Use toolbar buttons to format text securely.
+                    </div>
+                </div>
 
                 <div class="grid grid-cols-2 gap-6">
                       <div><label class="text-xs text-gray-500 font-bold block mb-1">UNESCO Status</label><input type="text" id="inp-unesco" class="input-light w-full rounded-lg p-3"></div>
@@ -558,6 +599,45 @@
             detailCache: {}, // New Cache Object
             loadingId: null
         };
+
+        // --- SAFE MARKDOWN PARSER (Plain-Text Structured Authoring) ---
+        // This function ensures the description text is safe (no XSS) and formatted nicely
+        function parseSafeMarkdown(text) {
+            if (!text) return '';
+
+            // 1. Sanitize HTML (prevent XSS) - ESCAPE ALL HTML TAGS FIRST
+            let safe = text.replace(/&/g, '&amp;')
+                           .replace(/</g, '&lt;')
+                           .replace(/>/g, '&gt;')
+                           .replace(/"/g, '&quot;')
+                           .replace(/'/g, '&#039;');
+
+            // 2. Simple Formatting Rules
+            // Headers (e.g. # Title)
+            safe = safe.replace(/^# (.*$)/gim, '<h3 class="font-bold text-lg mt-4 mb-2 text-gray-900 border-b border-gray-100 pb-1">$1</h3>');
+            
+            // Bold (**text**)
+            safe = safe.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            
+            // Italic (*text*)
+            safe = safe.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            
+            // Links ([text](url))
+            safe = safe.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" class="text-blue-600 hover:underline">$1</a>');
+            
+            // Lists (- item) - Replace line starting with "- " to a bullet item
+            // Note: We are not wrapping in <ul> for simplicity, but styling it to look like a list
+            safe = safe.replace(/^\s*-\s+(.*$)/gim, '<div class="flex items-start ml-2 mb-1"><span class="mr-2 text-gray-400">•</span><span>$1</span></div>');
+            
+            // Paragraphs/Newlines
+            // Double newline -> Paragraph
+            safe = safe.replace(/\n\n/g, '</p><p class="mb-4">');
+            // Single newline -> Line break
+            safe = safe.replace(/\n/g, '<br>');
+
+            // Wrap in a div container with specific markdown styling class
+            return `<div class="markdown-body text-gray-700 leading-relaxed">${safe}</div>`;
+        }
 
         // --- HELPER FOR PDF GENERATION (Avoid CORS Issues) ---
         const getBase64FromUrl = async (url) => {
@@ -992,6 +1072,29 @@
                         }
                     }, 200);
                 }
+            },
+            
+            // --- NEW: Helper for Mini-Word Editor ---
+            insertFormat: (prefix, suffix) => {
+                const el = document.getElementById('inp-desc');
+                if(!el) return;
+                
+                const start = el.selectionStart;
+                const end = el.selectionEnd;
+                const text = el.value;
+                
+                const before = text.substring(0, start);
+                const selected = text.substring(start, end);
+                const after = text.substring(end);
+                
+                // Insert formatting
+                el.value = before + prefix + selected + suffix + after;
+                
+                // Move cursor to after prefix or wrap selection
+                el.selectionStart = start + prefix.length;
+                el.selectionEnd = end + prefix.length;
+                
+                el.focus();
             }
         };
 
@@ -1374,7 +1477,8 @@
                                 <!-- 3. HISTORICAL NARRATIVE (Stacked Below Roots) -->
                                 <div class="prose prose-sm max-w-none text-gray-700 bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
                                     <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wide border-b pb-2 mb-4">Historical Narrative</h3>
-                                    <p class="leading-relaxed whitespace-pre-line">${d.description || 'No historical data available for this entry.'}</p>
+                                    <!-- Use Safe Markdown Parser Here -->
+                                    <div class="leading-relaxed whitespace-pre-line">${parseSafeMarkdown(d.description) || 'No historical data available for this entry.'}</div>
                                 </div>
 
                             </div>
@@ -1918,7 +2022,9 @@
                                 </div>
                             </div>` : ''}
                             <h3 style="border-left: 4px solid #ff1b2d; padding-left: 10px; font-size: 12px; font-weight: bold; text-transform: uppercase; margin-bottom: 10px;">Historical Narrative</h3>
-                            <div style="font-size: 11px; line-height: 1.6; text-align: justify; margin-bottom: 30px; white-space: pre-line; color: #444;">${d.description || 'No detailed history available.'}</div>
+                            <!-- Use Parser for PDF -->
+                            <div style="font-size: 11px; line-height: 1.6; text-align: justify; margin-bottom: 30px; color: #444;">${parseSafeMarkdown(d.description) || 'No detailed history available.'}</div>
+                            
                             <h3 style="border-left: 4px solid #ff1b2d; padding-left: 10px; font-size: 12px; font-weight: bold; text-transform: uppercase; margin-bottom: 10px;">Geographic Mapping</h3>
                             <div style="margin-bottom: 15px;">
                                 <div style="font-size: 9px; font-weight: bold; color: #2563eb; margin-bottom: 4px;">FIG 1. DISTRIBUTION MAP</div>
