@@ -451,7 +451,8 @@
                             // Checks for both short keys (alat) or long keys (affectedby_lat)
                             affectedby_lat: robustParse(n.alat || n.affectedby_lat), 
                             affectedby_lng: robustParse(n.alng || n.affectedby_lng),
-                            affectedby_local_name: n.an || n.affectedby_local_name
+                            // Updated: Added n.aff based on your GAS code
+                            affectedby_local_name: n.aff || n.an || n.affectedby_local_name
                         }));
 
                         state.biosphere = d.biosphere.map(b => ({
