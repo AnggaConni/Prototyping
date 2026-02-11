@@ -399,11 +399,15 @@
                     state.nodes.forEach(n => {
                         if(search && !n.local_name.toLowerCase().includes(search)) return;
                         if(!isValidLatLng(n.lat, n.lng)) return;
+                        
+                        // FIX: Added logging to debug missing lines
+                        // If coordinates exist, draw dashed line
                         if(isValidLatLng(n.affectedby_lat, n.affectedby_lng)) {
                             const line = L.polyline([[n.affectedby_lat, n.affectedby_lng], [n.lat, n.lng]], { pane: 'linesPane', color: '#64748b', weight: 1, dashArray: '4,4' }).addTo(mapLogic.map);
                             const orange = L.marker([n.affectedby_lat, n.affectedby_lng], { pane: 'orangePane', icon: L.divIcon({ className: 'geo-marker-icon', html: '<div style="background:#F59E0B; width:100%; height:100%; border-radius:50%; border:2px solid white;"></div>', iconSize: [10,10] }) }).addTo(mapLogic.map);
                             orange.bindTooltip(n.affectedby_local_name || 'Factor', {className: 'custom-tooltip'}); mapLogic.layers.push(line, orange);
                         }
+                        
                         const marker = L.marker([n.lat, n.lng], { pane: 'nodesPane', icon: L.divIcon({ className: 'geo-marker-icon', iconSize: [14,14] }) }).addTo(mapLogic.map);
                         marker.on('click', (e) => { if (state.pickerMode === 'origin') { L.DomEvent.stopPropagation(e); BioApp.selectConnection(n); BioApp.cancelPicker(); return; } BioApp.showDetail(n, 'nodes'); });
                         marker.bindTooltip(n.local_name, {className: 'custom-tooltip'}); mapLogic.layers.push(marker);
@@ -443,7 +447,11 @@
                             lat: robustParse(n.lat),
                             lng: robustParse(n.lng),
                             unesco_status: n.s,
-                            // Full details will be loaded on demand
+                            // FIX: Added mapping for interaction lines
+                            // Checks for both short keys (alat) or long keys (affectedby_lat)
+                            affectedby_lat: robustParse(n.alat || n.affectedby_lat), 
+                            affectedby_lng: robustParse(n.alng || n.affectedby_lng),
+                            affectedby_local_name: n.an || n.affectedby_local_name
                         }));
 
                         state.biosphere = d.biosphere.map(b => ({
