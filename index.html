@@ -443,9 +443,7 @@
                             lat: robustParse(n.lat),
                             lng: robustParse(n.lng),
                             unesco_status: n.s,
-                            affectedby_local_name: n.aff, // <-- IMPORTANT: Network traversal requires this in Lite Mode
-                            affectedby_lat: robustParse(n.alat),
-                            affectedby_lng: robustParse(n.alng)
+                            // Full details will be loaded on demand
                         }));
 
                         state.biosphere = d.biosphere.map(b => ({
@@ -576,20 +574,14 @@
                     const queue = [d];
                     const visited = new Set([d.id]);
                     let safety = 0;
-                    
-                    // Improved matching logic for network traversal
                     while(queue.length > 0 && safety < 100) {
                         const curr = queue.shift();
                         safety++;
-                        
-                        // 1. Forward Connections (My "Affected By" field)
                         if(curr.affectedby_local_name) {
-                            const targets = curr.affectedby_local_name.split(',').map(s=>s.trim().toLowerCase());
+                            const targets = curr.affectedby_local_name.split(',').map(s=>s.trim());
                             targets.forEach(tName => {
-                                // Try finding exact match, then loose match
-                                const targetNode = state.nodes.find(n => n.local_name && n.local_name.toLowerCase() === tName) || 
-                                                   state.biosphere.find(b => b.name_bio && b.name_bio.toLowerCase() === tName);
-                                
+                                const targetNode = state.nodes.find(n => n.local_name && n.local_name.toLowerCase() === tName.toLowerCase()) || 
+                                                   state.biosphere.find(b => b.name_bio && b.name_bio.toLowerCase() === tName.toLowerCase());
                                 if(targetNode && !visited.has(targetNode.id)) {
                                     visited.add(targetNode.id);
                                     connectedNodes.push(targetNode);
@@ -597,13 +589,10 @@
                                 }
                             });
                         }
-                        
-                        // 2. Reverse Connections (Who points to me?)
-                        // Note: This relies on 'affectedby_local_name' being present in Lite data (Requires GAS Update)
                         const currName = (curr.local_name || curr.name_bio).toLowerCase();
                         [...state.nodes, ...state.biosphere].forEach(cand => {
-                            if(cand.id !== curr.id && cand.affectedby_local_name) { // This property needs to be in Lite Data
-                                const links = cand.affectedby_local_name.toLowerCase();
+                            if(cand.id !== curr.id && cand.affectedby_local_name) {
+                                const links = cand.affectedby_local_name.split(',').map(s=>s.trim().toLowerCase());
                                 if(links.includes(currName)) {
                                     if(!visited.has(cand.id)) {
                                         visited.add(cand.id);
@@ -614,28 +603,13 @@
                             }
                         });
                     }
-                    
                     connectedNodes.forEach(fNode => {
                         const color = '#F59E0B';
                         let fGeo = BioApp.getGeometry(fNode);
-                        // Draw Polygon if available
                         if (fGeo) {
-                            try { 
-                                fGeo = fGeo.replace(/^GEOMETRY_JSON/i, '').trim(); 
-                                let parsed = JSON.parse(fGeo); 
-                                if (Array.isArray(parsed)) { 
-                                    const poly = L.polygon(parsed, { pane: 'factors', color: color, weight: 2, dashArray: '5,5', fillOpacity: 0.3, fillColor: color }).addTo(mapLogic.detailMap); 
-                                    poly.bringToBack(); 
-                                    bounds.extend(poly.getBounds()); 
-                                    hasPolygon = true; // Expand bounds for connected items too
-                                } 
-                            } catch(e){}
-                        } 
-                        // Always draw marker as fallback or center
-                        if (fNode && isValidLatLng(fNode.lat, fNode.lng)) {
-                            const marker = L.circleMarker([fNode.lat, fNode.lng], { pane: 'factors', color: color, radius: 6 }).addTo(mapLogic.detailMap).bindTooltip(`Network: ${fNode.local_name || fNode.name_bio}`); 
-                            marker.bringToBack(); 
-                            bounds.extend([fNode.lat, fNode.lng]);
+                            try { fGeo = fGeo.replace(/^GEOMETRY_JSON/i, '').trim(); let parsed = JSON.parse(fGeo); if (Array.isArray(parsed)) { const poly = L.polygon(parsed, { pane: 'factors', color: color, weight: 2, dashArray: '5,5', fillOpacity: 0.3, fillColor: color }).addTo(mapLogic.detailMap); poly.bringToBack(); bounds.extend(poly.getBounds()); } } catch(e){}
+                        } else if (fNode && isValidLatLng(fNode.lat, fNode.lng)) {
+                            const marker = L.circleMarker([fNode.lat, fNode.lng], { pane: 'factors', color: color, radius: 6 }).addTo(mapLogic.detailMap).bindTooltip(`Network: ${fNode.local_name || fNode.name_bio}`); marker.bringToBack(); bounds.extend([fNode.lat, fNode.lng]);
                         }
                     });
                 }
@@ -810,7 +784,7 @@
                     tbody.innerHTML += `<tr class="border-b border-slate-50 hover:bg-slate-100 cursor-pointer" onclick="BioApp.showDetail(state.${isBio?'biosphere':'nodes'}.find(i=>i.id=='${x.id}'), '${isBio?'biosphere':'nodes'}')"><td class="p-3"><span class="w-2 h-2 rounded-full ${isBio?'bg-emerald-500':'bg-blue-500'} inline-block mr-2"></span>${isBio?'Biosphere':'Biodiversity'}</td><td class="p-3 font-bold text-slate-700">${name}</td><td class="p-3 text-slate-500">${x.country}</td><td class="p-3"><span class="px-2 py-0.5 rounded bg-slate-200 text-slate-600 text-[10px] font-bold">${status||'-'}</span></td></tr>`;
                 });
                 
-                document.getElementById('pagination-info').innerText = `Page ${state.pagination.currentPage} of ${Math.ceil(all.length/state.pagination.itemsPerPage)} (Showing ${Math.min(start + 1, all.length)}-${Math.min(end, all.length)} of ${all.length})`;
+                document.getElementById('pagination-info').innerText = `Showing ${Math.min(start + 1, all.length)}-${Math.min(end, all.length)} of ${all.length}`;
                 document.getElementById('btn-prev').disabled = state.pagination.currentPage === 1;
                 document.getElementById('btn-next').disabled = end >= all.length;
             },
