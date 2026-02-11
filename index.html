@@ -349,7 +349,7 @@
     <div id="geo-editor" class="fixed inset-0 z-picker hidden bg-slate-100"><div id="geo-map" class="w-full h-full"></div><div class="fixed bottom-12 left-1/2 -translate-x-1/2 bg-white px-6 py-3 rounded-full shadow-2xl flex gap-6 text-sm font-bold z-[9999] border-2 border-slate-200 items-center"><span class="text-purple-600 flex items-center"><i class="fas fa-pen-nib mr-2"></i> DRAWING</span><button onclick="geoEditor.clear()" class="text-red-500 hover:text-red-700 border-r border-slate-200 pr-6 mr-2"><i class="fas fa-trash-alt mr-1"></i> RESET MAP</button><button onclick="geoEditor.finish()" class="text-green-600 hover:text-green-800 uppercase tracking-wide">Save Geometry</button><button onclick="geoEditor.cancel()" class="text-slate-400 hover:text-slate-600">Cancel</button></div></div>
 
     <script>
-        const GAS_URL = 'https://script.google.com/macros/s/AKfycbx-0fJ2n9aKZO1K-vybrD6HAnVAgW7lHkmMLxk_aLtzE50FupFVm941sZ2R2vmahuNsjA/exec';
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycby5AG1WIY-UDWw3rcyOZ3L3Ej11dp3mG_9--BZ3GwLnipVM7Pnqbz2uvBJUqYiExMdBkg/exec';
         const state = { nodes: [], biosphere: [], notes: [], role: 'guest', currentDetail: null, currentType: null, inputMode: 'nodes', media: { imgIdx: 0, vidIdx: 0, images: [], videos: [] }, charts: { iucn: null, bioCountry: null, bioStatus: null, scatterInsight: null }, pagination: { currentPage: 1, itemsPerPage: 15 }, filters: { search: '', type: 'all', country: 'all' }, currentExportFormat: 'csv', layerFilter: 'all', pickerMode: null };
 
         function sanitizeHTML(str) { if (!str) return ''; return str.replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gm, "").replace(/on\w+="[^"]*"/g, "").replace(/javascript:/g, ""); }
@@ -380,13 +380,10 @@
                 mapLogic.layers.forEach(l => mapLogic.map.removeLayer(l)); mapLogic.layers = [];
                 const search = document.getElementById('map-search').value.toLowerCase();
                 
-                // --- UPDATE: SORT BIOSPHERE BY AREA (Largest to Smallest) ---
-                // Drawing order in Leaflet: First added = Bottom.
-                // So we sort Largest First (Bottom), Smallest Last (Top).
                 const sortedBiosphere = [...state.biosphere].sort((a, b) => {
                     const areaA = parseFloat(a.area_total_ha) || 0;
                     const areaB = parseFloat(b.area_total_ha) || 0;
-                    return areaB - areaA; // Descending (Big -> Small)
+                    return areaB - areaA;
                 });
 
                 if(state.layerFilter === 'all' || state.layerFilter === 'biosphere') {
@@ -429,18 +426,56 @@
         const BioApp = {
             init: () => { ui.renderAuth(); BioApp.fetchData(); },
             getGeometry: (d) => { if (!d) return null; if (d.geo_json) return d.geo_json; if (d.geometry_json) return d.geometry_json; if (d.geometry) return d.geometry; if (d.GEOMETRY_JSON) return d.GEOMETRY_JSON; const key = Object.keys(d).find(k => /geo(metry|_json)/i.test(k)); return key ? d[key] : null; },
+            
+            // --- NEW: FETCH LITE DATA ---
             fetchData: () => {
-                fetch(GAS_URL + '?t=' + new Date().getTime()).then(r => r.json()).then(d => {
+                document.getElementById('loading-container').classList.remove('hidden');
+                // Use action=get_map_lite for lightweight data
+                fetch(GAS_URL + '?action=get_map_lite&t=' + new Date().getTime())
+                .then(r => r.json())
+                .then(d => {
                     if(d.status === 'success') {
-                        state.nodes = d.nodes.map(n => { n.lat = robustParse(n.lat); n.lng = robustParse(n.lng); n.affectedby_lat = robustParse(n.affectedby_lat); n.affectedby_lng = robustParse(n.affectedby_lng); return n; }); 
-                        state.biosphere = d.biosphere;
-                        // UPDATE: Fetch notes
-                        state.notes = d.notes || []; // Expect backend to send 'notes'
-                        document.getElementById('loading-container').classList.add('hidden'); document.getElementById('entry-buttons').classList.remove('hidden');
-                        BioApp.populateFilters(); if(!mapLogic.map) mapLogic.init(); mapLogic.render(); BioApp.updateDashboard();
-                    } else { alert('Database Error: ' + d.message); document.getElementById('loading-container').innerHTML = `<span class="text-red-400 font-bold">${d.message}</span>`; }
-                }).catch(e => { console.error(e); alert('Network Error'); document.getElementById('loading-container').innerHTML = `<span class="text-red-400 font-bold">Connection Failed</span>`; });
+                        // Map Lite Data (Short keys: n=name, c=country, s=status, a=area, g=geo) to Application State
+                        state.nodes = d.nodes.map(n => ({
+                            id: n.id,
+                            local_name: n.n,
+                            country: n.c,
+                            lat: robustParse(n.lat),
+                            lng: robustParse(n.lng),
+                            unesco_status: n.s,
+                            // Full details will be loaded on demand
+                        }));
+
+                        state.biosphere = d.biosphere.map(b => ({
+                            id: b.id,
+                            name_bio: b.n,
+                            country: b.c,
+                            region: b.r,
+                            status: b.s,
+                            area_total_ha: b.a,
+                            geometry_json: b.g, // Keep geojson for map rendering
+                        }));
+
+                        state.notes = d.notes || [];
+
+                        document.getElementById('loading-container').classList.add('hidden');
+                        document.getElementById('entry-buttons').classList.remove('hidden');
+                        
+                        BioApp.populateFilters();
+                        if(!mapLogic.map) mapLogic.init();
+                        mapLogic.render(); // Render map with lite data
+                        BioApp.updateDashboard(); // Render dashboard with lite data
+                    } else {
+                        alert('Database Error: ' + d.message);
+                        document.getElementById('loading-container').innerHTML = `<span class="text-red-400 font-bold">${d.message}</span>`;
+                    }
+                }).catch(e => {
+                    console.error(e);
+                    alert('Network Error');
+                    document.getElementById('loading-container').innerHTML = `<span class="text-red-400 font-bold">Connection Failed</span>`;
+                });
             },
+
             populateFilters: () => { const countries = new Set([...state.nodes.map(x=>x.country), ...state.biosphere.map(x=>x.country)]); const sel = document.getElementById('filter-country'); sel.innerHTML = '<option value="all">All Countries</option>'; Array.from(countries).sort().forEach(c => { if(c) sel.innerHTML += `<option value="${c}">${c}</option>`; }); },
             enterAsGuest: () => { document.getElementById('landing-page').style.display = 'none'; document.getElementById('main-app').classList.add('active'); setTimeout(()=>mapLogic.map.invalidateSize(), 500); },
             enterAsContributor: () => ui.openModal('login-modal'),
@@ -466,34 +501,87 @@
             downloadFile: (content, fileName, mimeType) => { const blob = new Blob([content], { type: mimeType }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = fileName; document.body.appendChild(a); a.click(); document.body.removeChild(a); },
             generateCSV: (data, fileName) => { if(!data || !data.length) return; const keys = Object.keys(data[0]).filter(k => !k.startsWith('_')); const csvContent = [ keys.join(','), ...data.map(row => keys.map(k => { let val = row[k] === null || row[k] === undefined ? '' : String(row[k]); val = val.replace(/"/g, '""'); if (val.search(/("|,|\n)/g) >= 0) val = `"${val}"`; return val; }).join(',')) ].join('\n'); BioApp.downloadFile(csvContent, fileName, 'text/csv;charset=utf-8;'); },
             generateDCMI: (data, type, fileName) => { let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<metadata xmlns:dc="http://purl.org/dc/elements/1.1/">\n'; data.forEach(item => { xml += '  <record>\n'; const title = type === 'nodes' ? item.local_name : item.name_bio; const altTitle = type === 'nodes' ? item.latin_name : ''; const desc = item.description || ''; const date = type === 'biosphere' ? item.unesco_year : ''; xml += `    <dc:title>${sanitizeHTML(title)}</dc:title>\n`; if(altTitle) xml += `    <dc:alternative>${sanitizeHTML(altTitle)}</dc:alternative>\n`; xml += `    <dc:identifier>${item.id}</dc:identifier>\n`; if(desc) xml += `    <dc:description>${sanitizeHTML(desc)}</dc:description>\n`; xml += `    <dc:coverage>${item.country}</dc:coverage>\n`; if(item.region) xml += `    <dc:coverage>${item.region}</dc:coverage>\n`; if(date) xml += `    <dc:date>${date}</dc:date>\n`; if(item.image_url) xml += `    <dc:relation>${item.image_url}</dc:relation>\n`; xml += '  </record>\n'; }); xml += '</metadata>'; BioApp.downloadFile(xml, fileName, 'application/xml;charset=utf-8;'); },
-            showDetail: (d, type) => { state.currentDetail = d; state.currentType = type; const isBio = type === 'biosphere'; document.getElementById('dt-tag-type').innerText = isBio ? 'BIOSPHERE' : 'BIODIVERSITY'; document.getElementById('dt-tag-type').className = isBio ? "px-2 py-1 rounded text-[9px] font-bold bg-emerald-600 text-white shadow" : "px-2 py-1 rounded text-[9px] font-bold bg-blue-600 text-white shadow"; document.getElementById('dt-title').innerText = isBio ? d.name_bio : d.local_name; document.getElementById('dt-subtitle').innerText = isBio ? d.region : d.latin_name; document.getElementById('dt-desc').innerHTML = sanitizeHTML(d.description || 'No description'); state.media.images = d.image_url ? d.image_url.split(/[,;]/).map(s => s.trim()).filter(s => s) : []; state.media.videos = d.youtube_url ? d.youtube_url.split(/[,;]/).map(s => s.trim()).filter(s => s) : []; state.media.imgIdx = 0; state.media.vidIdx = 0; 
-                // FIX: Update Country Label dynamically
+            
+            // --- NEW: LAZY LOAD DETAIL ---
+            showDetail: async (lightData, type) => {
+                // Show modal first with loading state
+                ui.openModal('detail-modal');
+                const isBio = type === 'biosphere';
+                document.getElementById('dt-title').innerText = isBio ? lightData.name_bio : lightData.local_name;
+                document.getElementById('dt-desc').innerHTML = '<div class="flex items-center gap-2 text-blue-600 font-bold justify-center p-8"><i class="fas fa-circle-notch fa-spin"></i> Loading full details from database...</div>';
+                
+                // Clear media areas
+                document.getElementById('img-carousel').innerHTML = '';
+                document.getElementById('dt-links-area').innerHTML = '';
+
+                // Try fetch full details
+                try {
+                    const response = await fetch(`${GAS_URL}?action=get_detail&id=${lightData.id}&type=${type}`);
+                    const result = await response.json();
+
+                    if (result.status === 'success') {
+                        const fullData = result.data;
+                        // Update cache in state
+                        if(type === 'nodes') {
+                            const idx = state.nodes.findIndex(n => n.id == fullData.id);
+                            if(idx !== -1) state.nodes[idx] = {...state.nodes[idx], ...fullData};
+                        } else {
+                            const idx = state.biosphere.findIndex(b => b.id == fullData.id);
+                            if(idx !== -1) state.biosphere[idx] = {...state.biosphere[idx], ...fullData};
+                        }
+                        BioApp.renderDetailContent(fullData, type);
+                    } else {
+                        document.getElementById('dt-desc').innerText = "Failed to load details. " + result.message;
+                    }
+                } catch (e) {
+                    console.error(e);
+                    document.getElementById('dt-desc').innerText = "Network error loading details.";
+                }
+            },
+
+            renderDetailContent: (d, type) => {
+                state.currentDetail = d;
+                state.currentType = type;
+                const isBio = type === 'biosphere';
+                
+                document.getElementById('dt-tag-type').innerText = isBio ? 'BIOSPHERE' : 'BIODIVERSITY';
+                document.getElementById('dt-tag-type').className = isBio ? "px-2 py-1 rounded text-[9px] font-bold bg-emerald-600 text-white shadow" : "px-2 py-1 rounded text-[9px] font-bold bg-blue-600 text-white shadow";
+                document.getElementById('dt-title').innerText = isBio ? d.name_bio : d.local_name;
+                document.getElementById('dt-subtitle').innerText = isBio ? d.region : d.latin_name;
+                document.getElementById('dt-desc').innerHTML = sanitizeHTML(d.description || 'No description');
                 document.getElementById('dt-tag-country').innerText = d.country || 'Unknown';
-                ui.renderMedia('img'); ui.renderMedia('vid'); document.getElementById('vid-section').classList.toggle('hidden', state.media.videos.length === 0); mapLogic.initDetailMap(); document.getElementById('map-legend-label').innerText = isBio ? 'Biosphere Zone' : 'Ecological Overlap'; const contextNote = document.getElementById('map-context-note'); 
+
+                state.media.images = d.image_url ? d.image_url.split(/[,;]/).map(s => s.trim()).filter(s => s) : [];
+                state.media.videos = d.youtube_url ? d.youtube_url.split(/[,;]/).map(s => s.trim()).filter(s => s) : [];
+                state.media.imgIdx = 0;
+                state.media.vidIdx = 0;
                 
-                // --- UPDATE: New Context Note ---
-                contextNote.innerHTML = '*Layers: Orange (Ecosystem Network) vs Purple (Selected Species).'; 
+                ui.renderMedia('img');
+                ui.renderMedia('vid');
+                document.getElementById('vid-section').classList.toggle('hidden', state.media.videos.length === 0);
                 
-                const bounds = L.latLngBounds([]); 
-                let hasPolygon = false; 
+                mapLogic.initDetailMap();
+                document.getElementById('map-legend-label').innerText = isBio ? 'Biosphere Zone' : 'Ecological Overlap';
+                const contextNote = document.getElementById('map-context-note');
+                contextNote.innerHTML = '*Layers: Orange (Ecosystem Network) vs Purple (Selected Species).';
                 
-                // --- UPDATE: NETWORK TRAVERSAL (BIODIVERSITY ONLY) ---
+                const bounds = L.latLngBounds([]);
+                let hasPolygon = false;
+                
+                // Network traversal for nodes
                 if (!isBio) {
                     const connectedNodes = [];
                     const queue = [d];
                     const visited = new Set([d.id]);
                     let safety = 0;
-
                     while(queue.length > 0 && safety < 100) {
                         const curr = queue.shift();
                         safety++;
-                        
-                        // 1. Forward: Who does curr depend on?
                         if(curr.affectedby_local_name) {
                             const targets = curr.affectedby_local_name.split(',').map(s=>s.trim());
                             targets.forEach(tName => {
-                                const targetNode = state.nodes.find(n => n.local_name.toLowerCase() === tName.toLowerCase()) || 
-                                                   state.biosphere.find(b => b.name_bio.toLowerCase() === tName.toLowerCase());
+                                const targetNode = state.nodes.find(n => n.local_name && n.local_name.toLowerCase() === tName.toLowerCase()) || 
+                                                   state.biosphere.find(b => b.name_bio && b.name_bio.toLowerCase() === tName.toLowerCase());
                                 if(targetNode && !visited.has(targetNode.id)) {
                                     visited.add(targetNode.id);
                                     connectedNodes.push(targetNode);
@@ -501,8 +589,6 @@
                                 }
                             });
                         }
-
-                        // 2. Reverse: Who depends on curr?
                         const currName = (curr.local_name || curr.name_bio).toLowerCase();
                         [...state.nodes, ...state.biosphere].forEach(cand => {
                             if(cand.id !== curr.id && cand.affectedby_local_name) {
@@ -517,12 +603,9 @@
                             }
                         });
                     }
-
-                    // Render all connected nodes found
                     connectedNodes.forEach(fNode => {
-                        const color = '#F59E0B'; // Orange for connected network
+                        const color = '#F59E0B';
                         let fGeo = BioApp.getGeometry(fNode);
-                        
                         if (fGeo) {
                             try { fGeo = fGeo.replace(/^GEOMETRY_JSON/i, '').trim(); let parsed = JSON.parse(fGeo); if (Array.isArray(parsed)) { const poly = L.polygon(parsed, { pane: 'factors', color: color, weight: 2, dashArray: '5,5', fillOpacity: 0.3, fillColor: color }).addTo(mapLogic.detailMap); poly.bringToBack(); bounds.extend(poly.getBounds()); } } catch(e){}
                         } else if (fNode && isValidLatLng(fNode.lat, fNode.lng)) {
@@ -531,9 +614,69 @@
                     });
                 }
                 
-                let targetGeo = BioApp.getGeometry(d); if(targetGeo) { try { targetGeo = targetGeo.replace(/^(GEOMETRY_JSON|geometry_json)\s*=?\s*/i, '').trim(); let parsed = JSON.parse(targetGeo); const style = { color: isBio?'#10B981':'#9333ea', weight: 3, fillOpacity: 0.6 }; if (Array.isArray(parsed)) { if (parsed.length > 0 && Array.isArray(parsed[0]) && parsed[0].length > 0 && Array.isArray(parsed[0][0])) { parsed.forEach(polyCoords => { const poly = L.polygon(polyCoords, { pane: 'current', ...style }).addTo(mapLogic.detailMap); poly.bringToFront(); bounds.extend(poly.getBounds()); }); } else { const poly = L.polygon(parsed, { pane: 'current', ...style }).addTo(mapLogic.detailMap); poly.bringToFront(); bounds.extend(poly.getBounds()); } hasPolygon = true; contextNote.innerHTML += ` <span class="text-green-600 font-bold ml-2 text-[9px]">[DATA FOUND]</span>`; } } catch(e){ contextNote.innerHTML += ` <span class="text-red-500 font-bold ml-2">(GIS ERROR)</span>`; } } else { contextNote.innerHTML += ` <span class="text-slate-400 ml-2">(No GIS Data)</span>`; } if(!hasPolygon && isValidLatLng(d.lat, d.lng)) { const m = L.marker([d.lat, d.lng], {zIndexOffset: 1000}).addTo(mapLogic.detailMap); bounds.extend([d.lat, d.lng]); } const grid = document.getElementById('dt-extra-info'); grid.innerHTML = ''; const addInfo = (lbl, val) => { if(val) grid.innerHTML += `<div><div class="font-bold text-slate-400 uppercase text-[10px]">${lbl}</div><div class="font-medium text-slate-700">${val}</div></div>`; }; addInfo('Country', d.country); if(isBio) { addInfo('Established', d.unesco_year); addInfo('Status', d.status); addInfo('Area (Ha)', d.area_total_ha); } else { addInfo('IUCN Status', d.unesco_status); addInfo('Affected By', d.affectedby_local_name); addInfo('Interaction', d.connection_type); } const linkArea = document.getElementById('dt-links-area'); linkArea.innerHTML = ''; if(d.research_links) { d.research_links.split(',').forEach(l => { const cleanUrl = safeURL(l); if(cleanUrl) { const urlObj = new URL(cleanUrl); const domain = urlObj.hostname; const pathSegments = urlObj.pathname.split('/').filter(p => p.trim() !== ''); const pseudoTitle = pathSegments.length > 0 ? pathSegments[pathSegments.length - 1].replace(/[-_]/g, ' ') : 'Home'; linkArea.innerHTML += `<a href="${cleanUrl}" target="_blank" rel="noopener noreferrer" class="block bg-slate-100 p-3 rounded-xl text-xs text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition border border-slate-200 group"><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-slate-400 shadow-sm border border-slate-100 group-hover:text-blue-500"><i class="fas fa-globe"></i></div><div class="overflow-hidden"><div class="font-bold truncate text-slate-700 group-hover:text-blue-700 capitalize">${pseudoTitle}</div><div class="truncate text-[10px] text-slate-400">${domain}</div></div><i class="fas fa-external-link-alt ml-auto text-slate-300 group-hover:text-blue-400"></i></div></a>`; } }); } else { linkArea.innerHTML = '<div class="text-slate-400 text-[10px] italic">No research links available.</div>'; } ui.openModal('detail-modal'); setTimeout(() => { mapLogic.detailMap.invalidateSize(); if(bounds.isValid()) { mapLogic.detailMap.fitBounds(bounds, { padding: [50, 50], maxZoom: 10, animate: false }); } else if (isValidLatLng(d.lat, d.lng)) { mapLogic.detailMap.setView([d.lat, d.lng], 8); } else { mapLogic.detailMap.setView([0,0], 2); } }, 300); },
+                let targetGeo = BioApp.getGeometry(d);
+                if(targetGeo) {
+                    try {
+                        targetGeo = targetGeo.replace(/^(GEOMETRY_JSON|geometry_json)\s*=?\s*/i, '').trim();
+                        let parsed = JSON.parse(targetGeo);
+                        const style = { color: isBio?'#10B981':'#9333ea', weight: 3, fillOpacity: 0.6 };
+                        if (Array.isArray(parsed)) {
+                            if (parsed.length > 0 && Array.isArray(parsed[0]) && parsed[0].length > 0 && Array.isArray(parsed[0][0])) {
+                                parsed.forEach(polyCoords => { const poly = L.polygon(polyCoords, { pane: 'current', ...style }).addTo(mapLogic.detailMap); poly.bringToFront(); bounds.extend(poly.getBounds()); });
+                            } else {
+                                const poly = L.polygon(parsed, { pane: 'current', ...style }).addTo(mapLogic.detailMap); poly.bringToFront(); bounds.extend(poly.getBounds());
+                            }
+                            hasPolygon = true;
+                            contextNote.innerHTML += ` <span class="text-green-600 font-bold ml-2 text-[9px]">[DATA FOUND]</span>`;
+                        }
+                    } catch(e){ contextNote.innerHTML += ` <span class="text-red-500 font-bold ml-2">(GIS ERROR)</span>`; }
+                } else { contextNote.innerHTML += ` <span class="text-slate-400 ml-2">(No GIS Data)</span>`; }
+                
+                if(!hasPolygon && isValidLatLng(d.lat, d.lng)) {
+                    const m = L.marker([d.lat, d.lng], {zIndexOffset: 1000}).addTo(mapLogic.detailMap);
+                    bounds.extend([d.lat, d.lng]);
+                }
+                
+                const grid = document.getElementById('dt-extra-info');
+                grid.innerHTML = '';
+                const addInfo = (lbl, val) => { if(val) grid.innerHTML += `<div><div class="font-bold text-slate-400 uppercase text-[10px]">${lbl}</div><div class="font-medium text-slate-700">${val}</div></div>`; };
+                addInfo('Country', d.country);
+                if(isBio) {
+                    addInfo('Established', d.unesco_year); addInfo('Status', d.status); addInfo('Area (Ha)', d.area_total_ha);
+                } else {
+                    addInfo('IUCN Status', d.unesco_status); addInfo('Affected By', d.affectedby_local_name); addInfo('Interaction', d.connection_type);
+                }
+                
+                const linkArea = document.getElementById('dt-links-area');
+                linkArea.innerHTML = '';
+                if(d.research_links) {
+                    d.research_links.split(',').forEach(l => {
+                        const cleanUrl = safeURL(l);
+                        if(cleanUrl) {
+                            const urlObj = new URL(cleanUrl);
+                            const domain = urlObj.hostname;
+                            const pathSegments = urlObj.pathname.split('/').filter(p => p.trim() !== '');
+                            const pseudoTitle = pathSegments.length > 0 ? pathSegments[pathSegments.length - 1].replace(/[-_]/g, ' ') : 'Home';
+                            linkArea.innerHTML += `<a href="${cleanUrl}" target="_blank" rel="noopener noreferrer" class="block bg-slate-100 p-3 rounded-xl text-xs text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition border border-slate-200 group"><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-slate-400 shadow-sm border border-slate-100 group-hover:text-blue-500"><i class="fas fa-globe"></i></div><div class="overflow-hidden"><div class="font-bold truncate text-slate-700 group-hover:text-blue-700 capitalize">${pseudoTitle}</div><div class="truncate text-[10px] text-slate-400">${domain}</div></div><i class="fas fa-external-link-alt ml-auto text-slate-300 group-hover:text-blue-400"></i></div></a>`;
+                        }
+                    });
+                } else {
+                    linkArea.innerHTML = '<div class="text-slate-400 text-[10px] italic">No research links available.</div>';
+                }
+                
+                ui.openModal('detail-modal');
+                setTimeout(() => {
+                    mapLogic.detailMap.invalidateSize();
+                    if(bounds.isValid()) {
+                        mapLogic.detailMap.fitBounds(bounds, { padding: [50, 50], maxZoom: 10, animate: false });
+                    } else if (isValidLatLng(d.lat, d.lng)) {
+                        mapLogic.detailMap.setView([d.lat, d.lng], 8);
+                    } else {
+                        mapLogic.detailMap.setView([0,0], 2);
+                    }
+                }, 300);
+            },
             
-            // --- UPDATED DASHBOARD LOGIC (NEW: Horizontal Bar & Scatter) ---
             updateDashboard: (resetPage = false) => {
                 const search = document.getElementById('filter-search').value.toLowerCase();
                 const type = document.getElementById('filter-type').value;
@@ -573,7 +716,7 @@
                 const nodeCountries = {};
                 state.nodes.forEach(x => { const c = (x.country || 'Unknown').trim(); nodeCountries[c] = (nodeCountries[c] || 0) + 1; });
                 const sortedNodeC = Object.entries(nodeCountries).sort((a,b)=>b[1]-a[1]).slice(0,5);
-                const barColors = sortedNodeC.map((_, i) => i === 0 ? '#F59E0B' : '#3B82F6'); // Highlight Top 1 Gold
+                const barColors = sortedNodeC.map((_, i) => i === 0 ? '#F59E0B' : '#3B82F6'); 
 
                 if(state.charts.bioCountry) state.charts.bioCountry.destroy();
                 state.charts.bioCountry = new Chart(document.getElementById('chart-bio-country'), {
@@ -589,25 +732,13 @@
                         }] 
                     },
                     options: { 
-                        indexAxis: 'y', // Horizontal
+                        indexAxis: 'y', 
                         maintainAspectRatio: false, 
                         plugins: { 
                             legend: { display: false },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        let val = context.raw;
-                                        let total = state.nodes.length;
-                                        let pct = Math.round((val/total)*100);
-                                        return `${val} Species (${pct}%)`;
-                                    }
-                                }
-                            }
+                            tooltip: { callbacks: { label: function(context) { let val = context.raw; let total = state.nodes.length; let pct = Math.round((val/total)*100); return `${val} Species (${pct}%)`; } } }
                         }, 
-                        scales: { 
-                            x: { grid: {display:false}, ticks: {font:{size:9}} },
-                            y: { grid: {display:false} }
-                        } 
+                        scales: { x: { grid: {display:false}, ticks: {font:{size:9}} }, y: { grid: {display:false} } } 
                     }
                 });
 
@@ -619,105 +750,72 @@
                     type: 'pie', data: { labels: Object.keys(bioStatusCounts), datasets: [{ data: Object.values(bioStatusCounts), backgroundColor: ['#059669', '#10b981', '#34d399'], borderWidth: 0 }] }, options: { maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 8, font: {size: 9} } } } }
                 });
                 
-                // 4. Insight 1: Scatter Plot (Bio vs Species)
+                // 4. Insight: Scatter
                 const countryStats = {};
-                // Init counts
-                [...state.nodes, ...state.biosphere].forEach(item => {
-                    const c = (item.country || 'Unknown').trim();
-                    if(!countryStats[c]) countryStats[c] = { nodes: 0, bio: 0 };
-                });
-                // Fill Counts
+                [...state.nodes, ...state.biosphere].forEach(item => { const c = (item.country || 'Unknown').trim(); if(!countryStats[c]) countryStats[c] = { nodes: 0, bio: 0 }; });
                 state.nodes.forEach(n => { const c = (n.country || 'Unknown').trim(); if(countryStats[c]) countryStats[c].nodes++; });
                 state.biosphere.forEach(b => { const c = (b.country || 'Unknown').trim(); if(countryStats[c]) countryStats[c].bio++; });
-                
                 const scatterData = Object.keys(countryStats).map(c => ({ x: countryStats[c].nodes, y: countryStats[c].bio, country: c })).filter(d => d.x > 0 || d.y > 0);
 
                 if(state.charts.scatterInsight) state.charts.scatterInsight.destroy();
                 state.charts.scatterInsight = new Chart(document.getElementById('chart-scatter-insight'), {
                     type: 'scatter',
-                    data: {
-                        datasets: [{
-                            label: 'Country Correlation',
-                            data: scatterData,
-                            backgroundColor: '#10B981',
-                            pointRadius: 6,
-                            pointHoverRadius: 8
-                        }]
-                    },
+                    data: { datasets: [{ label: 'Country Correlation', data: scatterData, backgroundColor: '#10B981', pointRadius: 6, pointHoverRadius: 8 }] },
                     options: {
                         maintainAspectRatio: false,
-                        scales: {
-                            x: { title: { display: true, text: 'Total Species' }, grid: { display: false } },
-                            y: { title: { display: true, text: 'Biosphere Reserves' }, grid: { color: '#f3f4f6' } }
-                        },
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        const pt = context.raw;
-                                        return `${pt.country}: ${pt.x} Species, ${pt.y} Reserves`;
-                                    }
-                                }
-                            }
-                        }
+                        scales: { x: { title: { display: true, text: 'Total Species' }, grid: { display: false } }, y: { title: { display: true, text: 'Biosphere Reserves' }, grid: { color: '#f3f4f6' } } },
+                        plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(context) { const pt = context.raw; return `${pt.country}: ${pt.x} Species, ${pt.y} Reserves`; } } } }
                     }
                 });
 
-                // --- PAGINATION ---
-                const start = (state.pagination.currentPage - 1) * state.pagination.itemsPerPage; const end = start + state.pagination.itemsPerPage; const paginatedData = all.slice(start, end); const tbody = document.getElementById('dash-table-body'); tbody.innerHTML = '';
+                // PAGINATION LOGIC
+                const start = (state.pagination.currentPage - 1) * state.pagination.itemsPerPage;
+                const end = start + state.pagination.itemsPerPage;
+                const paginatedData = all.slice(start, end);
+                const tbody = document.getElementById('dash-table-body');
+                tbody.innerHTML = '';
+                
                 paginatedData.forEach(x => {
-                    const isBio = x._type === 'biosphere'; const name = isBio ? x.name_bio : x.local_name; const status = isBio ? x.status : x.unesco_status;
+                    const isBio = x._type === 'biosphere';
+                    const name = isBio ? x.name_bio : x.local_name;
+                    const status = isBio ? x.status : x.unesco_status;
+                    // Detail On Click: Pass the lightweight object 'x'
+                    // showDetail will then fetch the full data using x.id
                     tbody.innerHTML += `<tr class="border-b border-slate-50 hover:bg-slate-100 cursor-pointer" onclick="BioApp.showDetail(state.${isBio?'biosphere':'nodes'}.find(i=>i.id=='${x.id}'), '${isBio?'biosphere':'nodes'}')"><td class="p-3"><span class="w-2 h-2 rounded-full ${isBio?'bg-emerald-500':'bg-blue-500'} inline-block mr-2"></span>${isBio?'Biosphere':'Biodiversity'}</td><td class="p-3 font-bold text-slate-700">${name}</td><td class="p-3 text-slate-500">${x.country}</td><td class="p-3"><span class="px-2 py-0.5 rounded bg-slate-200 text-slate-600 text-[10px] font-bold">${status||'-'}</span></td></tr>`;
                 });
-                document.getElementById('pagination-info').innerText = `Showing ${Math.min(start + 1, all.length)}-${Math.min(end, all.length)} of ${all.length}`; document.getElementById('btn-prev').disabled = state.pagination.currentPage === 1; document.getElementById('btn-next').disabled = end >= all.length;
+                
+                document.getElementById('pagination-info').innerText = `Showing ${Math.min(start + 1, all.length)}-${Math.min(end, all.length)} of ${all.length}`;
+                document.getElementById('btn-prev').disabled = state.pagination.currentPage === 1;
+                document.getElementById('btn-next').disabled = end >= all.length;
             },
             nextPage: () => { state.pagination.currentPage++; BioApp.updateDashboard(); },
             prevPage: () => { if (state.pagination.currentPage > 1) { state.pagination.currentPage--; BioApp.updateDashboard(); } },
             pickLocation: (target) => { ui.closeModal('input-modal'); BioApp.switchTab('map'); state.pickerMode = target; document.getElementById('picker-notification').classList.remove('hidden'); document.getElementById('picker-msg').innerText = target === 'main' ? "Click map to set location" : "Click map OR Blue Node to connect"; const existingLat = document.getElementById(target === 'main' ? 'inp-lat' : 'inp-aff-lat').value; const existingLng = document.getElementById(target === 'main' ? 'inp-lng' : 'inp-aff-lng').value; if(isValidLatLng(existingLat, existingLng)) { mapLogic.map.setView([existingLat, existingLng], 12); } const handler = (e) => { const lat = e.latlng.lat.toFixed(6); const lng = e.latlng.lng.toFixed(6); if(target === 'main') { document.getElementById('inp-lat').value = lat; document.getElementById('inp-lng').value = lng; } else { document.getElementById('inp-aff-lat').value = lat; document.getElementById('inp-aff-lng').value = lng; } mapLogic.map.off('click', handler); BioApp.cancelPicker(); }; mapLogic.map.on('click', handler); document.getElementById('map-container').classList.add('picker-mode'); },
             cancelPicker: () => { state.pickerMode = null; document.getElementById('picker-notification').classList.add('hidden'); document.getElementById('map-container').classList.remove('picker-mode'); ui.openModal('input-modal'); },
             
-            // --- NEW: DYNAMIC HELP RENDER ---
             renderHelp: () => {
                 const container = document.getElementById('help-tabs-container');
                 const content = document.getElementById('help-content-container');
-                
-                // MODIFIED: Use ONLY data from state.notes. No fallback.
                 const data = state.notes || [];
-                
-                // Clear previous
                 container.innerHTML = '';
-                
                 if (data.length === 0) {
-                    // Show a polite empty message or nothing, as requested "guide kosong"
-                     content.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-slate-300">
-                        <i class="fas fa-info-circle text-4xl mb-2"></i>
-                        <span class="text-xs">No guide data available</span>
-                    </div>`;
+                      content.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-slate-300"><i class="fas fa-info-circle text-4xl mb-2"></i><span class="text-xs">No guide data available</span></div>`;
                     return;
                 }
-                
-                // Build Tabs
                 data.forEach((item, index) => {
                     if(!item.page) return;
                     const isActive = index === 0;
-                    
-                    // Tab Button
                     const btn = document.createElement('div');
                     btn.className = `guide-tab ${isActive ? 'active' : ''}`;
                     btn.innerText = item.page;
                     btn.onclick = () => {
-                        // Switch Active Tab
                         document.querySelectorAll('.guide-tab').forEach(b => b.classList.remove('active'));
                         btn.classList.add('active');
-                        // Show Content
                         document.querySelectorAll('.guide-content-item').forEach(c => c.classList.remove('active'));
                         document.getElementById(`guide-content-${index}`).classList.add('active');
                     };
                     container.appendChild(btn);
                 });
-
-                // Build Content
                 content.innerHTML = '';
                 data.forEach((item, index) => {
                     if(!item.page) return;
@@ -725,16 +823,8 @@
                     const div = document.createElement('div');
                     div.id = `guide-content-${index}`;
                     div.className = `guide-content-item ${isActive ? 'active' : ''}`;
-                    
-                    // Parse Description (Bold before colon, Newlines)
-                    let formattedDesc = sanitizeHTML(item.desc || '')
-                        .replace(/\n/g, '<br>')
-                        .replace(/([^:]+):/g, '<strong>$1:</strong>'); // Simple bolding logic for "Key:"
-                    
-                    div.innerHTML = `
-                        <h3 class="text-xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">${item.page}</h3>
-                        <div class="leading-relaxed text-sm">${formattedDesc}</div>
-                    `;
+                    let formattedDesc = sanitizeHTML(item.desc || '').replace(/\n/g, '<br>').replace(/([^:]+):/g, '<strong>$1:</strong>');
+                    div.innerHTML = `<h3 class="text-xl font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">${item.page}</h3><div class="leading-relaxed text-sm">${formattedDesc}</div>`;
                     content.appendChild(div);
                 });
             }
