@@ -349,7 +349,7 @@
     <div id="geo-editor" class="fixed inset-0 z-picker hidden bg-slate-100"><div id="geo-map" class="w-full h-full"></div><div class="fixed bottom-12 left-1/2 -translate-x-1/2 bg-white px-6 py-3 rounded-full shadow-2xl flex gap-6 text-sm font-bold z-[9999] border-2 border-slate-200 items-center"><span class="text-purple-600 flex items-center"><i class="fas fa-pen-nib mr-2"></i> DRAWING</span><button onclick="geoEditor.clear()" class="text-red-500 hover:text-red-700 border-r border-slate-200 pr-6 mr-2"><i class="fas fa-trash-alt mr-1"></i> RESET MAP</button><button onclick="geoEditor.finish()" class="text-green-600 hover:text-green-800 uppercase tracking-wide">Save Geometry</button><button onclick="geoEditor.cancel()" class="text-slate-400 hover:text-slate-600">Cancel</button></div></div>
 
     <script>
-        const GAS_URL = 'https://script.google.com/macros/s/AKfycby5AG1WIY-UDWw3rcyOZ3L3Ej11dp3mG_9--BZ3GwLnipVM7Pnqbz2uvBJUqYiExMdBkg/exec';
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbxq2TOvwVBD12hIfm4H4Fu7PNOaodDN-7iQXYlDY4KwmZCcgRRwRcJYj62IjAlM2wDIpg/exec';
         const state = { nodes: [], biosphere: [], notes: [], role: 'guest', currentDetail: null, currentType: null, inputMode: 'nodes', media: { imgIdx: 0, vidIdx: 0, images: [], videos: [] }, charts: { iucn: null, bioCountry: null, bioStatus: null, scatterInsight: null }, pagination: { currentPage: 1, itemsPerPage: 15 }, filters: { search: '', type: 'all', country: 'all' }, currentExportFormat: 'csv', layerFilter: 'all', pickerMode: null };
 
         function sanitizeHTML(str) { if (!str) return ''; return str.replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gm, "").replace(/on\w+="[^"]*"/g, "").replace(/javascript:/g, ""); }
