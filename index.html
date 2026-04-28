@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ID Scanner Pro - PoC</title>
+    <title>ID Scanner Pro - PoC (Read/Write)</title>
     <!-- Tailwind CSS untuk Styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
@@ -19,7 +19,7 @@
                 <i data-lucide="smartphone-nfc" id="main-icon" class="w-12 h-12 text-white"></i>
             </div>
             <h1 class="text-2xl font-bold tracking-wide">ID Scanner Pro</h1>
-            <p class="text-blue-200 text-sm mt-1">Sistem Pemindai Dokumen Cerdas</p>
+            <p class="text-blue-200 text-sm mt-1">Sistem Pemindai & Penulis Dokumen</p>
         </div>
 
         <!-- Content Section -->
@@ -31,7 +31,7 @@
                     <i data-lucide="info" class="w-6 h-6"></i>
                 </div>
                 <div>
-                    <p id="status-message" class="text-sm font-medium leading-tight">Siap untuk membaca kartu NFC atau e-KTP.</p>
+                    <p id="status-message" class="text-sm font-medium leading-tight">Siap untuk membaca atau menulis kartu NFC.</p>
                 </div>
             </div>
 
@@ -43,11 +43,22 @@
 
             <!-- Action Buttons -->
             <div class="space-y-3">
-                <!-- Real Scan Button (Android) -->
-                <button id="btn-real-scan" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-xl shadow-md transition disabled:opacity-50 flex justify-center items-center gap-2">
-                    <i data-lucide="smartphone-nfc" class="w-5 h-5"></i>
-                    Mulai Scan NFC Asli
-                </button>
+                
+                <!-- Real NFC Features (Android) -->
+                <div id="real-nfc-features" class="space-y-3">
+                    <button id="btn-real-scan" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-xl shadow-md transition disabled:opacity-50 flex justify-center items-center gap-2">
+                        <i data-lucide="scan" class="w-5 h-5"></i>
+                        Mulai Scan NFC Asli
+                    </button>
+                    
+                    <div class="flex gap-2">
+                        <input type="text" id="input-write-data" placeholder="Teks sandi (cth: KUNCI-123)" class="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <button id="btn-write-nfc" class="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-xl shadow-md transition disabled:opacity-50 flex justify-center items-center gap-2">
+                            <i data-lucide="edit-3" class="w-5 h-5"></i>
+                            Tulis
+                        </button>
+                    </div>
+                </div>
 
                 <!-- Simulation Buttons (iOS/Unsupported) -->
                 <div id="simulation-buttons" class="hidden grid-cols-2 gap-3">
@@ -60,8 +71,9 @@
                 </div>
                 
                 <!-- Reset Button -->
-                <button id="btn-reset" class="hidden w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 px-4 rounded-xl transition">
-                    Reset Pemindai
+                <button id="btn-reset" class="hidden w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 px-4 rounded-xl transition flex justify-center items-center gap-2">
+                    <i data-lucide="refresh-ccw" class="w-5 h-5"></i>
+                    Batal / Reset
                 </button>
             </div>
 
@@ -75,11 +87,28 @@
                 </div>
             </div>
 
+            <!-- Panduan Hardware NFC -->
+            <div class="mt-6 bg-indigo-50 rounded-xl p-4 border border-indigo-100 text-sm text-indigo-900 shadow-sm">
+                <h4 class="font-bold flex items-center gap-2 mb-2 text-indigo-800">
+                    <i data-lucide="info" class="w-4 h-4"></i>
+                    Panduan Hardware NFC (Wajib Dibaca)
+                </h4>
+                <p class="mb-3 text-xs leading-relaxed">Agar fitur ini <strong>pasti 100% berhasil di HP</strong>, cari stiker atau kartu dengan chip seri <strong>NTAG</strong>:</p>
+                <ul class="space-y-2 text-xs list-none mb-3">
+                    <li class="flex gap-2"><span>👉</span><span><strong>NTAG213:</strong> Paling murah, memori kecil, cocok untuk teks pendek/kunci sandi pintu.</span></li>
+                    <li class="flex gap-2"><span>👉</span><span><strong>NTAG215:</strong> Memori sedang, ini chip yang sama persis dengan yang dipakai Nintendo Amiibo.</span></li>
+                    <li class="flex gap-2"><span>👉</span><span><strong>NTAG216:</strong> Memori besar, cocok kalau mau menyimpan kontak vCard lengkap.</span></li>
+                </ul>
+                <p class="text-xs text-indigo-700/80 leading-relaxed italic">
+                    Seri NTAG ini sudah bersertifikat <strong>NFC Forum Type 2</strong>, yang artinya formatnya terbuka (NDEF) dan paling ramah dibaca/ditulis oleh semua smartphone dan API Web yang kita buat!
+                </p>
+            </div>
+
         </div>
         
         <!-- Footer -->
         <div class="bg-gray-50 p-4 text-center border-t border-gray-100">
-            <p class="text-xs text-gray-400">Prototipe MVP - Konsep Verifikasi Identitas</p>
+            <p class="text-xs text-gray-400">Prototipe MVP - Read & Write NFC Terbuka</p>
         </div>
     </div>
 
@@ -94,7 +123,10 @@
             const statusIconContainer = document.getElementById('status-icon-container');
             const statusMessage = document.getElementById('status-message');
             const iosWarning = document.getElementById('ios-warning');
+            const realNfcFeatures = document.getElementById('real-nfc-features');
             const btnRealScan = document.getElementById('btn-real-scan');
+            const btnWriteNfc = document.getElementById('btn-write-nfc');
+            const inputWriteData = document.getElementById('input-write-data');
             const simulationButtons = document.getElementById('simulation-buttons');
             const btnSimEktp = document.getElementById('btn-sim-ektp');
             const btnSimNfc = document.getElementById('btn-sim-nfc');
@@ -110,7 +142,7 @@
             if (!('NDEFReader' in window)) {
                 isWebNfcSupported = false;
                 iosWarning.classList.remove('hidden');
-                btnRealScan.classList.add('hidden');
+                realNfcFeatures.classList.add('hidden');
                 simulationButtons.classList.remove('hidden');
                 simulationButtons.classList.add('grid');
                 updateStatus('idle', 'Mode Simulasi Presentasi Aktif.');
@@ -118,10 +150,8 @@
 
             // Fungsi Update UI Status
             function updateStatus(status, message, data = null) {
-                // Update Message
                 statusMessage.textContent = message;
 
-                // Reset Classes
                 statusBox.className = 'p-4 rounded-xl flex items-start gap-3 mb-6 transition-colors duration-300';
                 mainIcon.classList.remove('animate-pulse', 'text-blue-200');
                 mainIcon.classList.add('text-white');
@@ -135,7 +165,7 @@
                         break;
                     case 'scanning':
                         statusBox.classList.add('bg-yellow-50', 'text-yellow-800');
-                        iconHtml = '<i data-lucide="refresh-cw" class="w-6 h-6 animate-spin"></i>';
+                        iconHtml = '<i data-lucide="loader" class="w-6 h-6 animate-spin"></i>';
                         mainIcon.classList.remove('text-white');
                         mainIcon.classList.add('animate-pulse', 'text-blue-200');
                         break;
@@ -159,33 +189,39 @@
                 // Button Visibility Logic
                 if (status === 'scanning') {
                     btnRealScan.disabled = true;
+                    btnWriteNfc.disabled = true;
+                    inputWriteData.disabled = true;
                     btnSimEktp.disabled = true;
                     btnSimNfc.disabled = true;
-                    btnReset.classList.add('hidden');
+                    
+                    realNfcFeatures.classList.add('hidden');
+                    simulationButtons.classList.add('hidden');
+                    btnReset.classList.remove('hidden');
                 } else if (status !== 'idle') {
                     btnRealScan.disabled = false;
+                    btnWriteNfc.disabled = false;
+                    inputWriteData.disabled = false;
                     btnSimEktp.disabled = false;
                     btnSimNfc.disabled = false;
                     
-                    // Sembunyikan tombol utama, tampilkan reset
-                    btnRealScan.classList.add('hidden');
+                    realNfcFeatures.classList.add('hidden');
                     simulationButtons.classList.add('hidden');
                     btnReset.classList.remove('hidden');
                 } else {
-                    // Jika idle
                     btnRealScan.disabled = false;
+                    btnWriteNfc.disabled = false;
+                    inputWriteData.disabled = false;
                     btnSimEktp.disabled = false;
                     btnSimNfc.disabled = false;
                     
                     btnReset.classList.add('hidden');
                     if (isWebNfcSupported) {
-                        btnRealScan.classList.remove('hidden');
+                        realNfcFeatures.classList.remove('hidden');
                     } else {
                         simulationButtons.classList.remove('hidden');
                     }
                 }
 
-                // Render Card Data
                 if (data) {
                     resultContent.innerHTML = '';
                     for (const [key, value] of Object.entries(data)) {
@@ -202,10 +238,10 @@
                 }
             }
 
-            // Aksi Scan Asli (Android)
+            // Aksi BACA (Read) NFC Asli
             btnRealScan.addEventListener('click', async () => {
                 try {
-                    updateStatus('scanning', 'Dekatkan kartu NFC atau e-KTP ke belakang HP Anda...');
+                    updateStatus('scanning', 'Dekatkan kartu NFC atau e-KTP ke punggung HP Anda...');
                     
                     currentAbortController = new AbortController();
                     const ndef = new NDEFReader();
@@ -213,24 +249,38 @@
 
                     ndef.onreadingerror = () => {
                         updateStatus('warning', 'API tidak terdeteksi, silahkan konek ke dukcapil atau minta izin dukcapil (enkripsi on)', {
+                            indikasi: 'Ini adalah e-KTP (Kartu Elektronik Negara)',
                             uid: 'Terdeteksi (Encrypted)',
-                            type: 'ISO-DEP / ISO 14443-4',
-                            records: 'Terkunci'
+                            tipe: 'ISO-DEP / ISO 14443-4',
+                            status: 'Terkunci (Butuh SAM/API)'
                         });
                     };
 
                     ndef.onreading = ({ message, serialNumber }) => {
                         if (message.records.length === 0) {
                             updateStatus('warning', 'API tidak terdeteksi, silahkan konek ke dukcapil atau minta izin dukcapil (enkripsi on)', {
+                                indikasi: 'Ini kemungkinan besar e-KTP / Kartu Identitas',
                                 uid: serialNumber || 'Hidden',
-                                type: 'Smart Card (Unknown)',
-                                records: 'Kosong / Terenkripsi'
+                                tipe: 'ISO-DEP / ISO 14443-4',
+                                status: 'Kosong / Terenkripsi'
                             });
                         } else {
+                            // Mencoba mengekstrak teks jika ada record teks NDEF
+                            let textContent = "Data biner/URL terdeteksi.";
+                            try {
+                                const decoder = new TextDecoder();
+                                for (const record of message.records) {
+                                    if (record.recordType === "text") {
+                                        textContent = decoder.decode(record.data);
+                                        break;
+                                    }
+                                }
+                            } catch (e) { console.log(e) }
+
                             updateStatus('success', 'Tag NFC berhasil dibaca!', {
                                 uid: serialNumber,
                                 type: 'NDEF Format',
-                                records: `${message.records.length} record(s) ditemukan.`
+                                isi_pesan: textContent
                             });
                         }
                     };
@@ -239,13 +289,34 @@
                 }
             });
 
+            // Aksi TULIS (Write) NFC Asli
+            btnWriteNfc.addEventListener('click', async () => {
+                const payloadText = inputWriteData.value.trim() || 'KUNCI-DEFAULT';
+                try {
+                    updateStatus('scanning', `Menunggu tag NFC. Dekatkan kartu kosong/writable untuk menulis teks: "${payloadText}"...`);
+                    
+                    const ndef = new NDEFReader();
+                    // Method write() akan aktif dan menunggu kartu didekatkan
+                    await ndef.write(payloadText);
+                    
+                    updateStatus('success', 'Berhasil! Data sukses ditulis ke dalam Tag NFC.', {
+                        aksi: 'Tulis (Write) NDEF',
+                        data_tersimpan: payloadText,
+                        status: 'Tag siap digunakan untuk Door Lock / Otomasi'
+                    });
+                } catch (error) {
+                    updateStatus('error', `Gagal menulis data. Pastikan kartu bukan e-KTP dan tidak di-lock. Error: ${error.message}`);
+                }
+            });
+
             // Simulasi e-KTP
             btnSimEktp.addEventListener('click', () => {
                 updateStatus('scanning', 'Mendeteksi kartu...');
                 setTimeout(() => {
                     updateStatus('warning', 'API tidak terdeteksi, silahkan konek ke dukcapil atau minta izin dukcapil (enkripsi on)', {
+                        indikasi: 'Ini adalah e-KTP (Kartu Elektronik Negara)',
                         uid: '04:A1:B2:C3:D4:E5:F6',
-                        type: 'ISO 14443-4 (e-KTP)',
+                        tipe: 'ISO-DEP / ISO 14443-4',
                         status: 'Data Terenkripsi (Butuh SAM/API)'
                     });
                 }, 1500);
@@ -258,7 +329,7 @@
                     updateStatus('success', 'NFC Tag publik berhasil dibaca secara terbuka.', {
                         uid: '04:99:88:77:66:55:44',
                         type: 'Mifare Ultralight (NDEF)',
-                        content: 'URL: https://dukcapil.kemendagri.go.id'
+                        isi_pesan: 'KUNCI-RAHASIA-001'
                     });
                 }, 1200);
             });
@@ -266,9 +337,9 @@
             // Reset
             btnReset.addEventListener('click', () => {
                 if (currentAbortController) {
-                    currentAbortController.abort(); // Menghentikan scan NFC jika sedang berjalan
+                    currentAbortController.abort(); // Membatalkan proses read yang sedang berjalan
                 }
-                const msg = isWebNfcSupported ? 'Siap untuk membaca kartu NFC atau e-KTP.' : 'Mode Simulasi Presentasi Aktif.';
+                const msg = isWebNfcSupported ? 'Siap untuk membaca atau menulis kartu NFC.' : 'Mode Simulasi Presentasi Aktif.';
                 updateStatus('idle', msg);
             });
         });
