@@ -1,294 +1,57 @@
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ID Scanner Pro - PoC (Read/Write)</title>
-    <!-- Tailwind CSS untuk Styling -->
+    <title>Angga Conni Saputra - Prototype Hub</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
-<body class="min-h-screen bg-gray-50 flex items-center justify-center p-4 font-sans text-gray-800">
+<body class="bg-gray-900 text-gray-100 font-sans antialiased min-h-screen flex flex-col">
 
-    <div class="bg-white w-full max-w-md rounded-3xl shadow-xl overflow-hidden border border-gray-100 mb-10">
-        
-        <!-- Header Section -->
-        <div class="bg-blue-600 p-6 text-white text-center rounded-b-3xl shadow-md">
-            <div class="flex justify-center mb-4">
-                <i data-lucide="smartphone-nfc" id="main-icon" class="w-12 h-12 text-white"></i>
-            </div>
-            <h1 class="text-2xl font-bold tracking-wide">ID Scanner Pro</h1>
-            <p class="text-blue-200 text-sm mt-1">Proof of Concept – NFC Identity Verification</p>
-        </div>
+    <!-- Header / Identitas -->
+    <header class="bg-gray-800/50 border-b border-gray-700 py-12 px-6">
+        <div class="max-w-5xl mx-auto flex flex-col md:flex-row gap-8 items-center md:items-start">
+            <div class="flex-1 text-center md:text-left">
+                <h1 class="text-4xl md:text-5xl font-bold text-white mb-2 tracking-tight">ANGGA CONNI SAPUTRA</h1>
+                <p class="text-xl text-blue-400 font-medium mb-4">Strategic Innovation Specialist & Systems Architect</p>
+                
+                <div class="flex flex-wrap gap-4 justify-center md:justify-start mb-6 text-sm text-gray-400">
+                    <span class="flex items-center gap-2"><i class="fas fa-map-marker-alt"></i> Jakarta, Indonesia</span>
+                    <span class="flex items-center gap-2"><i class="fas fa-envelope"></i> angga.conni@horizon-scanning.org</span>
+                </div>
 
-        <!-- Content Section -->
-        <div class="p-6">
-            
-            <!-- Status Alert -->
-            <div id="status-box" class="p-4 rounded-xl flex items-start gap-3 mb-6 transition-colors duration-300 bg-blue-50 text-blue-800">
-                <div id="status-icon-container" class="shrink-0 mt-0.5">
-                    <i data-lucide="info" class="w-6 h-6"></i>
-                </div>
-                <div>
-                    <p id="status-message" class="text-sm font-medium leading-tight">Siap untuk membaca atau menulis kartu NFC.</p>
-                </div>
-            </div>
-
-            <!-- Browser & Device Warning Banner -->
-            <div id="browser-warning" class="hidden bg-red-50 p-4 rounded-xl border border-red-100 mb-6">
-                <div class="flex items-center gap-2 text-red-700 font-bold mb-1 text-sm">
-                    <i data-lucide="alert-triangle" class="w-4 h-4"></i>
-                    Browser Tidak Mendukung
-                </div>
-                <p class="text-xs text-red-600 leading-relaxed">
-                    Fitur Web NFC saat ini <strong>hanya bisa berjalan di Google Chrome (Android)</strong>. Browser lain atau iOS tidak mengizinkan akses sensor hardware lewat web.
+                <p class="text-gray-300 leading-relaxed text-sm md:text-base text-justify mb-6">
+                    12+ years of experience bridging high-level policy mandates and grassroots digital execution for United Nations agencies (UNESCO, UNDP) and government ministries. Proven expertise in engineering zero-cost, serverless digital public goods and AI-assisted OSINT pipelines to automate data validation and policy-ready forecasting in low-resource settings. Adept at conducting institutional readiness audits and designing phased, costed implementation roadmaps that translate complex bureaucratic bottlenecks into sustainable, child-safe, and user-centric digital architectures.
                 </p>
-            </div>
 
-            <!-- Action Buttons -->
-            <div class="space-y-3">
-                
-                <!-- Real NFC Features (Android Only) -->
-                <div id="real-nfc-features" class="space-y-3">
-                    <button id="btn-real-scan" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-xl shadow-md transition disabled:opacity-50 flex justify-center items-center gap-2">
-                        <i data-lucide="scan" class="w-5 h-5"></i>
-                        Mulai Scan NFC Asli
-                    </button>
-                    
-                    <div class="flex gap-2">
-                        <input type="text" id="input-write-data" placeholder="Teks sandi kunci" class="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <button id="btn-write-nfc" class="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-xl shadow-md transition disabled:opacity-50 flex justify-center items-center gap-2">
-                            <i data-lucide="edit-3" class="w-5 h-5"></i>
-                            Tulis
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Simulation Buttons -->
-                <div id="simulation-buttons" class="grid grid-cols-2 gap-3">
-                    <button id="btn-sim-ektp" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 px-2 rounded-xl shadow-md transition disabled:opacity-50 text-sm">
-                        Simulasi e-KTP
-                    </button>
-                    <button id="btn-sim-nfc" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-2 rounded-xl shadow-md transition disabled:opacity-50 text-sm">
-                        Simulasi Tag NDEF
-                    </button>
-                </div>
-                
-                <!-- Reset Button -->
-                <button id="btn-reset" class="hidden w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 px-4 rounded-xl transition flex justify-center items-center gap-2">
-                    <i data-lucide="refresh-ccw" class="w-5 h-5"></i>
-                    Batal / Reset
-                </button>
-            </div>
-
-            <!-- Result Card -->
-            <div id="result-card" class="hidden mt-6 border border-gray-200 rounded-xl overflow-hidden transition-all duration-500">
-                <div class="bg-gray-100 px-4 py-2 border-b border-gray-200">
-                    <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider">Detail Hardware Kartu</h3>
-                </div>
-                <div id="result-content" class="p-4 bg-white space-y-3">
-                    <!-- Data injected here -->
+                <div class="flex flex-wrap gap-4 justify-center md:justify-start">
+                    <a href="https://anggaconni.github.io/" target="_blank" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
+                        <i class="fas fa-globe"></i> Portfolio
+                    </a>
+                    <a href="https://linkedin.com/in/anggaconni/" target="_blank" class="flex items-center gap-2 bg-[#0A66C2] hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
+                        <i class="fab fa-linkedin"></i> LinkedIn
+                    </a>
                 </div>
             </div>
-
-            <!-- Panduan Hardware Section -->
-            <div class="mt-8 pt-6 border-t border-gray-100">
-                <h4 class="font-bold flex items-center gap-2 mb-3 text-gray-700 text-sm">
-                    <i data-lucide="shopping-cart" class="w-4 h-4"></i>
-                    Spesifikasi Hardware Relevan
-                </h4>
-                
-                <div class="bg-indigo-50 rounded-xl p-4 border border-indigo-100 text-xs text-indigo-900">
-                    <p class="mb-2">Gunakan chip seri <strong>NTAG</strong> (NFC Forum Type 2) untuk hasil terbaik:</p>
-                    <ul class="space-y-1 opacity-80">
-                        <li>• <strong>NTAG213:</strong> Murah, memori kecil.</li>
-                        <li>• <strong>NTAG215:</strong> Amiibo compatible.</li>
-                        <li>• <strong>NTAG216:</strong> Memori besar (vCard).</li>
-                    </ul>
-                </div>
-            </div>
-
         </div>
-        
-        <!-- Footer -->
-        <div class="bg-gray-50 p-4 text-center border-t border-gray-100">
-            <p class="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Dukcapil Integration PoC v2.0</p>
+    </header>
+
+    <!-- Prototype Grid -->
+    <main class="flex-grow w-full max-w-5xl mx-auto px-6 py-12">
+        <div class="flex justify-between items-center mb-8 border-b border-gray-700 pb-4">
+            <h2 class="text-2xl font-bold text-white"><i class="fas fa-flask text-blue-400 mr-2"></i> Active Prototypes</h2>
+            <span class="text-sm bg-gray-800 px-3 py-1 rounded-full text-gray-400 border border-gray-700">0 apps</span>
         </div>
-    </div>
 
-    <!-- Application Logic -->
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            lucide.createIcons();
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="col-span-full text-center py-10 text-gray-500 border border-dashed border-gray-700 rounded-xl">Belum ada prototype. Silakan upload file HTML Anda ke folder "proto".</div>
+        </div>
+    </main>
 
-            const statusBox = document.getElementById('status-box');
-            const statusIconContainer = document.getElementById('status-icon-container');
-            const statusMessage = document.getElementById('status-message');
-            const browserWarning = document.getElementById('browser-warning');
-            const realNfcFeatures = document.getElementById('real-nfc-features');
-            const btnRealScan = document.getElementById('btn-real-scan');
-            const btnWriteNfc = document.getElementById('btn-write-nfc');
-            const inputWriteData = document.getElementById('input-write-data');
-            const btnSimEktp = document.getElementById('btn-sim-ektp');
-            const btnSimNfc = document.getElementById('btn-sim-nfc');
-            const btnReset = document.getElementById('btn-reset');
-            const resultCard = document.getElementById('result-card');
-            const resultContent = document.getElementById('result-content');
-            const mainIcon = document.getElementById('main-icon');
-
-            let currentAbortController = null;
-
-            // Browser Support Check
-            if (!('NDEFReader' in window)) {
-                browserWarning.classList.remove('hidden');
-                realNfcFeatures.classList.add('hidden');
-                updateStatus('idle', 'Browser ini tidak mendukung Web NFC. Gunakan Simulasi.');
-            }
-
-            function updateStatus(status, message, data = null) {
-                statusMessage.textContent = message;
-                statusBox.className = 'p-4 rounded-xl flex items-start gap-3 mb-6 transition-colors duration-300';
-                
-                let iconHtml = '';
-                switch (status) {
-                    case 'idle':
-                        statusBox.classList.add('bg-blue-50', 'text-blue-800');
-                        iconHtml = '<i data-lucide="info" class="w-6 h-6"></i>';
-                        break;
-                    case 'scanning':
-                        statusBox.classList.add('bg-yellow-50', 'text-yellow-800');
-                        iconHtml = '<i data-lucide="loader" class="w-6 h-6 animate-spin"></i>';
-                        mainIcon.classList.add('animate-pulse');
-                        break;
-                    case 'success':
-                        statusBox.classList.add('bg-green-50', 'text-green-800');
-                        iconHtml = '<i data-lucide="check-circle-2" class="w-6 h-6"></i>';
-                        break;
-                    case 'warning':
-                        statusBox.classList.add('bg-orange-50', 'text-orange-800', 'border', 'border-orange-200');
-                        iconHtml = '<i data-lucide="alert-circle" class="w-6 h-6"></i>';
-                        break;
-                    case 'error':
-                        statusBox.classList.add('bg-red-50', 'text-red-800');
-                        iconHtml = '<i data-lucide="x-circle" class="w-6 h-6"></i>';
-                        break;
-                }
-
-                statusIconContainer.innerHTML = iconHtml;
-                lucide.createIcons();
-
-                if (status === 'scanning') {
-                    btnReset.classList.remove('hidden');
-                    btnSimEktp.disabled = true;
-                    btnSimNfc.disabled = true;
-                } else {
-                    btnSimEktp.disabled = false;
-                    btnSimNfc.disabled = false;
-                }
-
-                if (data) {
-                    resultContent.innerHTML = '';
-                    for (const [key, value] of Object.entries(data)) {
-                        resultContent.innerHTML += `
-                            <div class="flex flex-col">
-                                <span class="text-[10px] text-gray-400 uppercase font-bold tracking-tighter">${key.replace('_', ' ')}</span>
-                                <span class="text-xs font-semibold text-gray-800 font-mono break-all">${value}</span>
-                            </div>
-                        `;
-                    }
-                    resultCard.classList.remove('hidden');
-                    btnReset.classList.remove('hidden');
-                } else if (status === 'idle') {
-                    resultCard.classList.add('hidden');
-                    btnReset.classList.add('hidden');
-                }
-            }
-
-            btnRealScan.addEventListener('click', async () => {
-                try {
-                    updateStatus('scanning', 'Dekatkan kartu ke punggung HP...');
-                    currentAbortController = new AbortController();
-                    const ndef = new NDEFReader();
-                    await ndef.scan({ signal: currentAbortController.signal });
-
-                    ndef.onreadingerror = () => {
-                        updateStatus('warning', 'Terdeteksi Kartu Terenkripsi (e-KTP). Akses data ditolak.', {
-                            indikasi: 'Kartu e-KTP / Identitas Negara',
-                            uid_kartu: 'Tersembunyi / Terenkripsi',
-                            protokol: 'ISO-DEP / ISO 14443-4',
-                            status: 'Membutuhkan Autentikasi SAM Dukcapil'
-                        });
-                    };
-
-                    ndef.onreading = ({ message, serialNumber }) => {
-                        if (message.records.length === 0) {
-                            updateStatus('warning', 'Terdeteksi Kartu Terenkripsi (e-KTP). Akses data ditolak.', {
-                                indikasi: 'Kartu e-KTP / Identitas Negara',
-                                uid_kartu: serialNumber || 'Tidak dapat diakses',
-                                protokol: 'ISO-DEP (Raw Format)',
-                                status: 'Membutuhkan Autentikasi SAM Dukcapil'
-                            });
-                        } else {
-                            updateStatus('success', 'Tag Berhasil Dibaca', {
-                                uid_kartu: serialNumber,
-                                tipe_tag: 'NDEF Format Terbuka',
-                                jumlah_record: message.records.length + ' record'
-                            });
-                        }
-                    };
-                } catch (e) {
-                    updateStatus('error', 'Gagal memulai scan: ' + e.message);
-                }
-            });
-
-            btnWriteNfc.addEventListener('click', async () => {
-                const val = inputWriteData.value || 'SECURE-ACCESS-2024';
-                try {
-                    updateStatus('scanning', 'Siap menulis data. Dekatkan kartu...');
-                    currentAbortController = new AbortController();
-                    const ndef = new NDEFReader();
-                    // Menambahkan opsi signal agar proses write juga bisa dibatalkan (direset)
-                    await ndef.write(val, { signal: currentAbortController.signal });
-                    updateStatus('success', 'Data Berhasil Ditulis', {
-                        status: 'Tag Berhasil Diperbarui',
-                        data_ditulis: val
-                    });
-                } catch (e) {
-                    updateStatus('error', 'Gagal menulis. Pastikan kartu tipe NTAG dan tidak dikunci.');
-                }
-            });
-
-            btnSimEktp.addEventListener('click', () => {
-                updateStatus('scanning', 'Mendeteksi hardware...');
-                setTimeout(() => {
-                    updateStatus('warning', 'Terdeteksi Kartu Terenkripsi (e-KTP). Akses data ditolak.', {
-                        indikasi: 'Kartu e-KTP / Identitas Negara',
-                        uid_kartu: '04:A1:B2:C3:D4:E5:F6',
-                        protokol: 'ISO-DEP / ISO 14443-4',
-                        status: 'Membutuhkan Autentikasi SAM Dukcapil'
-                    });
-                }, 1000);
-            });
-
-            btnSimNfc.addEventListener('click', () => {
-                updateStatus('scanning', 'Membaca record...');
-                setTimeout(() => {
-                    updateStatus('success', 'NFC Tag publik berhasil dibaca.', {
-                        uid_kartu: '04:99:88:77:66:55:44',
-                        tipe_tag: 'NTAG215 (NDEF)',
-                        isi_pesan: 'KUNCI-DOOR-LOCK-01'
-                    });
-                }, 1000);
-            });
-
-            btnReset.addEventListener('click', () => {
-                if (currentAbortController) currentAbortController.abort();
-                updateStatus('idle', 'Siap untuk membaca atau menulis kartu NFC.');
-                mainIcon.classList.remove('animate-pulse');
-                inputWriteData.value = ''; // Mengosongkan kolom input teks
-            });
-        });
-    </script>
+    <footer class="text-center py-6 text-gray-600 text-sm border-t border-gray-800 mt-auto">
+        &copy; 2026 Angga Conni Saputra. Auto-generated by Serverless Pipeline.
+    </footer>
 </body>
 </html>
