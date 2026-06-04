@@ -1,0 +1,35 @@
+name: Auto Generate Landing Page & Sitemap
+
+# Kapan robot ini berjalan?
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'proto/**'     # Hanya jalan jika ada file yang di-upload ke folder proto
+      - 'scripts/**'   # Atau jika script kita ubah
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Tarik kode dari repository
+        uses: actions/checkout@v4
+
+      - name: Siapkan Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Jalankan Script Auto-Generate
+        run: npm run build
+
+      - name: Simpan (Commit) hasil HTML & Sitemap ke Github
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "🚀 auto-build: update landing page & sitemap"
+          branch: main
+          file_pattern: 'index.html sitemap.xml'
