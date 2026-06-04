@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EdTech & AI Governance Readiness Index</title>
+    
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: { unblue: '#009EDB', undark: '#1C2C44', unlight: '#F2F6FA' }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body { background-color: #f8fafc; color: #334155; }
+        
+        .likert-radio:checked + label {
+            background-color: #009EDB;
+            color: white;
+            border-color: #009EDB;
+            transform: scale(1.02);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Custom scrollbar for left column */
+        .scroll-area::-webkit-scrollbar { width: 6px; }
+        .scroll-area::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        .scroll-area::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .scroll-area::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        @media print {
+            body { background-color: white; overflow: auto; height: auto; }
+            .no-print { display: none !important; }
+            .print-full { width: 100% !important; max-width: none !important; display: block !important; }
+            .lg\:h-\[calc\(100vh-80px\)\] { height: auto !important; }
+            .overflow-y-auto { overflow: visible !important; }
+            .break-before { page-break-before: always; }
+            .shadow-lg { box-shadow: none; border: 1px solid #e2e8f0; }
+        }
+    </style>
+</head>
+<body class="font-sans antialiased min-h-screen flex flex-col overflow-hidden print:overflow-visible">
+
+    <header class="bg-undark text-white shadow-md z-10 relative">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight">EdTech & AI Implementation Readiness</h1>
+                <p class="text-sm text-gray-300 mt-1">Diagnostic tool for child-centered & responsible digital transformation</p>
+            </div>
+            <div class="hidden md:flex items-center gap-4 text-sm font-medium">
+                <span class="bg-white/10 px-3 py-1 rounded-full"><i class="fa-solid fa-book-open mr-2"></i>ASEAN/SEAMEO Aligned</span>
+                <i class="fa-solid fa-shield-halved text-unblue text-3xl ml-2"></i>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl mx-auto px-4 py-6 w-full lg:h-[calc(100vh-80px)] flex flex-col lg:flex-row gap-8">
+        
+        <!-- LEFT COLUMN: Content & Forms -->
+        <div class="w-full lg:w-7/12 flex flex-col h-full overflow-y-auto scroll-area pr-2 pb-10 print:w-full print:pr-0">
+            
+            <!-- Welcome Screen -->
+            <div id="intro-screen" class="bg-white rounded-xl shadow-lg p-8 border-t-4 border-unblue mb-6 shrink-0">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Situation Analysis & Desk Review</h2>
+                <p class="text-gray-600 mb-4 leading-relaxed">
+                    This strategic foresight tool assesses systemic preparedness across <strong>6 core policy pillars</strong>. It ensures that any exploration of emerging technologies (including AI) prioritizes <strong>child rights, equity, and safeguarding</strong> over rapid, unmanaged technological adoption.
+                </p>
+                <ul class="text-sm text-gray-600 mb-6 space-y-2 list-disc pl-5">
+                    <li>Evaluates ICT infrastructure from national down to school levels.</li>
+                    <li>Checks for vendor dependency and unmanaged data extraction risks.</li>
+                    <li>Ensures a phased, evidence-based approach to implementation.</li>
+                </ul>
+                <button onclick="startAssessment()" class="bg-unblue hover:bg-blue-600 text-white font-semibold py-3 px-8 rounded-lg shadow-md transition-all hover:-translate-y-1 w-full md:w-auto">
+                    Begin Baseline Assessment <i class="fa-solid fa-play ml-2"></i>
+                </button>
+            </div>
+
+            <!-- Assessment Screen -->
+            <div id="assessment-screen" class="hidden shrink-0">
+                <!-- Progress Bar -->
+                <div class="mb-6 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <div class="flex justify-between text-sm font-bold text-gray-700 mb-2">
+                        <span id="current-pillar-title">Pillar 1</span>
+                        <span id="progress-text" class="text-unblue">Step 1 of 6</span>
+                    </div>
+                    <div class="w-full bg-gray-100 rounded-full h-2">
+                        <div id="progress-bar" class="bg-unblue h-2 rounded-full transition-all duration-500" style="width: 16.6%"></div>
+                    </div>
+                </div>
+
+                <!-- Questions Container -->
+                <div class="bg-white rounded-xl shadow-lg p-6 md:p-8 border-t-4 border-unblue">
+                    <div id="question-container"></div>
+                    
+                    <!-- Navigation -->
+                    <div class="mt-8 pt-6 border-t border-gray-100 flex justify-between">
+                        <button id="btn-prev" onclick="prevStep()" class="text-gray-500 hover:text-gray-800 font-medium py-2 px-4 rounded transition-colors hidden bg-gray-100 hover:bg-gray-200">
+                            <i class="fa-solid fa-arrow-left mr-2"></i> Previous
+                        </button>
+                        <button id="btn-next" onclick="nextStep()" class="bg-undark hover:bg-gray-800 text-white font-semibold py-2 px-6 rounded-lg shadow transition-colors ml-auto">
+                            Next Pillar <i class="fa-solid fa-arrow-right ml-2"></i>
+                        </button>
+                        <button id="btn-submit" onclick="showResults()" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg shadow transition-colors hidden ml-auto animate-pulse">
+                            Generate Policy Roadmap <i class="fa-solid fa-file-contract ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recommendations Screen (Visible on Results) -->
+            <div id="recommendations-screen" class="hidden shrink-0 mt-6 print-full">
+                <div class="bg-white p-6 md:p-8 rounded-xl shadow-lg border-t-4 border-undark">
+                    <h3 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-4">
+                        <i class="fa-solid fa-road text-unblue mr-2"></i> Implementation Framework & Roadmap
+                    </h3>
+                    <p class="text-sm text-gray-600 mb-6 bg-blue-50 p-4 rounded border border-blue-100">
+                        Based on your institutional readiness context, the following phased actions, coordination mechanisms, and mitigation strategies are recommended.
+                    </p>
+                    <div id="recommendations-container" class="space-y-5">
+                        <!-- Injected via JS -->
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- RIGHT COLUMN: Visualization -->
+        <div class="w-full lg:w-5/12 h-full flex flex-col print-full print:mt-8">
+            <div class="bg-white rounded-xl shadow-lg border border-gray-100 flex flex-col h-full sticky top-0 overflow-hidden">
+                
+                <!-- Results Header (Hidden during assessment) -->
+                <div id="results-header" class="hidden bg-gray-50 p-4 border-b border-gray-100 flex justify-between items-center no-print">
+                    <h2 class="font-bold text-gray-800">Diagnostic Results</h2>
+                    <div class="flex gap-2">
+                        <button onclick="window.print()" class="bg-unblue hover:bg-blue-600 text-white text-xs font-semibold py-1.5 px-3 rounded shadow transition-colors">
+                            <i class="fa-solid fa-print"></i> PDF
+                        </button>
+                        <button onclick="resetApp()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-semibold py-1.5 px-3 rounded transition-colors">
+                            Restart
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Chart Area -->
+                <div class="p-6 flex-grow flex flex-col items-center justify-center relative min-h-[350px]">
+                    <h3 id="chart-title" class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2 text-center">Live Readiness Radar</h3>
+                    <p id="chart-subtitle" class="text-xs text-gray-400 text-center mb-4">Values map to policy pillars in real-time</p>
+                    <div class="w-full h-full relative" style="max-height: 400px;">
+                        <canvas id="readinessChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Overall Status (Hidden until results) -->
+                <div id="overall-status-panel" class="hidden bg-undark text-white p-6 text-center border-t border-gray-100">
+                    <h3 class="text-sm font-semibold text-gray-300 mb-1">Systemic Readiness Score</h3>
+                    <div id="overall-score-display" class="text-5xl font-bold mb-3 text-unblue">0%</div>
+                    <div id="overall-status-badge" class="inline-block px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider mb-3">
+                        Pending
+                    </div>
+                    <p id="overall-summary" class="text-gray-300 text-sm mx-auto max-w-sm leading-relaxed">
+                        <!-- Summary injected via JS -->
+                    </p>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // Data Structure reflecting the 6 specific Policy Pillars
+        const assessmentData = [
+            {
+                id: 'infrastructure',
+                title: 'Pillar 1: ICT Infrastructure & Connectivity',
+                desc: 'Assessing connectivity, devices, and systems at national, municipal, and school levels.',
+                questions: [
+                    { id: 'q1_1', text: 'To what extent is there equitable, high-speed internet connectivity supporting rural, municipal, and national school levels?', scores: [1, 2, 3, 4] },
+                    { id: 'q1_2', text: 'Are standardized digital devices and accessibility tools equitably distributed to support inclusive learning?', scores: [1, 2, 3, 4] },
+                    { id: 'q1_3', text: 'Does the system have a sustainable financing and hardware maintenance model avoiding long-term obsolescence?', scores: [1, 2, 3, 4] }
+                ]
+            },
+            {
+                id: 'content',
+                title: 'Pillar 2: Digital Learning Resources',
+                desc: 'Evaluating current digital practices, regional alignment, and contextual appropriateness.',
+                questions: [
+                    { id: 'q2_1', text: 'Are digital learning resources aligned with contextual priorities and regional (ASEAN/SEAMEO) good practices?', scores: [1, 2, 3, 4] },
+                    { id: 'q2_2', text: 'To what degree are resources vetted for child-centered appropriateness, equity, and inclusion?', scores: [1, 2, 3, 4] },
+                    { id: 'q2_3', text: 'Are there centralized platforms for secure, open-source educational resource sharing among teachers?', scores: [1, 2, 3, 4] }
+                ]
+            },
+            {
+                id: 'capacity',
+                title: 'Pillar 3: Teacher Digital Capacity',
+                desc: 'Analyzing capacity constraints and professional development regarding digital literacy.',
+                questions: [
+                    { id: 'q3_1', text: 'What is the institutional capacity to deliver sustained digital and AI literacy training for educators?', scores: [1, 2, 3, 4] },
+                    { id: 'q3_2', text: 'Are current digital practices shifting educators from administrative burdens toward pedagogical improvement?', scores: [1, 2, 3, 4] },
+                    { id: 'q3_3', text: 'Do teachers possess the skills to cautiously and ethically evaluate EdTech tools before classroom use?', scores: [1, 2, 3, 4] }
+                ]
+            },
+            {
+                id: 'emis',
+                title: 'Pillar 4: EMIS & Data Governance',
+                desc: 'Strengthening data systems, ownership, consent, security, and ethical use.',
+                questions: [
+                    { id: 'q4_1', text: 'Are there explicit, legally enforced data protection policies prioritizing child rights, consent, and security?', scores: [1, 2, 3, 4] },
+                    { id: 'q4_2', text: 'To what extent is the Education Management Information System (EMIS) interoperable and secure from cyber threats?', scores: [1, 2, 3, 4] },
+                    { id: 'q4_3', text: 'Is there a robust mechanism requiring parental/student consent prior to data collection by external platforms?', scores: [1, 2, 3, 4] }
+                ]
+            },
+            {
+                id: 'partnerships',
+                title: 'Pillar 5: Partnerships & Sustainability',
+                desc: 'Encouraging strategic partnerships avoiding dependency or unmanaged extraction.',
+                questions: [
+                    { id: 'q5_1', text: 'Are there clear frameworks preventing vendor lock-in, dependency, and unmanaged data extraction by third-party EdTech?', scores: [1, 2, 3, 4] },
+                    { id: 'q5_2', text: 'Is there indicative costing and formal institutional coordination mapping public-private partnerships?', scores: [1, 2, 3, 4] },
+                    { id: 'q5_3', text: 'Are partnerships aligned strictly with national priorities rather than supply-driven technology pushes?', scores: [1, 2, 3, 4] }
+                ]
+            },
+            {
+                id: 'ai_policy',
+                title: 'Pillar 6: AI & Emerging Tech Policy',
+                desc: 'Identifying directions for cautious, ethical, and context-appropriate exploration of AI.',
+                questions: [
+                    { id: 'q6_1', text: 'Does the policy framework mandate "human-in-the-loop" oversight and accountability at all stages of AI use?', scores: [1, 2, 3, 4] },
+                    { id: 'q6_2', text: 'Is there an active Monitoring, Evaluation, and Learning (MEL) framework specific to AI risk mitigation?', scores: [1, 2, 3, 4] },
+                    { id: 'q6_3', text: 'Does the governance stance prioritize evidence-based preparedness over rapid, untested AI adoption?', scores: [1, 2, 3, 4] }
+                ]
+            }
+        ];
+
+        const scaleLabels = {
+            1: 'Absent / Critical Risk',
+            2: 'Nascent / Fragmented',
+            3: 'Developing Frameworks',
+            4: 'Mature & Institutionalized'
+        };
+
+        // Application State
+        let currentStep = 0;
+        let userResponses = {};
+        let myRadarChart = null;
+
+        // Initialize Chart on load to show empty state
+        window.onload = function() {
+            initChart();
+        };
+
+        function initChart() {
+            const ctx = document.getElementById('readinessChart').getContext('2d');
+            
+            const labels = assessmentData.map(p => p.title.split(':')[0]); // 'Pillar 1', 'Pillar 2', etc.
+            
+            myRadarChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Readiness (%)',
+                        data: [0,0,0,0,0,0], // Start empty
+                        backgroundColor: 'rgba(0, 158, 219, 0.3)',
+                        borderColor: 'rgba(0, 158, 219, 1)',
+                        pointBackgroundColor: 'rgba(28, 44, 68, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(28, 44, 68, 1)',
+                        borderWidth: 2,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { color: 'rgba(0, 0, 0, 0.05)' },
+                            grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                            pointLabels: { 
+                                font: { size: 11, family: 'Inter', weight: '600' }, 
+                                color: '#64748b'
+                            },
+                            ticks: { display: false, min: 0, max: 100, stepSize: 25 }
+                        }
+                    },
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.raw + '% Readiness';
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 800,
+                        easing: 'easeOutQuart'
+                    }
+                }
+            });
+        }
+
+        function updateLiveChart() {
+            const scores = calculateScores();
+            const dataArray = assessmentData.map(p => scores[p.id]);
+            myRadarChart.data.datasets[0].data = dataArray;
+            myRadarChart.update();
+        }
+
+        function startAssessment() {
+            document.getElementById('intro-screen').style.display = 'none';
+            document.getElementById('assessment-screen').style.display = 'block';
+            renderStep();
+        }
+
+        function renderStep() {
+            const pillar = assessmentData[currentStep];
+            document.getElementById('current-pillar-title').textContent = pillar.title.split(':')[0];
+            document.getElementById('progress-text').textContent = `Step ${currentStep + 1} of ${assessmentData.length}`;
+            document.getElementById('progress-bar').style.width = `${((currentStep + 1) / assessmentData.length) * 100}%`;
+
+            const container = document.getElementById('question-container');
+            container.innerHTML = `
+                <h3 class="text-xl font-bold text-gray-800 mb-2">${pillar.title}</h3>
+                <p class="text-sm text-gray-500 mb-6 italic">${pillar.desc}</p>
+            `;
+
+            pillar.questions.forEach((q, index) => {
+                let html = `
+                    <div class="mb-6 bg-gray-50 p-5 rounded-lg border border-gray-200 shadow-sm transition-all hover:border-unblue/50">
+                        <label class="block text-sm font-semibold text-gray-800 mb-4">${index + 1}. ${q.text}</label>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                `;
+                
+                q.scores.forEach(score => {
+                    const isChecked = userResponses[q.id] === score ? 'checked' : '';
+                    html += `
+                        <div>
+                            <input type="radio" name="${q.id}" id="${q.id}_${score}" value="${score}" class="likert-radio hidden" onchange="saveResponse('${q.id}', ${score})" ${isChecked}>
+                            <label for="${q.id}_${score}" class="block text-center p-3 text-xs font-medium border border-gray-300 rounded cursor-pointer transition-all hover:bg-white text-gray-600 bg-gray-100/50">
+                                <span class="block text-lg font-bold mb-1">${score}</span>
+                                ${scaleLabels[score]}
+                            </label>
+                        </div>
+                    `;
+                });
+                
+                html += `</div></div>`;
+                container.innerHTML += html;
+            });
+
+            updateButtons();
+        }
+
+        function saveResponse(questionId, score) {
+            userResponses[questionId] = score;
+            updateButtons();
+            updateLiveChart(); // Animate chart dynamically
+        }
+
+        function checkAllAnswered() {
+            const pillar = assessmentData[currentStep];
+            return pillar.questions.every(q => userResponses[q.id]);
+        }
+
+        function updateButtons() {
+            const btnPrev = document.getElementById('btn-prev');
+            const btnNext = document.getElementById('btn-next');
+            const btnSubmit = document.getElementById('btn-submit');
+
+            btnPrev.style.display = currentStep > 0 ? 'block' : 'none';
+
+            if (currentStep === assessmentData.length - 1) {
+                btnNext.style.display = 'none';
+                btnSubmit.style.display = 'block';
+                btnSubmit.disabled = !checkAllAnswered();
+                btnSubmit.className = btnSubmit.disabled 
+                    ? "bg-gray-400 text-white font-semibold py-2 px-6 rounded-lg shadow ml-auto cursor-not-allowed opacity-70" 
+                    : "bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg shadow transition-all ml-auto animate-pulse";
+            } else {
+                btnSubmit.style.display = 'none';
+                btnNext.style.display = 'block';
+                btnNext.disabled = !checkAllAnswered();
+                btnNext.className = btnNext.disabled
+                    ? "bg-gray-300 text-gray-500 font-semibold py-2 px-6 rounded-lg shadow ml-auto cursor-not-allowed"
+                    : "bg-undark hover:bg-gray-800 text-white font-semibold py-2 px-6 rounded-lg shadow transition-colors ml-auto";
+            }
+        }
+
+        function nextStep() {
+            if (checkAllAnswered() && currentStep < assessmentData.length - 1) {
+                currentStep++;
+                renderStep();
+                document.querySelector('.scroll-area').scrollTo({top: 0, behavior: 'smooth'});
+            }
+        }
+
+        function prevStep() {
+            if (currentStep > 0) {
+                currentStep--;
+                renderStep();
+                document.querySelector('.scroll-area').scrollTo({top: 0, behavior: 'smooth'});
+            }
+        }
+
+        function calculateScores() {
+            const scores = {};
+            const maxPerPillar = 3 * 4; // 3 questions * max score 4
+
+            assessmentData.forEach(pillar => {
+                let sum = 0;
+                pillar.questions.forEach(q => {
+                    sum += userResponses[q.id] || 0; // treat null as 0 for live graph
+                });
+                scores[pillar.id] = Math.round((sum / maxPerPillar) * 100);
+            });
+
+            return scores;
+        }
+
+        function showResults() {
+            document.getElementById('assessment-screen').style.display = 'none';
+            document.getElementById('recommendations-screen').style.display = 'block';
+            document.getElementById('results-header').style.display = 'flex';
+            document.getElementById('overall-status-panel').style.display = 'block';
+            document.getElementById('chart-title').textContent = 'Final Governance Architecture';
+            document.getElementById('chart-subtitle').style.display = 'none';
+
+            // Scroll to top
+            document.querySelector('.scroll-area').scrollTo({top: 0, behavior: 'smooth'});
+            window.scrollTo(0,0);
+
+            const scores = calculateScores();
+            
+            // Calculate Overall Avg
+            let total = 0;
+            for (let key in scores) total += scores[key];
+            const overallScore = Math.round(total / assessmentData.length);
+            
+            document.getElementById('overall-score-display').textContent = `${overallScore}%`;
+
+            const badge = document.getElementById('overall-status-badge');
+            const summary = document.getElementById('overall-summary');
+            
+            if (overallScore < 50) {
+                badge.className = "inline-block px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider mb-3 bg-red-500 text-white";
+                badge.textContent = "High Risk / Foundational Gap";
+                summary.innerHTML = "<strong>Pause AI Adoption.</strong> Current systems lack enabling conditions. Focus indicative financing on closing infrastructure equity gaps and establishing legally binding data safeguards.";
+            } else if (overallScore < 75) {
+                badge.className = "inline-block px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider mb-3 bg-yellow-500 text-white";
+                badge.textContent = "Transitional Readiness";
+                summary.innerHTML = "<strong>Proceed with Caution.</strong> Establish strict human oversight and formal MEL coordination frameworks before transitioning from pilot phases to broader systemic deployment.";
+            } else {
+                badge.className = "inline-block px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider mb-3 bg-green-500 text-white";
+                badge.textContent = "Implementation Ready";
+                summary.innerHTML = "<strong>Forward-Looking Stance Achieved.</strong> System demonstrates robust evidence-based governance. Maintain strategic partnerships while preventing unmanaged data extraction.";
+            }
+            
+            generateRoadmap(scores);
+        }
+
+        function generateRoadmap(scores) {
+            const container = document.getElementById('recommendations-container');
+            container.innerHTML = '';
+
+            const recData = [
+                {
+                    id: 'infrastructure', s: scores.infrastructure,
+                    title: '1. Connectivity & Equity', icon: 'fa-network-wired',
+                    bad: '<strong>Deficit:</strong> Halt digital expansions that widen the equity gap. Define indicative costing for municipal-level broadband and device standardization.',
+                    good: '<strong>Action:</strong> Maintain sustainable financing. Ensure hardware lifecycles are modeled to support future pedagogical demands.'
+                },
+                {
+                    id: 'content', s: scores.content,
+                    title: '2. Inclusive Resources', icon: 'fa-book-open',
+                    bad: '<strong>Deficit:</strong> Fragmented repositories. Curate centralized, ASEAN-aligned digital learning resources prioritizing inclusivity and cultural context.',
+                    good: '<strong>Action:</strong> Expand open-source sharing. Ensure contextual appropriateness checks remain standardized.'
+                },
+                {
+                    id: 'capacity', s: scores.capacity,
+                    title: '3. Educator Digital Capacity', icon: 'fa-chalkboard-user',
+                    bad: '<strong>Deficit:</strong> Institutional readiness is constrained. Mandate foundational digital literacy and AI pedagogy training before pushing new classroom tools.',
+                    good: '<strong>Action:</strong> Shift focus from admin tasks to pedagogical elevation. Utilize high-capacity teachers as champions for ethical EdTech review.'
+                },
+                {
+                    id: 'emis', s: scores.emis,
+                    title: '4. Data & Safeguarding', icon: 'fa-user-lock',
+                    bad: '<strong>CRITICAL RISK:</strong> Uphold child rights immediately. Institute strict ownership, consent, and security protocols in the EMIS before any data interoperability testing.',
+                    good: '<strong>Action:</strong> Governance is strong. Continue routine cyber-security audits and ensure ongoing human oversight on automated data flows.'
+                },
+                {
+                    id: 'partnerships', s: scores.partnerships,
+                    title: '5. Strategic Partnerships', icon: 'fa-handshake',
+                    bad: '<strong>Deficit:</strong> High risk of vendor lock-in. Define coordination mechanisms that prevent unmanaged data extraction and establish clear public-private boundaries.',
+                    good: '<strong>Action:</strong> Leverage established strategic partnerships to scale regional good practices without compromising national data sovereignty.'
+                },
+                {
+                    id: 'ai_policy', s: scores.ai_policy,
+                    title: '6. Ethical AI Integration', icon: 'fa-microchip',
+                    bad: '<strong>Deficit:</strong> Avoid rapid, supply-driven AI adoption. Construct a strict MEL framework mandating "human-in-the-loop" accountability and risk mitigation.',
+                    good: '<strong>Action:</strong> Continue evidence-based exploration of emerging tech. Share MEL findings with regional (SEAMEO) partners to guide responsible digital transformation.'
+                }
+            ];
+
+            recData.forEach(r => {
+                const isBad = r.s < 65;
+                const border = isBad ? 'border-orange-400' : 'border-green-400';
+                const bg = isBad ? 'bg-orange-50' : 'bg-green-50';
+                const iconColor = isBad ? 'text-orange-500' : 'text-green-500';
+                const iconFa = isBad ? 'fa-triangle-exclamation' : 'fa-check-circle';
+                const text = isBad ? r.bad : r.good;
+
+                html = `
+                    <div class="p-4 border-l-4 ${border} ${bg} rounded-r-lg flex gap-4 items-start shadow-sm">
+                        <div class="w-10 h-10 shrink-0 rounded-full bg-white flex flex-col items-center justify-center shadow-sm border border-gray-100">
+                            <i class="fa-solid ${r.icon} text-gray-600"></i>
+                        </div>
+                        <div class="flex-grow">
+                            <div class="flex justify-between items-center mb-1">
+                                <h4 class="font-bold text-gray-800 text-sm md:text-base">${r.title}</h4>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-bold text-gray-500 bg-white px-2 py-1 rounded border border-gray-200">${r.s}%</span>
+                                    <i class="fa-solid ${iconFa} ${iconColor}"></i>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-700 leading-relaxed">${text}</p>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += html;
+            });
+        }
+
+        function resetApp() {
+            currentStep = 0;
+            userResponses = {};
+            
+            // UI Resets
+            document.getElementById('recommendations-screen').style.display = 'none';
+            document.getElementById('results-header').style.display = 'none';
+            document.getElementById('overall-status-panel').style.display = 'none';
+            document.getElementById('assessment-screen').style.display = 'none';
+            document.getElementById('intro-screen').style.display = 'block';
+            
+            document.getElementById('chart-title').textContent = 'Live Readiness Radar';
+            document.getElementById('chart-subtitle').style.display = 'block';
+            
+            // Reset Chart
+            myRadarChart.data.datasets[0].data = [0,0,0,0,0,0];
+            myRadarChart.update();
+        }
+    </script>
+</body>
+</html>
