@@ -421,7 +421,7 @@
                     setStakeholders(prev => prev.map(x => x.id === s.id ? { ...x, actions: [...(x.actions||[]), { id: Date.now().toString(), text: aiText, owner:"Project Manager", due:"", status:"Planned" }] } : x));
                     
                 } catch (error) {
-                    alert(`🚨 Gagal menghubungi AI:\n${error.message}`);
+                    alert(`🚨 Prototype Failed calling AI :\n${error.message}`);
                     console.error(error);
                 } finally {
                     setIsSuggesting(prev => ({...prev, [s.id]: false}));
