@@ -217,6 +217,11 @@
             const [search, setSearch] = useState("");
             const [groupFilter, setGroupFilter] = useState("All");
             const [expandedId, setExpandedId] = useState(null);
+            
+            // --- NEW: API Key & Loading State untuk Gemini ---
+            const [apiKey, setApiKey] = useState("");
+            const [isSuggesting, setIsSuggesting] = useState({});
+            
             const fileInputRef = useRef(null);
             const loaded = useRef(false);
 
@@ -229,6 +234,7 @@
                         if (d.stakeholders) setStakeholders(d.stakeholders);
                         if (d.relationships) setRelationships(d.relationships);
                         if (d.meta) setMeta(d.meta);
+                        if (d.apiKey) setApiKey(d.apiKey); // Load API Key
                     }
                 } catch (e) {}
                 loaded.current = true;
@@ -236,8 +242,9 @@
 
             useEffect(() => {
                 if (!loaded.current) return;
-                try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ stakeholders, relationships, meta })); } catch(e){}
-            }, [stakeholders, relationships, meta]);
+                // Simpan API Key ke LocalStorage bersama data lain
+                try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ stakeholders, relationships, meta, apiKey })); } catch(e){}
+            }, [stakeholders, relationships, meta, apiKey]);
 
             // --- Logic ---
             const getPowerInterestStrategy = (power, interest) => {
@@ -349,17 +356,76 @@
             const removeAction = (sid, aid) => {
                 setStakeholders(stakeholders.map(s => s.id === sid ? { ...s, actions: (s.actions||[]).filter(a => a.id !== aid) } : s));
             };
-            const suggestAction = (s) => {
+
+
+            const suggestAction = async (s) => {
                 const strat = getPowerInterestStrategy(s.power, s.interest);
-                const map = {
-                    "Manage Closely": "Schedule recurring 1:1 strategic alignment meeting",
-                    "Keep Satisfied": "Send periodic executive briefing & invite to key milestones",
-                    "Keep Informed": "Add to newsletter and engage as grassroots advocate",
-                    "Monitor": "Review status each quarter for changes in power/interest"
-                };
-                let text = map[strat];
-                if (s.support < 0) text = "Mitigation: identify common ground & address objections — " + text.toLowerCase();
-                setStakeholders(stakeholders.map(x => x.id === s.id ? { ...x, actions: [...(x.actions||[]), { id: Date.now().toString(), text, owner:"", due:"", status:"Planned" }] } : x));
+                
+                // 1. BLOKIR JIKA API KEY KOSONG
+                if (!apiKey || apiKey.trim() === "") {
+                    alert("⚠️ Tolong masukkan Gemini API Key Anda di kolom Header atas terlebih dahulu.");
+                    return;
+                }
+
+                setIsSuggesting(prev => ({...prev, [s.id]: true}));
+                try {
+                    const prompt = `You are a strategic stakeholder management consultant. Suggest ONE practical, highly specific, and actionable step (maximum 15 words) to engage this stakeholder effectively:
+                    - Name: ${s.name} (${s.group})
+                    - Power: ${s.power}/10 | Interest: ${s.interest}/10 | Support: ${s.support} (Scale -5 to 5)
+                    - Strategy: ${strat}
+                    - Key Interests: ${s.keyInterests || 'Unknown'}
+                    - Concerns: ${s.concerns || 'Unknown'}`;
+
+                    // 2. LINI MASA 2026: Sistem Cerdas Auto-Fallback
+                    // Mencoba dari model terbaru (3.1), turun terus ke legacy jika server Google merespon 404 (Deprecated/Tidak ada akses)
+                    const modelsToTry = ['gemini-3.1-flash', 'gemini-3.0-flash', 'gemini-2.5-flash', 'gemini-1.5-flash-latest', 'gemini-pro'];
+                    let response;
+                    let usedModel = '';
+
+                    for (const model of modelsToTry) {
+                        response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                contents: [{ parts: [{ text: prompt }] }],
+                                generationConfig: { temperature: 0.7, maxOutputTokens: 50 }
+                            })
+                        });
+                        
+                        if (response.ok) {
+                            usedModel = model;
+                            break; // API merespon sukses! Keluar dari loop pencarian.
+                        } else if (response.status !== 404) {
+                            // Jika error BUKAN 404 (misal 403 password salah, 429 kuota limit habis), langsung berhentikan pencarian.
+                            break; 
+                        }
+                        // Jika 404, artinya model ini sudah ditutup/tidak disupport akun Anda. Loop akan otomatis lanjut ke model berikutnya.
+                    }
+
+                    // 3. TANGKAP ERROR FINAL JIKA SEMUA MODEL GAGAL
+                    if (!response || !response.ok) {
+                        if (response && response.status === 429) throw new Error("429 Too Many Requests: Kuota API Anda habis atau terlalu cepat klik.");
+                        if (response && response.status === 403) throw new Error("403 Forbidden: API Key Tidak Valid atau salah ketik.");
+                        if (response && response.status === 404) throw new Error("404 Not Found: Semua lini model ditolak. Pastikan API Key memiliki akses aktif.");
+                        throw new Error(`API Error Code: ${response ? response.status : 'Unknown'}`);
+                    }
+
+                    const data = await response.json();
+                    let aiText = data.candidates[0].content.parts[0].text.trim();
+                    aiText = aiText.replace(/^["'\-\*]|["'\-\*]$/g, '').trim(); 
+
+                    // 4. Tambahkan watermark model apa yang berhasil dieksekusi agar kita tahu AI mana yang merespon
+                    aiText = `${aiText} ⚡ (by ${usedModel})`;
+
+                    // 5. Simpan ke tabel action plan
+                    setStakeholders(prev => prev.map(x => x.id === s.id ? { ...x, actions: [...(x.actions||[]), { id: Date.now().toString(), text: aiText, owner:"Project Manager", due:"", status:"Planned" }] } : x));
+                    
+                } catch (error) {
+                    alert(`🚨 Gagal menghubungi AI:\n${error.message}`);
+                    console.error(error);
+                } finally {
+                    setIsSuggesting(prev => ({...prev, [s.id]: false}));
+                }
             };
 
             const addRelationship = () => {
@@ -1022,7 +1088,13 @@
                                                     </div>
                                                     {!isExporting && (
                                                         <div className="flex gap-2">
-                                                            <button onClick={()=>suggestAction(s)} className="text-xs bg-purple-100 text-purple-700 hover:bg-purple-200 px-2 py-1 rounded font-medium">✨ Suggest</button>
+                                                            <button 
+                                                                onClick={()=>suggestAction(s)} 
+                                                                disabled={isSuggesting[s.id]}
+                                                                className={`text-xs px-2 py-1 rounded font-medium flex items-center gap-1 transition ${isSuggesting[s.id] ? 'bg-gray-100 text-gray-500 cursor-wait' : 'bg-purple-100 text-purple-700 hover:bg-purple-200'}`}
+                                                            >
+                                                                {isSuggesting[s.id] ? '⏳ Thinking...' : '✨ AI Suggest'}
+                                                            </button>
                                                             <button onClick={()=>addAction(s.id)} className="text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 flex items-center gap-1"><IconPlus/> Action</button>
                                                         </div>
                                                     )}
@@ -1131,6 +1203,20 @@
                                 </div>
                             </div>
                             <div className="flex items-center gap-2 flex-wrap justify-end">
+
+                                {!isExporting && (
+                                    <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 px-2 py-1.5 rounded" title="Bring Your Own Key - Gemini 2.5 Flash">
+                                        <span className="text-sm">🔑</span>
+                                        <input 
+                                            type="password" 
+                                            placeholder="Gemini API Key..." 
+                                            value={apiKey} 
+                                            onChange={e=>setApiKey(e.target.value)} 
+                                            className="bg-transparent text-xs outline-none w-28 md:w-36 placeholder-gray-400 text-gray-700"
+                                        />
+                                    </div>
+                                )}
+
                                 <button onClick={()=>setShowHelp(true)} className="flex items-center gap-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded transition font-medium"><IconHelp/> Help</button>
                                 <button onClick={handleLoadSample} className="flex items-center gap-2 text-sm text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded transition font-medium"><IconDownload/> Sample</button>
                                 <input type="file" accept=".json" ref={fileInputRef} onChange={handleLoadJSON} className="hidden"/>
