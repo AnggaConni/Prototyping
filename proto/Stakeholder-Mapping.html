@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comprehensive Stakeholder Mapping Tool</title>
+
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; }
+        .tab-active { border-bottom: 3px solid #3b82f6; color: #1d4ed8; font-weight: 600; }
+        .tab-inactive { color: #6b7280; }
+        .tab-inactive:hover { color: #374151; }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+
+        .node-circle { transition: all 0.3s ease; }
+        .node-circle:hover { r: 25; stroke-width: 4; cursor: pointer; }
+
+        .pdf-header { display: none; }
+        .pdf-export-mode .pdf-header { display: block; margin-bottom: 20px; text-align: center; }
+        .pdf-export-mode { padding: 20px; background-color: white !important; }
+        .pdf-export-mode .shadow-sm, .pdf-export-mode .shadow { box-shadow: none !important; border: 1px solid #e5e7eb; }
+
+        .page-break { page-break-before: always; margin-top: 40px; }
+        .pdf-section { margin-bottom: 30px; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .modal-overlay { animation: fadeIn 0.2s ease-out forwards; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(8px);} to {opacity:1; transform: translateY(0);} }
+        .card-anim { animation: slideUp 0.3s ease-out forwards; }
+        .bar-fill { transition: width 0.6s ease; }
+
+       /* =========================================================
+        PROFESSIONAL PRINT REPORT STYLES (UPDATED & FIXED)
+        ========================================================= */
+        @media print {
+            /* Atur kertas ukuran A4 Portrait dengan Margin standar dokumen */
+            @page { size: A4 portrait; margin: 15mm; }
+            
+            /* Paksa warna background dan grafik agar ikut ter-print */
+            body { 
+                background-color: #ffffff !important; 
+                -webkit-print-color-adjust: exact !important; 
+                print-color-adjust: exact !important; 
+            }
+
+            /* 1. Sembunyikan UI Web */
+            header, .print-hidden, ::-webkit-scrollbar { display: none !important; }
+
+            /* 2. Reset layout kontainer utama */
+            main { max-width: 100% !important; margin: 0 !important; padding: 0 !important; }
+
+            /* ==========================================
+            FIX 1: MENCEGAH HALAMAN 1 KOSONG
+            ========================================== */
+            /* Izinkan blok besar untuk terpotong secara natural ke halaman berikutnya */
+            .pdf-section, .bg-white { 
+                page-break-inside: auto !important; 
+                break-inside: auto !important;
+            }
+            
+            /* Terapkan "anti-terpotong" HANYA pada elemen kecil (baris tabel, list, kartu) */
+            tr, li, .rounded-xl, .border-gray-200 > .p-3, .pdf-section h3 { 
+                page-break-inside: avoid !important; 
+                break-inside: avoid !important; 
+            }
+            
+            .pdf-section { margin-bottom: 30px !important; }
+
+            /* Matikan efek bayangan web */
+            .shadow-sm, .shadow { box-shadow: none !important; border: 1px solid #e5e7eb !important; }
+
+            /* ==========================================
+            FIX 2: MENCEGAH MATRIKS & TEKS TERPOTONG
+            ========================================== */
+            /* Izinkan teks untuk keluar dari batas area kotak SVG */
+            svg { overflow: visible !important; }
+            
+            /* Posisikan grafik rata kiri (bukan di tengah) agar sisa ruang kertas di kanan maksimal */
+            .flex-col.md\:flex-row, .flex-col.lg\:flex-row, .flex-col.xl\:flex-row { 
+                flex-direction: column !important; 
+                align-items: flex-start !important; 
+            }
+            .flex-1.w-full { width: 100% !important; margin-top: 25px !important; }
+            
+            /* Perkecil sedikit ukuran grafik (zoom 85%) agar aman dan proporsional di kertas A4 */
+            .relative[style*="width: 500px"], 
+            .relative[style*="width: 520px"], 
+            .relative[style*="width: 600px"] {
+                zoom: 0.85 !important;
+                margin-bottom: 10px !important;
+            }
+
+            /* Paksa area scroll analisis untuk memanjang ke bawah (tampil semua) */
+            .overflow-y-auto { max-height: none !important; overflow: visible !important; }
+
+            /* ==========================================
+            STYLE HEADER REPORT
+            ========================================== */
+            .pdf-header { 
+                display: block !important; 
+                text-align: center; 
+                margin-bottom: 35px; 
+                padding-bottom: 15px; 
+                border-bottom: 3px solid #1e40af; 
+            }
+            .pdf-header h1 { 
+                font-size: 24pt !important; 
+                font-weight: bold; 
+                color: #1e3a8a; 
+                margin-bottom: 5px; 
+            }
+            .pdf-header p { font-size: 11pt !important; color: #6b7280; }
+        }
+
+
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useMemo } = React;
+
+        // --- ICONS ---
+        const IconUsers = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
+        const IconGrid = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>;
+        const IconNetwork = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>;
+        const IconActivity = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>;
+        const IconDashboard = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>;
+        const IconTarget = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>;
+        const IconClipboard = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14l2 2 4-4"/></svg>;
+        const IconSave = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>;
+        const IconUpload = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>;
+        const IconTrash = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>;
+        const IconDownload = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>;
+        const IconPDF = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>;
+        const IconCSV = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h2M8 17h2M14 13h2M14 17h2"/></svg>;
+        const IconHelp = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>;
+        const IconX = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
+        const IconSearch = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>;
+        const IconChevron = ({open}) => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{transform: open ? 'rotate(90deg)' : 'none', transition:'transform .2s'}}><polyline points="9 18 15 12 9 6"/></svg>;
+        const IconPlus = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>;
+
+        // --- SAMPLE DATA ---
+        const euSampleStakeholders = [
+            { id: "1", name: "EU Commission (DG CNECT)", group: "Government", power: 9, interest: 10, legitimacy: 10, urgency: 8, support: 5, contact: "Policy Unit Lead", keyInterests: "Drive the Digital Decade 2030 targets; ensure 100% gigabit coverage.", concerns: "Fragmented national implementation; budget overruns.", notes: "Primary funding & regulatory authority.", actions: [{id:"a1", text:"Quarterly strategic alignment briefing", owner:"Programme Director", due:"2025-03-31", status:"In Progress"}] },
+            { id: "2", name: "National Regulators (BEREC)", group: "Government", power: 8, interest: 8, legitimacy: 9, urgency: 7, support: 4, contact: "", keyInterests: "Harmonised telecom rules across member states.", concerns: "Loss of national discretion.", notes: "", actions: [] },
+            { id: "3", name: "Major Telcos (Vodafone, etc)", group: "Private Sector", power: 8, interest: 9, legitimacy: 8, urgency: 7, support: 2, contact: "", keyInterests: "Return on infrastructure investment; spectrum access.", concerns: "Mandated rural rollout costs.", notes: "", actions: [] },
+            { id: "4", name: "Digital Rights NGOs (EDRi)", group: "Community", power: 5, interest: 10, legitimacy: 8, urgency: 9, support: 4, contact: "", keyInterests: "Privacy, accessibility, net neutrality.", concerns: "Surveillance creep; exclusion of vulnerable groups.", notes: "", actions: [] },
+            { id: "5", name: "Big Tech (Google, Meta)", group: "Private Sector", power: 9, interest: 7, legitimacy: 6, urgency: 5, support: 1, contact: "", keyInterests: "Light-touch regulation; market access.", concerns: "DMA/DSA compliance burden.", notes: "Heavy lobbying presence.", actions: [] },
+            { id: "6", name: "Elderly Citizens Orgs", group: "Community", power: 3, interest: 9, legitimacy: 8, urgency: 8, support: 5, contact: "", keyInterests: "Digital skills training; non-digital fallback options.", concerns: "Being left behind by the digital transition.", notes: "", actions: [] },
+            { id: "7", name: "Academic Researchers", group: "Academia", power: 4, interest: 7, legitimacy: 8, urgency: 4, support: 3, contact: "", keyInterests: "Evidence-based policy; research funding.", concerns: "Data access restrictions.", notes: "", actions: [] },
+            { id: "8", name: "Rural Municipalities", group: "Government", power: 5, interest: 9, legitimacy: 8, urgency: 9, support: 5, contact: "", keyInterests: "Local connectivity & economic development.", concerns: "Last-mile funding gaps.", notes: "", actions: [] }
+        ];
+
+        const euSampleRelationships = [
+            { id: "r1", source: "1", target: "2", type: "Authority", desc: "EU Directives & Guidelines" },
+            { id: "r2", source: "5", target: "1", type: "Influence", desc: "Lobbying & Policy Influence" },
+            { id: "r3", source: "4", target: "1", type: "Influence", desc: "Advocacy for Digital Rights" },
+            { id: "r4", source: "3", target: "2", type: "Influence", desc: "Infrastructure Negotiations" },
+            { id: "r5", source: "3", target: "8", type: "Funds", desc: "Rural Broadband Investment" },
+            { id: "r6", source: "7", target: "4", type: "Data", desc: "Digital Divide Statistics" },
+            { id: "r7", source: "6", target: "8", type: "Influence", desc: "Community Demands" }
+        ];
+
+        // --- HELPERS ---
+        const StrategyBadge = ({ strategy }) => {
+            const colors = {
+                "Manage Closely": "bg-red-100 text-red-800 border-red-200",
+                "Keep Satisfied": "bg-orange-100 text-orange-800 border-orange-200",
+                "Keep Informed": "bg-blue-100 text-blue-800 border-blue-200",
+                "Monitor": "bg-gray-100 text-gray-800 border-gray-200",
+            };
+            return <span className={`px-2 py-1 text-xs font-medium rounded border ${colors[strategy] || colors["Monitor"]}`}>{strategy}</span>;
+        };
+
+        const SalienceBadge = ({ type }) => {
+            const colors = {
+                "Definitive": "bg-purple-100 text-purple-800",
+                "Dominant": "bg-indigo-100 text-indigo-800",
+                "Dangerous": "bg-rose-100 text-rose-800",
+                "Dependent": "bg-amber-100 text-amber-800",
+                "Latent/Dormant": "bg-gray-100 text-gray-800",
+                "Latent/Discretionary": "bg-gray-100 text-gray-800",
+                "Latent/Demanding": "bg-gray-100 text-gray-800",
+                "Non-Stakeholder": "bg-slate-100 text-slate-500",
+            };
+            return <span className={`px-2 py-1 text-xs font-medium rounded ${colors[type] || "bg-gray-100 text-gray-800"}`}>{type}</span>;
+        };
+
+        const STATUS_COLORS = {
+            "Planned": "bg-slate-100 text-slate-700 border-slate-200",
+            "In Progress": "bg-amber-100 text-amber-700 border-amber-200",
+            "Done": "bg-emerald-100 text-emerald-700 border-emerald-200",
+        };
+
+        const STORAGE_KEY = "stakeholderMapper_v2";
+
+        // --- MAIN APP ---
+        const App = () => {
+            const [stakeholders, setStakeholders] = useState([]);
+            const [relationships, setRelationships] = useState([]);
+            const [meta, setMeta] = useState({ projectName: "Untitled Project", author: "" });
+            const [activeTab, setActiveTab] = useState("dashboard");
+            const [isExporting, setIsExporting] = useState(false);
+            const [showHelp, setShowHelp] = useState(false);
+            const [search, setSearch] = useState("");
+            const [groupFilter, setGroupFilter] = useState("All");
+            const [expandedId, setExpandedId] = useState(null);
+            const fileInputRef = useRef(null);
+            const loaded = useRef(false);
+
+            // --- Persistence ---
+            useEffect(() => {
+                try {
+                    const raw = localStorage.getItem(STORAGE_KEY);
+                    if (raw) {
+                        const d = JSON.parse(raw);
+                        if (d.stakeholders) setStakeholders(d.stakeholders);
+                        if (d.relationships) setRelationships(d.relationships);
+                        if (d.meta) setMeta(d.meta);
+                    }
+                } catch (e) {}
+                loaded.current = true;
+            }, []);
+
+            useEffect(() => {
+                if (!loaded.current) return;
+                try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ stakeholders, relationships, meta })); } catch(e){}
+            }, [stakeholders, relationships, meta]);
+
+            // --- Logic ---
+            const getPowerInterestStrategy = (power, interest) => {
+                if (power >= 6 && interest >= 6) return "Manage Closely";
+                if (power >= 6 && interest < 6) return "Keep Satisfied";
+                if (power < 6 && interest >= 6) return "Keep Informed";
+                return "Monitor";
+            };
+            const getSalienceType = (power, legitimacy, urgency) => {
+                const p = power >= 6, l = legitimacy >= 6, u = urgency >= 6;
+                if (p && l && u) return "Definitive";
+                if (p && l && !u) return "Dominant";
+                if (p && !l && u) return "Dangerous";
+                if (!p && l && u) return "Dependent";
+                if (p && !l && !u) return "Latent/Dormant";
+                if (!p && l && !u) return "Latent/Discretionary";
+                if (!p && !l && u) return "Latent/Demanding";
+                return "Non-Stakeholder";
+            };
+            const getSupportType = (support) => {
+                if (support >= 3) return "Strong Supporter";
+                if (support > 0) return "Supporter";
+                if (support === 0) return "Neutral";
+                if (support <= -3) return "Strong Opponent";
+                return "Opponent";
+            };
+            const getPriorityScore = (s) => Math.round((s.power*0.3 + s.interest*0.2 + s.legitimacy*0.2 + s.urgency*0.3)*10);
+
+            const getGroupColor = (group) => ({
+                "Government": "#3b82f6", "Community": "#10b981", "Private Sector": "#f59e0b",
+                "Media": "#8b5cf6", "Academia": "#ec4899",
+            }[group] || "#6b7280");
+
+            // --- Handlers ---
+            const handleLoadSample = () => {
+                setStakeholders(euSampleStakeholders);
+                setRelationships(euSampleRelationships);
+                setMeta({ projectName: "EU Digital Inclusion Initiative", author: "Programme Office" });
+                setActiveTab("dashboard");
+            };
+            const handleClearAll = () => {
+                if (window.confirm("Clear ALL data? This cannot be undone.")) {
+                    setStakeholders([]); setRelationships([]);
+                    setMeta({ projectName: "Untitled Project", author: "" });
+                }
+            };
+            const handleSaveJSON = () => {
+                const blob = new Blob([JSON.stringify({ stakeholders, relationships, meta, version: "2.0" }, null, 2)], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a'); a.href = url; a.download = `${meta.projectName.replace(/\s+/g,'_')}.json`; a.click();
+                URL.revokeObjectURL(url);
+            };
+            const handleExportCSV = () => {
+                const header = ["Name","Group","Power","Interest","Legitimacy","Urgency","Support","Priority","Strategy","Salience","Key Interests","Concerns"];
+                const rows = stakeholders.map(s => [
+                    s.name, s.group, s.power, s.interest, s.legitimacy, s.urgency, s.support, getPriorityScore(s),
+                    getPowerInterestStrategy(s.power, s.interest), getSalienceType(s.power, s.legitimacy, s.urgency),
+                    (s.keyInterests||""), (s.concerns||"")
+                ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(","));
+                const csv = [header.join(","), ...rows].join("\n");
+                const blob = new Blob([csv], { type: "text/csv" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a'); a.href = url; a.download = `${meta.projectName.replace(/\s+/g,'_')}.csv`; a.click();
+                URL.revokeObjectURL(url);
+            };
+            const handleLoadJSON = (e) => {
+                const file = e.target.files[0]; if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    try {
+                        const data = JSON.parse(ev.target.result);
+                        if (data.stakeholders) setStakeholders(data.stakeholders);
+                        if (data.relationships) setRelationships(data.relationships);
+                        if (data.meta) setMeta(data.meta);
+                    } catch (err) { alert("Invalid JSON file"); }
+                };
+                reader.readAsText(file);
+                e.target.value = "";
+            };
+
+            const handleExportPDF = () => {
+                // 1. Ubah state ke mode export (merender semua tab jadi satu halaman panjang)
+                setIsExporting(true);
+
+                // 2. Beri waktu 1.5 detik agar React selesai merender semua SVG & Chart
+                setTimeout(() => {
+                    // 3. Panggil PDF generator native browser (jauh lebih rapi dan ukurannya kecil)
+                    window.print();
+                    
+                    // 4. Kembalikan tampilan ke mode web aplikasi setelah dialog print ditutup
+                    setIsExporting(false);
+                }, 1500);
+            };
+
+            const addStakeholder = () => {
+                const newId = Date.now().toString();
+                setStakeholders([...stakeholders, { id: newId, name: "New Stakeholder", group: "Other", power: 5, interest: 5, legitimacy: 5, urgency: 5, support: 0, contact:"", keyInterests:"", concerns:"", notes:"", actions:[] }]);
+                setExpandedId(newId);
+            };
+            const updateStakeholder = (id, field, value) => setStakeholders(stakeholders.map(s => s.id === id ? { ...s, [field]: value } : s));
+            const removeStakeholder = (id) => { setStakeholders(stakeholders.filter(s => s.id !== id)); setRelationships(relationships.filter(r => r.source !== id && r.target !== id)); };
+
+            const addAction = (sid) => {
+                setStakeholders(stakeholders.map(s => s.id === sid ? { ...s, actions: [...(s.actions||[]), { id: Date.now().toString(), text:"", owner:"", due:"", status:"Planned" }] } : s));
+            };
+            const updateAction = (sid, aid, field, value) => {
+                setStakeholders(stakeholders.map(s => s.id === sid ? { ...s, actions: (s.actions||[]).map(a => a.id === aid ? { ...a, [field]: value } : a) } : s));
+            };
+            const removeAction = (sid, aid) => {
+                setStakeholders(stakeholders.map(s => s.id === sid ? { ...s, actions: (s.actions||[]).filter(a => a.id !== aid) } : s));
+            };
+            const suggestAction = (s) => {
+                const strat = getPowerInterestStrategy(s.power, s.interest);
+                const map = {
+                    "Manage Closely": "Schedule recurring 1:1 strategic alignment meeting",
+                    "Keep Satisfied": "Send periodic executive briefing & invite to key milestones",
+                    "Keep Informed": "Add to newsletter and engage as grassroots advocate",
+                    "Monitor": "Review status each quarter for changes in power/interest"
+                };
+                let text = map[strat];
+                if (s.support < 0) text = "Mitigation: identify common ground & address objections — " + text.toLowerCase();
+                setStakeholders(stakeholders.map(x => x.id === s.id ? { ...x, actions: [...(x.actions||[]), { id: Date.now().toString(), text, owner:"", due:"", status:"Planned" }] } : x));
+            };
+
+            const addRelationship = () => {
+                if (stakeholders.length < 2) return;
+                setRelationships([...relationships, { id: Date.now().toString(), source: stakeholders[0].id, target: stakeholders[1].id, type: "Influence", desc: "" }]);
+            };
+            const updateRelationship = (id, field, value) => setRelationships(relationships.map(r => r.id === id ? { ...r, [field]: value } : r));
+            const removeRelationship = (id) => setRelationships(relationships.filter(r => r.id !== id));
+
+            const EmptyHint = ({msg}) => <div className="text-center p-8 text-gray-500 bg-gray-50 rounded border border-dashed border-gray-300">{msg}</div>;
+
+            // --- Reusable Chart: horizontal distribution bars ---
+            const DistBars = ({ data }) => {
+                const total = data.reduce((a, d) => a + d.value, 0) || 1;
+                return (
+                    <div className="space-y-2">
+                        {data.map((d, i) => (
+                            <div key={i}>
+                                <div className="flex justify-between text-xs text-gray-600 mb-0.5"><span className="font-medium">{d.label}</span><span>{d.value}</span></div>
+                                <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                                    <div className="h-full rounded-full bar-fill" style={{ width: `${(d.value/total)*100}%`, backgroundColor: d.color }}></div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                );
+            };
+
+            // ============ DASHBOARD ============
+            const DashboardView = () => {
+                const stats = useMemo(() => {
+                    const n = stakeholders.length;
+                    const avgSupport = n ? (stakeholders.reduce((a,s)=>a+s.support,0)/n) : 0;
+                    const supporters = stakeholders.filter(s=>s.support>0).length;
+                    const neutral = stakeholders.filter(s=>s.support===0).length;
+                    const opponents = stakeholders.filter(s=>s.support<0).length;
+                    const powerfulOpp = stakeholders.filter(s=>s.power>=6 && s.support<0).length;
+                    const keyAllies = stakeholders.filter(s=>s.power>=6 && s.support>=3).length;
+                    const definitive = stakeholders.filter(s=>getSalienceType(s.power,s.legitimacy,s.urgency)==="Definitive").length;
+
+                    const groupCounts = {};
+                    stakeholders.forEach(s => groupCounts[s.group] = (groupCounts[s.group]||0)+1);
+                    const groupData = Object.keys(groupCounts).map(g => ({label:g, value:groupCounts[g], color:getGroupColor(g)}));
+
+                    const stratCounts = {"Manage Closely":0,"Keep Satisfied":0,"Keep Informed":0,"Monitor":0};
+                    stakeholders.forEach(s => stratCounts[getPowerInterestStrategy(s.power,s.interest)]++);
+                    const stratColors = {"Manage Closely":"#ef4444","Keep Satisfied":"#f59e0b","Keep Informed":"#3b82f6","Monitor":"#9ca3af"};
+                    const stratData = Object.keys(stratCounts).map(k=>({label:k, value:stratCounts[k], color:stratColors[k]}));
+
+                    const salCounts = {};
+                    stakeholders.forEach(s => { const t=getSalienceType(s.power,s.legitimacy,s.urgency); salCounts[t]=(salCounts[t]||0)+1; });
+                    const salData = Object.keys(salCounts).map(k=>({label:k, value:salCounts[k], color:"#8b5cf6"}));
+
+                    const top = [...stakeholders].sort((a,b)=>getPriorityScore(b)-getPriorityScore(a)).slice(0,6);
+                    return { n, avgSupport, supporters, neutral, opponents, powerfulOpp, keyAllies, definitive, groupData, stratData, salData, top };
+                }, [stakeholders]);
+
+                const KPI = ({label, value, color, sub}) => (
+                    <div className={`rounded-xl p-4 text-white shadow-sm card-anim`} style={{background:`linear-gradient(135deg, ${color[0]}, ${color[1]})`}}>
+                        <div className="text-3xl font-bold">{value}</div>
+                        <div className="text-xs font-medium opacity-90 mt-1">{label}</div>
+                        {sub && <div className="text-[10px] opacity-75 mt-0.5">{sub}</div>}
+                    </div>
+                );
+
+                return (
+                    <div className="space-y-6">
+                        <div className="bg-white p-6 rounded-lg shadow-sm">
+                            <div className="flex flex-col md:flex-row justify-between gap-4">
+                                <div>
+                                    <h2 className="text-xl font-bold text-gray-800">Project Dashboard</h2>
+                                    <p className="text-sm text-gray-500">Live overview of your stakeholder landscape.</p>
+                                </div>
+                                {!isExporting && (
+                                    <div className="flex gap-3 flex-wrap">
+                                        <div>
+                                            <label className="block text-[10px] uppercase text-gray-400 font-bold">Project Name</label>
+                                            <input value={meta.projectName} onChange={e=>setMeta({...meta, projectName:e.target.value})} className="border rounded p-1.5 text-sm w-56 focus:ring-blue-500 focus:border-blue-500"/>
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] uppercase text-gray-400 font-bold">Author</label>
+                                            <input value={meta.author} onChange={e=>setMeta({...meta, author:e.target.value})} className="border rounded p-1.5 text-sm w-40"/>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {stats.n === 0 ? <div className="bg-white p-6 rounded-lg shadow-sm"><EmptyHint msg='No data yet. Click "Load EU Sample" in the header, or add stakeholders in the Inventory tab.'/></div> : (
+                        <React.Fragment>
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                                <KPI label="Stakeholders" value={stats.n} color={["#3b82f6","#2563eb"]} />
+                                <KPI label="Relationships" value={relationships.length} color={["#8b5cf6","#7c3aed"]} />
+                                <KPI label="Avg. Sentiment" value={(stats.avgSupport>0?"+":"")+stats.avgSupport.toFixed(1)} color={stats.avgSupport>=0?["#10b981","#059669"]:["#ef4444","#dc2626"]} sub="-5 to +5 scale" />
+                                <KPI label="Key Allies" value={stats.keyAllies} color={["#10b981","#0d9488"]} sub="Powerful supporters" />
+                                <KPI label="Powerful Opponents" value={stats.powerfulOpp} color={["#f43f5e","#e11d48"]} sub="Need mitigation" />
+                                <KPI label="Definitive" value={stats.definitive} color={["#a855f7","#9333ea"]} sub="Top salience" />
+                            </div>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                <div className="bg-white p-5 rounded-lg shadow-sm">
+                                    <h3 className="font-bold text-gray-700 mb-4 text-sm uppercase tracking-wider">Sentiment Split</h3>
+                                    <div className="flex h-6 rounded-full overflow-hidden mb-4 bg-gray-100">
+                                        <div className="bg-emerald-500 flex items-center justify-center text-white text-xs font-bold" style={{width:`${(stats.supporters/stats.n)*100}%`}}>{stats.supporters||''}</div>
+                                        <div className="bg-gray-400 flex items-center justify-center text-white text-xs font-bold" style={{width:`${(stats.neutral/stats.n)*100}%`}}>{stats.neutral||''}</div>
+                                        <div className="bg-red-500 flex items-center justify-center text-white text-xs font-bold" style={{width:`${(stats.opponents/stats.n)*100}%`}}>{stats.opponents||''}</div>
+                                    </div>
+                                    <div className="flex justify-between text-xs">
+                                        <span className="flex items-center gap-1"><span className="w-3 h-3 bg-emerald-500 rounded-sm"></span>Supporters {stats.supporters}</span>
+                                        <span className="flex items-center gap-1"><span className="w-3 h-3 bg-gray-400 rounded-sm"></span>Neutral {stats.neutral}</span>
+                                        <span className="flex items-center gap-1"><span className="w-3 h-3 bg-red-500 rounded-sm"></span>Opponents {stats.opponents}</span>
+                                    </div>
+                                    <h3 className="font-bold text-gray-700 mb-3 mt-6 text-sm uppercase tracking-wider">By Group</h3>
+                                    <DistBars data={stats.groupData}/>
+                                </div>
+
+                                <div className="bg-white p-5 rounded-lg shadow-sm">
+                                    <h3 className="font-bold text-gray-700 mb-4 text-sm uppercase tracking-wider">Engagement Strategy</h3>
+                                    <DistBars data={stats.stratData}/>
+                                    <h3 className="font-bold text-gray-700 mb-3 mt-6 text-sm uppercase tracking-wider">Salience Types</h3>
+                                    <DistBars data={stats.salData}/>
+                                </div>
+
+                                <div className="bg-white p-5 rounded-lg shadow-sm">
+                                    <h3 className="font-bold text-gray-700 mb-4 text-sm uppercase tracking-wider">⭐ Top Priority</h3>
+                                    <ul className="space-y-2">
+                                        {stats.top.map((s,i) => {
+                                            const score = getPriorityScore(s);
+                                            return (
+                                                <li key={s.id} className="flex items-center gap-3">
+                                                    <span className="text-xs font-bold text-gray-400 w-4">{i+1}</span>
+                                                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{backgroundColor:getGroupColor(s.group)}}></span>
+                                                    <span className="text-sm text-gray-700 flex-1 truncate" title={s.name}>{s.name}</span>
+                                                    <div className="w-20 h-2 bg-gray-100 rounded-full overflow-hidden">
+                                                        <div className="h-full bar-fill" style={{width:`${score}%`, background:'linear-gradient(90deg,#3b82f6,#8b5cf6)'}}></div>
+                                                    </div>
+                                                    <span className="text-xs font-bold text-gray-600 w-7 text-right">{score}</span>
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+                                </div>
+                            </div>
+                        </React.Fragment>
+                        )}
+                    </div>
+                );
+            };
+
+            // ============ INVENTORY ============
+            const InventoryView = () => {
+                const filtered = stakeholders.filter(s =>
+                    (groupFilter === "All" || s.group === groupFilter) &&
+                    (s.name.toLowerCase().includes(search.toLowerCase()) || (s.keyInterests||"").toLowerCase().includes(search.toLowerCase()))
+                );
+                const NumCell = (s, field, min, max) => isExporting
+                    ? <div className="text-center text-sm">{field==='support' ? (s.support>0?`+${s.support}`:s.support) : s[field]}</div>
+                    : <input type="number" min={min} max={max} value={s[field]} onChange={(e)=>updateStakeholder(s.id, field, parseInt(e.target.value)||0)} className="w-full border rounded p-1 text-center"/>;
+
+                return (
+                    <div className="bg-white p-6 rounded-lg shadow-sm">
+                        <div className="flex flex-col md:flex-row justify-between md:items-center gap-3 mb-4">
+                            <div>
+                                <h2 className="text-xl font-bold text-gray-800">Stakeholder Inventory</h2>
+                                <p className="text-sm text-gray-500">Score parties and capture their interests, concerns & contacts.</p>
+                            </div>
+                            {!isExporting && (
+                                <div className="flex gap-2 items-center flex-wrap">
+                                    <div className="relative">
+                                        <span className="absolute left-2 top-2.5 text-gray-400"><IconSearch/></span>
+                                        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search..." className="border rounded pl-8 pr-2 py-1.5 text-sm w-40 focus:ring-blue-500 focus:border-blue-500"/>
+                                    </div>
+                                    <select value={groupFilter} onChange={e=>setGroupFilter(e.target.value)} className="border rounded py-1.5 px-2 text-sm">
+                                        <option>All</option><option>Government</option><option>Community</option><option>Private Sector</option><option>Media</option><option>Academia</option><option>Other</option>
+                                    </select>
+                                    <button onClick={addStakeholder} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-medium transition flex items-center gap-1"><IconPlus/> Add</button>
+                                </div>
+                            )}
+                        </div>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider">
+                                        {!isExporting && <th className="p-2 border-b w-6"></th>}
+                                        <th className="p-3 border-b">Name & Group</th>
+                                        <th className="p-3 border-b" title="Ability to influence (0-10)">Power<br/><span className="text-[10px] font-normal text-gray-400">0-10</span></th>
+                                        <th className="p-3 border-b" title="Concern about outcomes (0-10)">Interest<br/><span className="text-[10px] font-normal text-gray-400">0-10</span></th>
+                                        <th className="p-3 border-b" title="Social/legal standing (0-10)">Legit.<br/><span className="text-[10px] font-normal text-gray-400">0-10</span></th>
+                                        <th className="p-3 border-b" title="Time sensitivity (0-10)">Urgency<br/><span className="text-[10px] font-normal text-gray-400">0-10</span></th>
+                                        <th className="p-3 border-b" title="Attitude (-5 to 5)">Support<br/><span className="text-[10px] font-normal text-gray-400">-5/+5</span></th>
+                                        <th className="p-3 border-b text-center" title="Weighted priority">Priority</th>
+                                        {!isExporting && <th className="p-3 border-b text-center">Del</th>}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {filtered.map((s) => {
+                                        const open = expandedId === s.id;
+                                        const score = getPriorityScore(s);
+                                        return (
+                                        <React.Fragment key={s.id}>
+                                        <tr className="border-b hover:bg-gray-50 transition">
+                                            {!isExporting && <td className="p-2 text-gray-400 cursor-pointer" onClick={()=>setExpandedId(open?null:s.id)}><IconChevron open={open}/></td>}
+                                            <td className="p-3">
+                                                {isExporting ? (
+                                                    <div><div className="font-medium text-sm text-gray-800">{s.name}</div><div className="text-xs text-gray-500">{s.group}</div></div>
+                                                ) : (
+                                                    <React.Fragment>
+                                                        <input type="text" value={s.name} onChange={(e)=>updateStakeholder(s.id,'name',e.target.value)} className="w-full border-gray-300 rounded p-1 mb-1 font-medium text-sm border focus:ring-blue-500 focus:border-blue-500"/>
+                                                        <select value={s.group} onChange={(e)=>updateStakeholder(s.id,'group',e.target.value)} className="w-full text-xs text-gray-500 border border-gray-300 rounded p-1">
+                                                            <option>Government</option><option>Community</option><option>Private Sector</option><option>Media</option><option>Academia</option><option>Other</option>
+                                                        </select>
+                                                    </React.Fragment>
+                                                )}
+                                            </td>
+                                            <td className="p-3 w-16">{NumCell(s,'power',0,10)}</td>
+                                            <td className="p-3 w-16">{NumCell(s,'interest',0,10)}</td>
+                                            <td className="p-3 w-16">{NumCell(s,'legitimacy',0,10)}</td>
+                                            <td className="p-3 w-16">{NumCell(s,'urgency',0,10)}</td>
+                                            <td className="p-3 w-16">{NumCell(s,'support',-5,5)}</td>
+                                            <td className="p-3 text-center">
+                                                <span className="inline-block px-2 py-1 rounded-full text-xs font-bold text-white" style={{background:'linear-gradient(90deg,#3b82f6,#8b5cf6)'}}>{score}</span>
+                                            </td>
+                                            {!isExporting && <td className="p-3 text-center"><button onClick={()=>removeStakeholder(s.id)} className="text-red-500 hover:text-red-700 p-1 bg-red-50 hover:bg-red-100 rounded transition"><IconTrash/></button></td>}
+                                        </tr>
+                                        {(open && !isExporting) && (
+                                            <tr className="bg-blue-50/40">
+                                                <td></td>
+                                                <td colSpan="8" className="p-4">
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                        <div>
+                                                            <label className="block text-[10px] uppercase font-bold text-gray-500 mb-1">Contact / Role</label>
+                                                            <input value={s.contact||""} onChange={e=>updateStakeholder(s.id,'contact',e.target.value)} className="w-full border rounded p-1.5 text-sm"/>
+                                                            <label className="block text-[10px] uppercase font-bold text-gray-500 mb-1 mt-3">Key Interests</label>
+                                                            <textarea value={s.keyInterests||""} onChange={e=>updateStakeholder(s.id,'keyInterests',e.target.value)} rows="2" className="w-full border rounded p-1.5 text-sm"/>
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-[10px] uppercase font-bold text-gray-500 mb-1">Concerns / Risks</label>
+                                                            <textarea value={s.concerns||""} onChange={e=>updateStakeholder(s.id,'concerns',e.target.value)} rows="2" className="w-full border rounded p-1.5 text-sm"/>
+                                                            <label className="block text-[10px] uppercase font-bold text-gray-500 mb-1 mt-3">Notes</label>
+                                                            <textarea value={s.notes||""} onChange={e=>updateStakeholder(s.id,'notes',e.target.value)} rows="2" className="w-full border rounded p-1.5 text-sm"/>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )}
+                                        </React.Fragment>
+                                    );})}
+                                </tbody>
+                            </table>
+                            {stakeholders.length === 0 && <EmptyHint msg='No stakeholders yet. Click "Load EU Sample" or "+ Add" to begin.'/>}
+                            {stakeholders.length > 0 && filtered.length === 0 && <div className="text-center p-4 text-gray-400 text-sm">No matches for your search/filter.</div>}
+                        </div>
+                    </div>
+                );
+            };
+
+ 
+
+            // ============ POWER-INTEREST MATRIX ============
+            const MatrixView = () => {
+                const size = 500, margin = 40, innerSize = size - 2*margin;
+                
+                // Algoritma Smart Bounding-Box Collision
+                const nodes = useMemo(() => {
+                    let pts = stakeholders.map(s => ({
+                        ...s,
+                        cx: margin + (s.interest/10)*innerSize,
+                        cy: size - margin - (s.power/10)*innerSize
+                    }));
+                    
+                    const placed = [];
+                    pts.forEach(n => {
+                        const txt = n.name.length > 22 ? n.name.substring(0,20)+'...' : n.name;
+                        const w = txt.length * 6.2; // Estimasi lebar pixel teks
+                        const h = 16;               // Estimasi tinggi teks
+                        
+                        n.isRightSide = n.cx > size * 0.55;
+                        
+                        let bestLy = n.cy + 4;
+                        let bestAnchor = n.isRightSide ? "end" : "start";
+                        let bestLx = n.isRightSide ? n.cx - 12 : n.cx + 12;
+                        
+                        // Coba 40 posisi berbeda: Atas, Bawah, Kiri, Kanan
+                        for(let attempt = 0; attempt < 40; attempt++) {
+                            let shiftMultiplier = Math.floor(attempt / 2);
+                            let shiftY = 0;
+                            
+                            // Urutan geser: 0, 0, +16, +16, -16, -16, +32, +32...
+                            if (shiftMultiplier > 0) {
+                                shiftY = Math.ceil(shiftMultiplier / 2) * 16 * (shiftMultiplier % 2 === 1 ? 1 : -1);
+                            }
+                            
+                            let flipSide = attempt % 2 === 1; // Coba balik arah teks
+                            let useRightSide = flipSide ? !n.isRightSide : n.isRightSide;
+                            
+                            let testAnchor = useRightSide ? "end" : "start";
+                            let testLx = useRightSide ? n.cx - 12 : n.cx + 12;
+                            let testLy = n.cy + 4 + shiftY;
+                            
+                            // Posisi kotak imajiner (Bounding Box)
+                            let boxX = testAnchor === "start" ? testLx : testLx - w;
+                            let boxY = testLy - 12; 
+                            
+                            // Mencegah teks keluar batas kanvas SVG
+                            if (boxX < 0 || boxX + w > size || boxY < 0 || boxY + h > size) {
+                                continue; 
+                            }
+
+                            // Cek apakah nabrak kotak teks lain
+                            let collision = placed.some(p => {
+                                return !(boxX + w + 4 < p.x || boxX > p.x + p.w + 4 || boxY + h + 2 < p.y || boxY > p.y + p.h + 2);
+                            });
+                            
+                            if (!collision) {
+                                bestLx = testLx;
+                                bestLy = testLy;
+                                bestAnchor = testAnchor;
+                                break;
+                            }
+                        }
+                        
+                        n.lx = bestLx;
+                        n.ly = bestLy;
+                        n.textAnchor = bestAnchor;
+                        n.txt = txt;
+                        
+                        // Simpan kotak teks ini agar tidak ditabrak yang lain
+                        let finalBoxX = n.textAnchor === "start" ? n.lx : n.lx - w;
+                        placed.push({x: finalBoxX, y: n.ly - 12, w: w, h: h});
+                    });
+                    return pts;
+                }, [stakeholders, innerSize, margin, size]);
+
+                return (
+                    <div className="bg-white p-6 rounded-lg shadow-sm">
+                        <div className="mb-6"><h2 className="text-xl font-bold text-gray-800">Mendelow's Power-Interest Matrix</h2><p className="text-sm text-gray-500">Determine the appropriate engagement strategy per stakeholder.</p></div>
+                        {stakeholders.length === 0 ? <EmptyHint msg="Add stakeholders in the Inventory tab first."/> : (
+                            <div className="flex flex-col md:flex-row gap-8 items-start">
+                                <div className="relative border border-gray-200 bg-gray-50 shadow-inner rounded flex-shrink-0" style={{width:size, height:size}}>
+                                    <svg width={size} height={size} style={{overflow: 'visible'}}>
+                                        <rect x={margin} y={margin} width={innerSize/2} height={innerSize/2} fill="#fee2e2" opacity="0.4"/>
+                                        <rect x={margin+innerSize/2} y={margin} width={innerSize/2} height={innerSize/2} fill="#fecaca" opacity="0.6"/>
+                                        <rect x={margin} y={margin+innerSize/2} width={innerSize/2} height={innerSize/2} fill="#f3f4f6" opacity="0.8"/>
+                                        <rect x={margin+innerSize/2} y={margin+innerSize/2} width={innerSize/2} height={innerSize/2} fill="#dbeafe" opacity="0.5"/>
+                                        <line x1={margin} y1={margin+innerSize/2} x2={size-margin} y2={margin+innerSize/2} stroke="#9ca3af" strokeWidth="2" strokeDasharray="4"/>
+                                        <line x1={margin+innerSize/2} y1={margin} x2={margin+innerSize/2} y2={size-margin} stroke="#9ca3af" strokeWidth="2" strokeDasharray="4"/>
+                                        <rect x={margin} y={margin} width={innerSize} height={innerSize} fill="none" stroke="#4b5563" strokeWidth="2"/>
+                                        <text x={margin+innerSize/4} y={margin+20} textAnchor="middle" fill="#991b1b" fontSize="12" fontWeight="bold">KEEP SATISFIED</text>
+                                        <text x={margin+(innerSize/4)*3} y={margin+20} textAnchor="middle" fill="#991b1b" fontSize="12" fontWeight="bold">MANAGE CLOSELY</text>
+                                        <text x={margin+innerSize/4} y={size-margin-10} textAnchor="middle" fill="#374151" fontSize="12" fontWeight="bold">MONITOR</text>
+                                        <text x={margin+(innerSize/4)*3} y={size-margin-10} textAnchor="middle" fill="#1e40af" fontSize="12" fontWeight="bold">KEEP INFORMED</text>
+                                        <text x={size/2} y={size-5} textAnchor="middle" fill="#111827" fontSize="14" fontWeight="bold">INTEREST ➔</text>
+                                        <text x={15} y={size/2} textAnchor="middle" fill="#111827" fontSize="14" fontWeight="bold" transform={`rotate(-90 15 ${size/2})`}>POWER ➔</text>
+                                        
+                                        {nodes.map(n => {
+                                            const isMoved = Math.abs(n.ly - (n.cy + 4)) > 2;
+                                            return (
+                                                <g key={`pi-${n.id}`}>
+                                                    {isMoved && <line x1={n.cx} y1={n.cy} x2={n.textAnchor==="end" ? n.lx+2 : n.lx-2} y2={n.ly-4} stroke="#9ca3af" strokeWidth="1" strokeDasharray="2" />}
+                                                    <circle cx={n.cx} cy={n.cy} r="8" fill={getGroupColor(n.group)} stroke="#fff" strokeWidth="2" className="node-circle">
+                                                        <title>{n.name} (P:{n.power}, I:{n.interest})</title>
+                                                    </circle>
+                                                    <text x={n.lx} y={n.ly} textAnchor={n.textAnchor} fontSize="11" fill="#1f2937" fontWeight="600" paintOrder="stroke" stroke="#ffffff" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" style={{pointerEvents:'none'}}>
+                                                        {n.txt}
+                                                    </text>
+                                                </g>
+                                            );
+                                        })}
+                                    </svg>
+                                </div>
+                                <div className="flex-1 w-full">
+                                    <h3 className="font-bold text-gray-700 mb-3 border-b pb-2">Analysis</h3>
+                                    <ul className={`space-y-3 ${isExporting?'':'max-h-[450px] overflow-y-auto pr-2'}`}>
+                                        {stakeholders.slice().sort((a,b)=>(b.power+b.interest)-(a.power+a.interest)).map(s => (
+                                            <li key={`strat-${s.id}`} className="bg-gray-50 p-3 rounded border border-gray-100 flex justify-between items-center">
+                                                <div><div className="font-medium text-sm text-gray-800">{s.name}</div><div className="text-xs text-gray-500">{s.group}</div></div>
+                                                <StrategyBadge strategy={getPowerInterestStrategy(s.power, s.interest)}/>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                );
+            };
+
+                        // ============ SUPPORT MATRIX ============
+            const SupportOppositionView = () => {
+                const size = 500, margin = 40, innerSize = size - 2*margin;
+                
+                // Algoritma Smart Bounding-Box Collision
+                const nodes = useMemo(() => {
+                    let pts = stakeholders.map(s => ({
+                        ...s,
+                        cx: margin + ((s.support+5)/10)*innerSize,
+                        cy: size - margin - (s.power/10)*innerSize
+                    }));
+                    
+                    const placed = [];
+                    pts.forEach(n => {
+                        const txt = n.name.length > 22 ? n.name.substring(0,20)+'...' : n.name;
+                        const w = txt.length * 6.2;
+                        const h = 16;
+                        
+                        n.isRightSide = n.cx > size * 0.55;
+                        
+                        let bestLy = n.cy + 4;
+                        let bestAnchor = n.isRightSide ? "end" : "start";
+                        let bestLx = n.isRightSide ? n.cx - 12 : n.cx + 12;
+                        
+                        for(let attempt = 0; attempt < 40; attempt++) {
+                            let shiftMultiplier = Math.floor(attempt / 2);
+                            let shiftY = 0;
+                            if (shiftMultiplier > 0) {
+                                shiftY = Math.ceil(shiftMultiplier / 2) * 16 * (shiftMultiplier % 2 === 1 ? 1 : -1);
+                            }
+                            
+                            let flipSide = attempt % 2 === 1;
+                            let useRightSide = flipSide ? !n.isRightSide : n.isRightSide;
+                            
+                            let testAnchor = useRightSide ? "end" : "start";
+                            let testLx = useRightSide ? n.cx - 12 : n.cx + 12;
+                            let testLy = n.cy + 4 + shiftY;
+                            
+                            let boxX = testAnchor === "start" ? testLx : testLx - w;
+                            let boxY = testLy - 12; 
+                            
+                            if (boxX < 0 || boxX + w > size || boxY < 0 || boxY + h > size) {
+                                continue; 
+                            }
+
+                            let collision = placed.some(p => {
+                                return !(boxX + w + 4 < p.x || boxX > p.x + p.w + 4 || boxY + h + 2 < p.y || boxY > p.y + p.h + 2);
+                            });
+                            
+                            if (!collision) {
+                                bestLx = testLx;
+                                bestLy = testLy;
+                                bestAnchor = testAnchor;
+                                break;
+                            }
+                        }
+                        
+                        n.lx = bestLx;
+                        n.ly = bestLy;
+                        n.textAnchor = bestAnchor;
+                        n.txt = txt;
+                        
+                        let finalBoxX = n.textAnchor === "start" ? n.lx : n.lx - w;
+                        placed.push({x: finalBoxX, y: n.ly - 12, w: w, h: h});
+                    });
+                    return pts;
+                }, [stakeholders, innerSize, margin, size]);
+
+                return (
+                    <div className="bg-white p-6 rounded-lg shadow-sm">
+                        <div className="mb-6"><h2 className="text-xl font-bold text-gray-800">Support-Opposition Matrix</h2><p className="text-sm text-gray-500">Identify powerful allies to leverage and opponents to mitigate.</p></div>
+                        {stakeholders.length === 0 ? <EmptyHint msg="Add stakeholders in the Inventory tab first."/> : (
+                            <div className="flex flex-col md:flex-row gap-8 items-start">
+                                <div className="relative border border-gray-200 bg-white shadow-inner rounded flex-shrink-0" style={{width:size, height:size}}>
+                                    <svg width={size} height={size} style={{overflow: 'visible'}}>
+                                        <rect x={margin} y={margin} width={innerSize/2} height={innerSize/2} fill="#fee2e2" opacity="0.3"/>
+                                        <rect x={margin+innerSize/2} y={margin} width={innerSize/2} height={innerSize/2} fill="#d1fae5" opacity="0.3"/>
+                                        <line x1={size/2} y1={margin} x2={size/2} y2={size-margin} stroke="#9ca3af" strokeWidth="2" strokeDasharray="4"/>
+                                        <line x1={margin} y1={size/2} x2={size-margin} y2={size/2} stroke="#9ca3af" strokeWidth="2" strokeDasharray="4"/>
+                                        <rect x={margin} y={margin} width={innerSize} height={innerSize} fill="none" stroke="#4b5563" strokeWidth="2"/>
+                                        <text x={margin+innerSize/4} y={margin+20} textAnchor="middle" fill="#991b1b" fontSize="12" fontWeight="bold">POWERFUL OPPONENTS</text>
+                                        <text x={margin+(innerSize/4)*3} y={margin+20} textAnchor="middle" fill="#065f46" fontSize="12" fontWeight="bold">POWERFUL ALLIES</text>
+                                        <text x={size/2} y={size-5} textAnchor="middle" fill="#111827" fontSize="14" fontWeight="bold">SUPPORT ➔</text>
+                                        <text x={margin} y={size-5} textAnchor="start" fill="#b91c1c" fontSize="12">-5 (Oppose)</text>
+                                        <text x={size-margin} y={size-5} textAnchor="end" fill="#047857" fontSize="12">+5 (Support)</text>
+                                        <text x={15} y={size/2} textAnchor="middle" fill="#111827" fontSize="14" fontWeight="bold" transform={`rotate(-90 15 ${size/2})`}>POWER ➔</text>
+                                        
+                                        {nodes.map(n => {
+                                            const isMoved = Math.abs(n.ly - (n.cy + 4)) > 2;
+                                            return (
+                                                <g key={`so-${n.id}`}>
+                                                    {isMoved && <line x1={n.cx} y1={n.cy} x2={n.textAnchor==="end" ? n.lx+2 : n.lx-2} y2={n.ly-4} stroke="#9ca3af" strokeWidth="1" strokeDasharray="2" />}
+                                                    <circle cx={n.cx} cy={n.cy} r="8" fill={n.support<0?'#ef4444':n.support>0?'#10b981':'#9ca3af'} stroke="#fff" strokeWidth="2" className="node-circle">
+                                                        <title>{n.name} (P:{n.power}, S:{n.support})</title>
+                                                    </circle>
+                                                    <text x={n.lx} y={n.ly} textAnchor={n.textAnchor} fontSize="11" fill="#1f2937" fontWeight="600" paintOrder="stroke" stroke="#ffffff" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" style={{pointerEvents:'none'}}>
+                                                        {n.txt}
+                                                    </text>
+                                                </g>
+                                            );
+                                        })}
+                                    </svg>
+                                </div>
+                                <div className="flex-1 w-full">
+                                    <h3 className="font-bold text-gray-700 mb-3 border-b pb-2">Analysis</h3>
+                                    <ul className={`space-y-3 ${isExporting?'':'max-h-[450px] overflow-y-auto pr-2'}`}>
+                                        {stakeholders.slice().sort((a,b)=>b.power-a.power).map(s => {
+                                            const supType = getSupportType(s.support);
+                                            const colorMap = {"Strong Supporter":"text-green-700 bg-green-50 border-green-200","Supporter":"text-green-600 bg-green-50 border-green-100","Neutral":"text-gray-600 bg-gray-50 border-gray-200","Opponent":"text-red-600 bg-red-50 border-red-100","Strong Opponent":"text-red-700 bg-red-50 border-red-200"};
+                                            return (<li key={`sup-${s.id}`} className={`p-3 rounded border flex justify-between items-center ${colorMap[supType]}`}><div><div className="font-medium text-sm">{s.name}</div><div className="text-xs opacity-75">Power: {s.power}/10</div></div><span className="px-2 py-1 text-xs font-bold rounded bg-white bg-opacity-50">{supType}</span></li>);
+                                        })}
+                                    </ul>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                );
+            };
+
+
+
+            // ============ SALIENCE (Mitchell Venn) ============
+            const SalienceView = () => {
+                const W=520, H=480;
+                // circle centers
+                const P={x:200,y:185,r:120}, L={x:320,y:185,r:120}, U={x:260,y:285,r:120};
+                const regions = {
+                    "Latent/Dormant":{x:140,y:140,label:"Dormant"},
+                    "Latent/Discretionary":{x:380,y:140,label:"Discretionary"},
+                    "Latent/Demanding":{x:260,y:360,label:"Demanding"},
+                    "Dominant":{x:260,y:140,label:"Dominant"},
+                    "Dangerous":{x:185,y:265,label:"Dangerous"},
+                    "Dependent":{x:335,y:265,label:"Dependent"},
+                    "Definitive":{x:260,y:220,label:"Definitive"},
+                };
+                const grouped = {};
+                Object.keys(regions).forEach(k=>grouped[k]=[]);
+                stakeholders.forEach(s=>{ const t=getSalienceType(s.power,s.legitimacy,s.urgency); if(grouped[t]) grouped[t].push(s); });
+
+                return (
+                    <div className="bg-white p-6 rounded-lg shadow-sm">
+                        <div className="mb-6"><h2 className="text-xl font-bold text-gray-800">Mitchell Salience Model</h2><p className="text-sm text-gray-500">Overlap of <b className="text-blue-600">Power</b>, <b className="text-purple-600">Legitimacy</b> & <b className="text-rose-600">Urgency</b> reveals who truly demands attention.</p></div>
+                        {stakeholders.length === 0 ? <EmptyHint msg="Add stakeholders in the Inventory tab first."/> : (
+                            <div className="flex flex-col lg:flex-row gap-8 items-start">
+                                <div className="border border-gray-200 rounded bg-gray-50 shadow-inner flex-shrink-0" style={{width:W}}>
+                                    <svg width="100%" viewBox={`0 0 ${W} ${H}`}>
+                                        <circle cx={P.x} cy={P.y} r={P.r} fill="#3b82f6" fillOpacity="0.18" stroke="#3b82f6" strokeWidth="2"/>
+                                        <circle cx={L.x} cy={L.y} r={L.r} fill="#a855f7" fillOpacity="0.18" stroke="#a855f7" strokeWidth="2"/>
+                                        <circle cx={U.x} cy={U.y} r={U.r} fill="#f43f5e" fillOpacity="0.18" stroke="#f43f5e" strokeWidth="2"/>
+                                        <text x={P.x-70} y={P.y-95} fill="#1d4ed8" fontWeight="bold" fontSize="14">POWER</text>
+                                        <text x={L.x+30} y={L.y-95} fill="#7c3aed" fontWeight="bold" fontSize="14">LEGITIMACY</text>
+                                        <text x={U.x-30} y={U.y+135} fill="#e11d48" fontWeight="bold" fontSize="14">URGENCY</text>
+                                        {Object.keys(regions).map(k=>{
+                                            const r=regions[k]; const items=grouped[k];
+                                            return (
+                                                <g key={k}>
+                                                    <text x={r.x} y={r.y-6} textAnchor="middle" fontSize="10" fontWeight="bold" fill="#374151" opacity="0.55">{r.label}{items.length?` (${items.length})`:''}</text>
+                                                    {items.slice(0,4).map((s,i)=>(
+                                                        <text key={s.id} x={r.x} y={r.y+8+i*12} textAnchor="middle" fontSize="9" fill="#111827" fontWeight="600">{s.name.length>16?s.name.substring(0,15)+'…':s.name}</text>
+                                                    ))}
+                                                    {items.length>4 && <text x={r.x} y={r.y+8+4*12} textAnchor="middle" fontSize="9" fill="#6b7280">+{items.length-4} more</text>}
+                                                </g>
+                                            );
+                                        })}
+                                    </svg>
+                                </div>
+                                <div className="flex-1 w-full">
+                                    <h3 className="font-bold text-gray-700 mb-3 border-b pb-2">Salience Classification</h3>
+                                    <ul className={`space-y-2 ${isExporting?'':'max-h-[430px] overflow-y-auto pr-2'}`}>
+                                        {stakeholders.slice().sort((a,b)=>getPriorityScore(b)-getPriorityScore(a)).map(s=>(
+                                            <li key={s.id} className="flex justify-between items-center bg-gray-50 p-3 rounded border border-gray-100">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="w-2.5 h-2.5 rounded-full" style={{backgroundColor:getGroupColor(s.group)}}></span>
+                                                    <span className="text-sm font-medium text-gray-800">{s.name}</span>
+                                                </div>
+                                                <SalienceBadge type={getSalienceType(s.power,s.legitimacy,s.urgency)}/>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                );
+            };
+
+            // ============ NETWORK ============
+            const NetworkView = () => {
+                const width=600, height=500, cx=width/2, cy=height/2, radius=180;
+                const nodesWithPos = useMemo(()=> stakeholders.map((s,i)=>{ const a=(i/stakeholders.length)*2*Math.PI-Math.PI/2; return {...s, x:cx+radius*Math.cos(a), y:cy+radius*Math.sin(a)}; }), [stakeholders]);
+                return (
+                    <div className="bg-white p-6 rounded-lg shadow-sm">
+                        <div className="mb-6"><h2 className="text-xl font-bold text-gray-800">Ecosystem & Influence Network</h2><p className="text-sm text-gray-500">Map flows of influence, funds, data & authority to find "shadow actors".</p></div>
+                        {stakeholders.length === 0 ? <EmptyHint msg="Add stakeholders in the Inventory tab first."/> : (
+                            <div className="flex flex-col xl:flex-row gap-6">
+                                {!isExporting && (
+                                    <div className="w-full xl:w-1/3 border border-gray-200 rounded p-4 bg-gray-50">
+                                        <div className="flex justify-between items-center mb-4"><h3 className="font-bold text-gray-700 text-sm uppercase tracking-wider">Relationships</h3><button onClick={addRelationship} className="text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 flex items-center gap-1"><IconPlus/> Link</button></div>
+                                        <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
+                                            {relationships.map(r => (
+                                                <div key={r.id} className="bg-white p-3 rounded shadow-sm border border-gray-100 text-sm relative">
+                                                    <button onClick={()=>removeRelationship(r.id)} className="absolute top-2 right-2 text-red-400 hover:text-red-600"><IconTrash/></button>
+                                                    <div className="grid grid-cols-2 gap-2 mb-2">
+                                                        <div><label className="block text-[10px] text-gray-400 uppercase">From</label><select value={r.source} onChange={(e)=>updateRelationship(r.id,'source',e.target.value)} className="w-full border p-1 rounded text-xs bg-gray-50">{stakeholders.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></div>
+                                                        <div><label className="block text-[10px] text-gray-400 uppercase">To</label><select value={r.target} onChange={(e)=>updateRelationship(r.id,'target',e.target.value)} className="w-full border p-1 rounded text-xs bg-gray-50">{stakeholders.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></div>
+                                                    </div>
+                                                    <div className="flex gap-2">
+                                                        <select value={r.type} onChange={(e)=>updateRelationship(r.id,'type',e.target.value)} className="w-1/3 border p-1 rounded text-xs bg-gray-50"><option>Influence</option><option>Funds</option><option>Data</option><option>Authority</option></select>
+                                                        <input type="text" placeholder="Description..." value={r.desc} onChange={(e)=>updateRelationship(r.id,'desc',e.target.value)} className="w-2/3 border p-1 rounded text-xs"/>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            {relationships.length === 0 && <p className="text-xs text-gray-500 italic text-center py-4">No connections mapped yet.</p>}
+                                        </div>
+                                    </div>
+                                )}
+                                <div className={`relative border border-gray-200 rounded flex justify-center bg-white ${isExporting?'w-full':'flex-1'}`}>
+                                    <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMidYMid meet">
+                                        <defs>
+                                            {["Influence","Funds","Data","Authority"].map(t=>{const c={Influence:"#ef4444",Funds:"#10b981",Data:"#3b82f6",Authority:"#6b7280"}[t];return <marker key={t} id={`arrowhead-${t}`} markerWidth="10" markerHeight="7" refX="28" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill={c}/></marker>;})}
+                                        </defs>
+                                        {relationships.map(r => {
+                                            const sN=nodesWithPos.find(n=>n.id===r.source), tN=nodesWithPos.find(n=>n.id===r.target);
+                                            if(!sN||!tN) return null;
+                                            const styles={Influence:{stroke:"#ef4444",width:2,dash:""},Funds:{stroke:"#10b981",width:3,dash:""},Data:{stroke:"#3b82f6",width:1.5,dash:"4 2"},Authority:{stroke:"#6b7280",width:2.5,dash:""}};
+                                            const st=styles[r.type]||styles.Influence;
+                                            const dx=tN.x-sN.x, dy=tN.y-sN.y, dr=Math.sqrt(dx*dx+dy*dy)*1.5;
+                                            const bi=relationships.some(rev=>rev.source===r.target&&rev.target===r.source);
+                                            const d=bi?`M${sN.x},${sN.y} A${dr},${dr} 0 0,1 ${tN.x},${tN.y}`:`M${sN.x},${sN.y} L${tN.x},${tN.y}`;
+                                            return (<g key={r.id}><path d={d} fill="none" stroke={st.stroke} strokeWidth={st.width} strokeDasharray={st.dash} markerEnd={`url(#arrowhead-${r.type})`} opacity="0.6"/><text x={(sN.x+tN.x)/2} y={(sN.y+tN.y)/2-5} fill={st.stroke} fontSize="10" textAnchor="middle" opacity="0.8">{r.type}</text></g>);
+                                        })}
+                                        {nodesWithPos.map(n=>(<g key={`n-${n.id}`} transform={`translate(${n.x}, ${n.y})`}><circle r="18" fill={getGroupColor(n.group)} stroke="#fff" strokeWidth="2"/><text y="4" textAnchor="middle" fill="#fff" fontSize="11" fontWeight="bold" style={{pointerEvents:'none'}}>{n.name.substring(0,2).toUpperCase()}</text><rect x="-40" y="22" width="80" height="20" fill="rgba(255,255,255,0.85)" rx="4"/><text y="35" textAnchor="middle" fill="#1f2937" fontSize="10" fontWeight="600">{n.name.length>15?n.name.substring(0,13)+'..':n.name}</text></g>))}
+                                    </svg>
+                                    <div className="absolute top-2 right-2 bg-white/90 p-3 rounded border border-gray-200 text-xs shadow-sm">
+                                        <div className="font-bold mb-2">Relationship Types</div>
+                                        <div className="flex items-center gap-2 mb-1"><span className="w-4 h-0.5 bg-red-500 inline-block"></span> Influence</div>
+                                        <div className="flex items-center gap-2 mb-1"><span className="w-4 h-1 bg-green-500 inline-block"></span> Funds</div>
+                                        <div className="flex items-center gap-2 mb-1"><span className="w-4 h-0.5 border-t border-dashed border-blue-500 inline-block"></span> Data</div>
+                                        <div className="flex items-center gap-2"><span className="w-4 h-[3px] bg-gray-500 inline-block"></span> Authority</div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                );
+            };
+
+            // ============ ENGAGEMENT PLAN ============
+            const EngagementView = () => {
+                const allActions = stakeholders.flatMap(s => (s.actions||[]));
+                const done = allActions.filter(a=>a.status==="Done").length;
+                const pct = allActions.length ? Math.round((done/allActions.length)*100) : 0;
+                return (
+                    <div className="bg-white p-6 rounded-lg shadow-sm">
+                        <div className="mb-6"><h2 className="text-xl font-bold text-gray-800">Engagement Action Plan</h2><p className="text-sm text-gray-500">Plan and track concrete engagement actions per stakeholder.</p></div>
+                        {stakeholders.length === 0 ? <EmptyHint msg="Add stakeholders in the Inventory tab first."/> : (
+                            <React.Fragment>
+                                {allActions.length > 0 && (
+                                    <div className="mb-6 bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg border border-blue-100">
+                                        <div className="flex justify-between text-sm font-medium text-gray-700 mb-1"><span>Overall progress</span><span>{done}/{allActions.length} done ({pct}%)</span></div>
+                                        <div className="h-3 bg-white rounded-full overflow-hidden"><div className="h-full bar-fill" style={{width:`${pct}%`, background:'linear-gradient(90deg,#3b82f6,#10b981)'}}></div></div>
+                                    </div>
+                                )}
+                                <div className="space-y-5">
+                                    {stakeholders.map(s => {
+                                        const strat = getPowerInterestStrategy(s.power, s.interest);
+                                        return (
+                                            <div key={s.id} style={{pageBreakInside:'avoid'}} className="border border-gray-200 rounded-lg overflow-hidden">
+                                                <div className="flex items-center justify-between p-3 bg-gray-50 border-b" style={{borderLeft:`4px solid ${getGroupColor(s.group)}`}}>
+                                                    <div className="flex items-center gap-3">
+                                                        <span className="font-bold text-gray-800 text-sm">{s.name}</span>
+                                                        <StrategyBadge strategy={strat}/>
+                                                    </div>
+                                                    {!isExporting && (
+                                                        <div className="flex gap-2">
+                                                            <button onClick={()=>suggestAction(s)} className="text-xs bg-purple-100 text-purple-700 hover:bg-purple-200 px-2 py-1 rounded font-medium">✨ Suggest</button>
+                                                            <button onClick={()=>addAction(s.id)} className="text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 flex items-center gap-1"><IconPlus/> Action</button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="p-3">
+                                                    {(s.actions||[]).length === 0 ? <p className="text-xs text-gray-400 italic py-2">No actions yet.</p> : (
+                                                        <div className="space-y-2">
+                                                            {(s.actions||[]).map(a => (
+                                                                <div key={a.id} className="flex flex-col md:flex-row gap-2 md:items-center bg-white border border-gray-100 rounded p-2">
+                                                                    {isExporting ? (
+                                                                        <React.Fragment>
+                                                                            <span className="flex-1 text-sm text-gray-700">{a.text||"(untitled)"}</span>
+                                                                            <span className="text-xs text-gray-500">{a.owner}</span>
+                                                                            <span className="text-xs text-gray-500">{a.due}</span>
+                                                                            <span className={`text-xs px-2 py-0.5 rounded border ${STATUS_COLORS[a.status]}`}>{a.status}</span>
+                                                                        </React.Fragment>
+                                                                    ) : (
+                                                                        <React.Fragment>
+                                                                            <input value={a.text} onChange={e=>updateAction(s.id,a.id,'text',e.target.value)} placeholder="Action description..." className="flex-1 border rounded p-1.5 text-sm"/>
+                                                                            <input value={a.owner} onChange={e=>updateAction(s.id,a.id,'owner',e.target.value)} placeholder="Owner" className="w-28 border rounded p-1.5 text-sm"/>
+                                                                            <input type="date" value={a.due} onChange={e=>updateAction(s.id,a.id,'due',e.target.value)} className="border rounded p-1.5 text-sm"/>
+                                                                            <select value={a.status} onChange={e=>updateAction(s.id,a.id,'status',e.target.value)} className={`border rounded p-1.5 text-xs font-medium ${STATUS_COLORS[a.status]}`}><option>Planned</option><option>In Progress</option><option>Done</option></select>
+                                                                            <button onClick={()=>removeAction(s.id,a.id)} className="text-red-400 hover:text-red-600 p-1"><IconTrash/></button>
+                                                                        </React.Fragment>
+                                                                    )}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </React.Fragment>
+                        )}
+                    </div>
+                );
+            };
+
+            // ============ STRATEGIC REPORT ============
+            const StrategyReportView = () => (
+                <div className="bg-white p-6 rounded-lg shadow-sm">
+                    <div className="mb-6"><h2 className="text-xl font-bold text-gray-800">Strategic Recommendations</h2><p className="text-sm text-gray-500">Synthesized action plan from Salience, Power-Interest & Ecosystem analysis.</p></div>
+                    {stakeholders.length === 0 ? <EmptyHint msg="Add stakeholders in the Inventory tab first."/> : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {stakeholders.map(s => {
+                                const piStrategy = getPowerInterestStrategy(s.power, s.interest);
+                                const salience = getSalienceType(s.power, s.legitimacy, s.urgency);
+                                const isOpponent = s.support < 0;
+                                const isKeyAlly = s.power >= 6 && s.support >= 3;
+                                const outgoingInfluence = relationships.filter(r => r.source === s.id && r.type === "Influence").length;
+                                const isShadowActor = outgoingInfluence >= 2 && s.power <= 7;
+                                return (
+                                    <div key={s.id} style={{pageBreakInside:'avoid'}} className="border border-gray-200 rounded-lg p-5 bg-gradient-to-br from-white to-gray-50 shadow-sm relative overflow-hidden">
+                                        <div className="absolute top-0 left-0 w-2 h-full" style={{backgroundColor:getGroupColor(s.group)}}></div>
+                                        <div className="pl-4">
+                                            <div className="flex justify-between items-start mb-2"><h3 className="font-bold text-lg text-gray-800">{s.name}</h3><StrategyBadge strategy={piStrategy}/></div>
+                                            <div className="flex gap-2 mb-4 flex-wrap items-center">
+                                                <SalienceBadge type={salience}/>
+                                                <span className={`px-2 py-1 text-[10px] uppercase font-bold rounded ${isOpponent?'bg-red-100 text-red-700':'bg-green-100 text-green-700'}`}>{s.support>0?`Supporter (+${s.support})`:s.support<0?`Opponent (${s.support})`:`Neutral (0)`}</span>
+                                                <span className="px-2 py-1 text-[10px] uppercase font-bold rounded bg-blue-100 text-blue-700">Priority {getPriorityScore(s)}</span>
+                                            </div>
+                                            {s.keyInterests && <p className="text-xs text-gray-500 mb-2"><b>Interests:</b> {s.keyInterests}</p>}
+                                            <div className="space-y-2 text-sm text-gray-600">
+                                                <p><strong>Primary Approach:</strong> {
+                                                    piStrategy === "Manage Closely" ? "Engage actively. Critical to project success — involve in key decisions." :
+                                                    piStrategy === "Keep Satisfied" ? "Meet their needs. High power, lower interest — avoid triggering opposition." :
+                                                    piStrategy === "Keep Informed" ? "Communicate regularly. They care deeply but lack power — leverage as advocates." :
+                                                    "Monitor status. Minimal effort, but watch for shifts in power or interest."
+                                                }</p>
+                                                {salience === "Definitive" && <p className="text-purple-700">⚠️ <strong>Urgent:</strong> Definitive stakeholder with power, legitimacy & urgent claims. Prioritize immediately.</p>}
+                                                {isKeyAlly && <p className="text-emerald-700">★ <strong>Key Ally:</strong> Powerful & supportive. Empower them to champion your project.</p>}
+                                                {isOpponent && s.power >= 6 && <p className="text-red-600">🚨 <strong>Risk:</strong> Powerful opponent. Build a mitigation strategy & find common ground.</p>}
+                                                {isShadowActor && <p className="text-amber-700">🕵️ <strong>Shadow Actor:</strong> Informal node of influence. Engage behind the scenes to sway formal authorities.</p>}
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+            );
+
+            const TABS = [
+                {id:'dashboard', label:'Dashboard', icon:<IconDashboard/>},
+                {id:'inventory', label:'1. Inventory', icon:<IconUsers/>},
+                {id:'pi-matrix', label:'2. Power-Interest', icon:<IconGrid/>},
+                {id:'support', label:'3. Support', icon:<IconGrid/>},
+                {id:'salience', label:'4. Salience', icon:<IconTarget/>},
+                {id:'network', label:'5. Network', icon:<IconNetwork/>},
+                {id:'engagement', label:'6. Action Plan', icon:<IconClipboard/>},
+                {id:'report', label:'7. Report', icon:<IconActivity/>},
+            ];
+
+            return (
+                <div className="min-h-screen pb-12">
+                    <header className="bg-white border-b border-gray-200 sticky top-0 z-10 print:hidden shadow-sm">
+                        <div className="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-gradient-to-br from-blue-600 to-purple-600 p-2 rounded text-white shadow"><IconNetwork/></div>
+                                <div>
+                                    <h1 className="font-bold text-lg leading-tight text-gray-900">StakeholderMapper</h1>
+                                    <div className="text-[10px] uppercase font-bold text-blue-600 tracking-wider">Strategic Analysis Suite</div>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2 flex-wrap justify-end">
+                                <button onClick={()=>setShowHelp(true)} className="flex items-center gap-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded transition font-medium"><IconHelp/> Help</button>
+                                <button onClick={handleLoadSample} className="flex items-center gap-2 text-sm text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded transition font-medium"><IconDownload/> Sample</button>
+                                <input type="file" accept=".json" ref={fileInputRef} onChange={handleLoadJSON} className="hidden"/>
+                                <button onClick={()=>fileInputRef.current.click()} className="text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 px-2 py-1.5 rounded transition" title="Load JSON"><IconUpload/></button>
+                                <button onClick={handleSaveJSON} className="text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 px-2 py-1.5 rounded transition" title="Save JSON"><IconSave/></button>
+                                <button onClick={handleExportCSV} disabled={!stakeholders.length} className="text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 px-2 py-1.5 rounded transition disabled:opacity-40" title="Export CSV"><IconCSV/></button>
+                                <button onClick={handleClearAll} disabled={!stakeholders.length} className="text-sm text-red-500 bg-red-50 hover:bg-red-100 px-2 py-1.5 rounded transition disabled:opacity-40" title="Clear all"><IconTrash/></button>
+                                <button onClick={handleExportPDF} disabled={isExporting || !stakeholders.length} className={`flex items-center gap-2 text-sm text-white px-3 py-1.5 rounded transition shadow-sm ${!stakeholders.length?'bg-gray-400 cursor-not-allowed':'bg-rose-600 hover:bg-rose-700'}`}><IconPDF/> {isExporting?'Generating...':'PDF'}</button>
+                            </div>
+                        </div>
+                        <div className="max-w-7xl mx-auto px-4 flex gap-5 mt-2 overflow-x-auto">
+                            {TABS.map(t => (
+                                <button key={t.id} onClick={()=>setActiveTab(t.id)} className={`pb-3 flex items-center gap-2 text-sm whitespace-nowrap ${activeTab===t.id?'tab-active':'tab-inactive'}`}>{t.icon} {t.label}</button>
+                            ))}
+                        </div>
+                    </header>
+
+                    <main id="pdf-content" className="max-w-7xl mx-auto px-4 mt-8 relative">
+                        {isExporting && (
+                            <div className="pdf-header">
+                                <h1 className="text-2xl font-bold text-gray-900 border-b pb-2 mb-2">{meta.projectName} — Stakeholder Analysis</h1>
+                                <p className="text-sm text-gray-500">{meta.author ? `Prepared by ${meta.author} · ` : ''}Generated {new Date().toLocaleDateString()}</p>
+                            </div>
+                        )}
+                        {(activeTab==='dashboard'||isExporting) && <div className="pdf-section"><DashboardView/></div>}
+                        {(activeTab==='inventory'||isExporting) && <div className={`pdf-section ${isExporting?'page-break':''}`}><InventoryView/></div>}
+                        {(activeTab==='pi-matrix'||isExporting) && <div className={`pdf-section ${isExporting?'page-break':''}`}><MatrixView/></div>}
+                        {(activeTab==='support'||isExporting) && <div className={`pdf-section ${isExporting?'page-break':''}`}><SupportOppositionView/></div>}
+                        {(activeTab==='salience'||isExporting) && <div className={`pdf-section ${isExporting?'page-break':''}`}><SalienceView/></div>}
+                        {(activeTab==='network'||isExporting) && <div className={`pdf-section ${isExporting?'page-break':''}`}><NetworkView/></div>}
+                        {(activeTab==='engagement'||isExporting) && <div className={`pdf-section ${isExporting?'page-break':''}`}><EngagementView/></div>}
+                        {(activeTab==='report'||isExporting) && <div className={`pdf-section ${isExporting?'page-break':''}`}><StrategyReportView/></div>}
+                    </main>
+
+{showHelp && (
+                        <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4 modal-overlay backdrop-blur-sm">
+                            <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+                                {/* Header */}
+                                <div className="flex justify-between items-center border-b p-5 bg-gray-50 rounded-t-xl">
+                                    <div>
+                                        <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                                            <IconHelp/> Stakeholder Analysis Guide
+                                        </h2>
+                                        <p className="text-xs text-gray-500 mt-1">Comprehensive scoring methodology and framework definitions.</p>
+                                    </div>
+                                    <button onClick={()=>setShowHelp(false)} className="text-gray-400 hover:text-red-500 transition bg-white p-2 rounded-full shadow-sm border border-gray-200">
+                                        <IconX/>
+                                    </button>
+                                </div>
+                                
+                                {/* Content */}
+                                <div className="p-6 overflow-y-auto bg-white space-y-8 flex-1">
+                                    
+                                    {/* Introduction */}
+                                    <div className="text-sm text-gray-600 bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r">
+                                        <strong>Why accurate scoring matters:</strong> The intelligence of this tool relies heavily on your inputs. By scoring stakeholders accurately across these dimensions, the system automatically runs algorithms based on international standard frameworks (Mendelow & Mitchell) to generate targeted engagement strategies and identify hidden risks.
+                                    </div>
+
+                                    {/* Section 1: Core Scoring Metrics */}
+                                    <div>
+                                        <h3 className="text-lg font-bold text-gray-800 border-b pb-2 mb-4">1. Core Evaluation Metrics</h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            
+                                            {/* Power */}
+                                            <div className="p-4 rounded-lg border border-gray-200 bg-gray-50 hover:border-blue-300 transition">
+                                                <h4 className="font-bold text-blue-700 flex justify-between items-center mb-2">
+                                                    Power <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs">Scale: 0 - 10</span>
+                                                </h4>
+                                                <p className="text-xs text-gray-600 mb-3">The capacity to influence, facilitate, or block the project's success.</p>
+                                                <ul className="text-xs space-y-1.5 text-gray-600">
+                                                    <li><span className="font-semibold text-gray-800">0-3 (Low):</span> Can voice opinions but cannot enforce changes.</li>
+                                                    <li><span className="font-semibold text-gray-800">4-7 (Medium):</span> Can cause delays or influence others.</li>
+                                                    <li><span className="font-semibold text-gray-800">8-10 (High):</span> Holds veto power, key funding, or absolute authority.</li>
+                                                </ul>
+                                            </div>
+
+                                            {/* Interest */}
+                                            <div className="p-4 rounded-lg border border-gray-200 bg-gray-50 hover:border-orange-300 transition">
+                                                <h4 className="font-bold text-orange-700 flex justify-between items-center mb-2">
+                                                    Interest <span className="bg-orange-100 text-orange-800 px-2 py-0.5 rounded text-xs">Scale: 0 - 10</span>
+                                                </h4>
+                                                <p className="text-xs text-gray-600 mb-3">How much the stakeholder cares about or is affected by the outcomes.</p>
+                                                <ul className="text-xs space-y-1.5 text-gray-600">
+                                                    <li><span className="font-semibold text-gray-800">0-3 (Low):</span> Indifferent or minimally impacted.</li>
+                                                    <li><span className="font-semibold text-gray-800">4-7 (Medium):</span> Indirectly affected, monitors progress occasionally.</li>
+                                                    <li><span className="font-semibold text-gray-800">8-10 (High):</span> Directly impacted, mission-critical to them.</li>
+                                                </ul>
+                                            </div>
+
+                                            {/* Legitimacy */}
+                                            <div className="p-4 rounded-lg border border-gray-200 bg-gray-50 hover:border-purple-300 transition">
+                                                <h4 className="font-bold text-purple-700 flex justify-between items-center mb-2">
+                                                    Legitimacy <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded text-xs">Scale: 0 - 10</span>
+                                                </h4>
+                                                <p className="text-xs text-gray-600 mb-3">The perceived appropriateness, moral right, or legal standing of their involvement.</p>
+                                                <ul className="text-xs space-y-1.5 text-gray-600">
+                                                    <li><span className="font-semibold text-gray-800">0-3 (Low):</span> Fringe groups or baseless claims.</li>
+                                                    <li><span className="font-semibold text-gray-800">4-7 (Medium):</span> Socially recognized but lacks formal authority.</li>
+                                                    <li><span className="font-semibold text-gray-800">8-10 (High):</span> Statutory authority or direct contractual relationship.</li>
+                                                </ul>
+                                            </div>
+
+                                            {/* Urgency */}
+                                            <div className="p-4 rounded-lg border border-gray-200 bg-gray-50 hover:border-rose-300 transition">
+                                                <h4 className="font-bold text-rose-700 flex justify-between items-center mb-2">
+                                                    Urgency <span className="bg-rose-100 text-rose-800 px-2 py-0.5 rounded text-xs">Scale: 0 - 10</span>
+                                                </h4>
+                                                <p className="text-xs text-gray-600 mb-3">The time-sensitivity and criticality of their claims or needs.</p>
+                                                <ul className="text-xs space-y-1.5 text-gray-600">
+                                                    <li><span className="font-semibold text-gray-800">0-3 (Low):</span> Can wait indefinitely; normal lifecycle.</li>
+                                                    <li><span className="font-semibold text-gray-800">4-7 (Medium):</span> Requires attention in the near term.</li>
+                                                    <li><span className="font-semibold text-gray-800">8-10 (High):</span> Immediate, critical action required; high risk if ignored.</li>
+                                                </ul>
+                                            </div>
+
+                                        </div>
+                                    </div>
+
+                                    {/* Section 2: Support & Sentiment */}
+                                    <div>
+                                        <h3 className="text-lg font-bold text-gray-800 border-b pb-2 mb-4">2. Sentiment & Attitude</h3>
+                                        <div className="bg-emerald-50 p-5 rounded-lg border border-emerald-100">
+                                            <h4 className="font-bold text-emerald-800 mb-2 flex justify-between">
+                                                Support Level <span className="bg-white border border-emerald-200 text-emerald-800 px-2 py-0.5 rounded text-xs">Scale: -5 to +5</span>
+                                            </h4>
+                                            <p className="text-xs text-emerald-900/80 mb-4">Indicates the stakeholder's current stance toward the project. Combined with 'Power', this identifies your Key Allies and Powerful Opponents.</p>
+                                            
+                                            <div className="flex justify-between items-stretch text-xs text-center bg-white rounded-lg shadow-sm border border-emerald-100 overflow-hidden">
+                                                <div className="text-red-700 p-3 w-1/3 border-r border-gray-100 bg-red-50/30">
+                                                    <div className="text-lg font-bold mb-1">-5 to -3</div>
+                                                    <div className="font-semibold">Strong Opponent</div>
+                                                    <div className="text-[10px] text-gray-500 mt-1">Actively working against the project.</div>
+                                                </div>
+                                                <div className="text-gray-600 p-3 w-1/3 border-r border-gray-100">
+                                                    <div className="text-lg font-bold mb-1">-2 to +2</div>
+                                                    <div className="font-semibold">Neutral / Mild</div>
+                                                    <div className="text-[10px] text-gray-500 mt-1">Skeptical, undecided, or mildly supportive.</div>
+                                                </div>
+                                                <div className="text-emerald-700 p-3 w-1/3 bg-emerald-50/30">
+                                                    <div className="text-lg font-bold mb-1">+3 to +5</div>
+                                                    <div className="font-semibold">Strong Supporter</div>
+                                                    <div className="text-[10px] text-gray-500 mt-1">Actively championing and defending the project.</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Section 3: Frameworks Explained */}
+                                    <div>
+                                        <h3 className="text-lg font-bold text-gray-800 border-b pb-2 mb-4">3. Analytical Frameworks Used</h3>
+                                        <div className="space-y-3">
+                                            <div className="p-4 bg-gray-50 rounded border border-gray-200">
+                                                <h4 className="font-bold text-gray-800 text-sm mb-1">📊 Mendelow's Power-Interest Matrix</h4>
+                                                <p className="text-xs text-gray-600">Maps <strong>Power</strong> against <strong>Interest</strong> to automatically assign an engagement strategy: <em>Manage Closely</em> (High P, High I), <em>Keep Satisfied</em> (High P, Low I), <em>Keep Informed</em> (Low P, High I), and <em>Monitor</em> (Low P, Low I).</p>
+                                            </div>
+                                            <div className="p-4 bg-gray-50 rounded border border-gray-200">
+                                                <h4 className="font-bold text-gray-800 text-sm mb-1">🎯 Mitchell's Salience Model</h4>
+                                                <p className="text-xs text-gray-600">Evaluates the overlap of <strong>Power</strong>, <strong>Legitimacy</strong>, and <strong>Urgency</strong>. Stakeholders possessing all three attributes are classified as <em>Definitive</em> and require absolute top priority.</p>
+                                            </div>
+                                            <div className="p-4 bg-gray-50 rounded border border-gray-200">
+                                                <h4 className="font-bold text-gray-800 text-sm mb-1">⭐ Priority Index Formula</h4>
+                                                <p className="text-xs text-gray-600">A weighted algorithm to rank attention: <code>(Power × 0.3) + (Urgency × 0.3) + (Interest × 0.2) + (Legitimacy × 0.2)</code>. Results are scaled to a 0-100 index for easy prioritization.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+                                
+                                {/* Footer */}
+                                <div className="border-t p-4 bg-gray-50 rounded-b-xl flex justify-end">
+                                    <button onClick={()=>setShowHelp(false)} className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded-lg font-semibold transition shadow-sm flex items-center gap-2">
+                                        Acknowledge & Close
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                </div>
+            );
+        };
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+    </script>
+</body>
+</html>
