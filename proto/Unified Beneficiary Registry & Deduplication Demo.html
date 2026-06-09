@@ -9,6 +9,10 @@
 <link rel="stylesheet" href="https://pyscript.net/releases/2024.4.1/core.css" />
 <script type="module" src="https://pyscript.net/releases/2024.4.1/core.js"></script>
 
+<py-config>
+  packages = ["openpyxl"]
+</py-config>
+
 <style>
   .terminal{background:#1e1e1e;color:#d4d4d4;font-family:'Courier New',monospace;font-size:.8rem;padding:1rem;height:380px;overflow-y:auto;border-radius:.5rem;box-shadow:inset 0 4px 6px rgba(0,0,0,.3)}
   .log-info{color:#4fc1ff}.log-warn{color:#ce9178}.log-error{color:#f44747}
@@ -26,9 +30,14 @@
       <h1 class="text-2xl font-bold">Unified Beneficiary Registry Engine</h1>
       <p class="text-xs text-blue-200 mt-1">Identity Resolution • Human Adjudication • Data Governance • Offline-Capable</p>
     </div>
-    <div class="text-right text-xs bg-blue-800 p-2 rounded border border-blue-700">
-      <span class="block text-blue-300">Engine Status</span>
-      <span class="font-bold text-green-400">Python (Pyodide) Active</span>
+    <div class="flex items-center gap-4">
+      <button onclick="openGuide()" class="bg-blue-700 hover:bg-blue-600 border border-blue-500 text-white py-2 px-4 rounded text-sm font-semibold flex items-center transition shadow-lg">
+        📖 Guide
+      </button>
+      <div class="text-right text-xs bg-blue-800 p-2 rounded border border-blue-700 hidden md:block">
+        <span class="block text-blue-300">Engine Status</span>
+        <span class="font-bold text-green-400">Python (Pyodide) Active</span>
+      </div>
     </div>
   </div>
 </header>
@@ -60,13 +69,13 @@
       <div id="mapping-section" class="mt-3 hidden bg-blue-50 p-3 rounded border border-blue-100">
         <h3 class="text-sm font-semibold text-blue-800 mb-2">💡 Identity Field Mapping</h3>
         <div class="grid grid-cols-2 gap-2 text-xs">
-          <div><label class="font-semibold text-gray-700">Document/ID (exact)</label><select id="map-doc" class="w-full border rounded p-1"></select></div>
-          <div><label class="font-semibold text-gray-700">Full Name</label><select id="map-name" class="w-full border rounded p-1"></select></div>
-          <div><label class="font-semibold text-gray-700">Date of Birth</label><select id="map-dob" class="w-full border rounded p-1"></select></div>
-          <div><label class="font-semibold text-gray-700">Sex</label><select id="map-sex" class="w-full border rounded p-1"></select></div>
-          <div><label class="font-semibold text-gray-700">Location</label><select id="map-location" class="w-full border rounded p-1"></select></div>
-          <div><label class="font-semibold text-gray-700">Household ID</label><select id="map-household" class="w-full border rounded p-1"></select></div>
-          <div class="col-span-2"><label class="font-semibold text-gray-700">Source / Agency</label><select id="map-source" class="w-full border rounded p-1"></select></div>
+          <div><label class="font-semibold text-gray-700">Unique ID (Exact Match)</label><select id="map-doc" class="w-full border rounded p-1"></select></div>
+          <div><label class="font-semibold text-gray-700">Primary Name / Title</label><select id="map-name" class="w-full border rounded p-1"></select></div>
+          <div><label class="font-semibold text-gray-700">Date / Number Field</label><select id="map-dob" class="w-full border rounded p-1"></select></div>
+          <div><label class="font-semibold text-gray-700">Category / Type / Status</label><select id="map-sex" class="w-full border rounded p-1"></select></div>
+          <div><label class="font-semibold text-gray-700">Secondary Text / Desc</label><select id="map-location" class="w-full border rounded p-1"></select></div>
+          <div><label class="font-semibold text-gray-700">Group / Parent ID</label><select id="map-household" class="w-full border rounded p-1"></select></div>
+          <div class="col-span-2"><label class="font-semibold text-gray-700">Data Source Name</label><select id="map-source" class="w-full border rounded p-1"></select></div>
         </div>
       </div>
 
@@ -123,6 +132,8 @@
       <div class="flex gap-2 flex-wrap">
         <button py-click="export_registry_csv" class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white py-2 px-3 rounded">⬇ Registry (CSV)</button>
         <button py-click="export_registry_json" class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white py-2 px-3 rounded">⬇ Registry (JSON)</button>
+        <button py-click="export_registry_xlsx" class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white py-2 px-3 rounded">⬇ Registry (XLSX)</button>
+        <button py-click="export_registry_dcmi" class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white py-2 px-3 rounded">⬇ DCMI (XML)</button>
         <button py-click="export_audit" class="text-xs bg-slate-600 hover:bg-slate-700 text-white py-2 px-3 rounded">⬇ Audit Log (CSV)</button>
       </div>
     </div>
@@ -159,11 +170,12 @@
           <tr>
             <th class="px-3 py-2">Beneficiary ID</th><th class="px-3 py-2">Name</th><th class="px-3 py-2">DOB</th>
             <th class="px-3 py-2">Sex</th><th class="px-3 py-2">Location</th><th class="px-3 py-2">Household</th>
+            <th class="px-3 py-2 bg-blue-100 text-blue-800">Other Data (Dynamic)</th>
             <th class="px-3 py-2">Quality</th><th class="px-3 py-2">Status</th><th class="px-3 py-2">Vulnerability</th><th class="px-3 py-2">Sources</th>
           </tr>
         </thead>
         <tbody id="registry-body">
-          <tr><td colspan="10" class="text-center py-8 text-gray-400 italic">No data processed yet.</td></tr>
+          <tr><td colspan="11" class="text-center py-8 text-gray-400 italic">No data processed yet.</td></tr>
         </tbody>
       </table>
     </div>
@@ -185,9 +197,145 @@
   </div>
 </section>
 
+<!-- MODAL PANDUAN (GUIDE) -->
+<div id="guide-modal" class="fixed inset-0 z-50 bg-black bg-opacity-60 hidden flex justify-center items-center p-4 backdrop-blur-sm">
+  <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden border border-gray-300">
+    
+    <!-- Modal Header -->
+    <div class="bg-slate-100 border-b px-6 py-4 flex justify-between items-center">
+      <div>
+        <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+          📖 Engine User Guide & Architecture Overview
+        </h2>
+        <p class="text-xs text-slate-500 mt-1">Comprehensive documentation on system operations and algorithmic logic.</p>
+      </div>
+      <button onclick="closeGuide()" class="text-slate-400 hover:text-red-600 focus:outline-none font-bold text-3xl leading-none transition-colors">&times;</button>
+    </div>
+
+    <!-- Modal Body (Scrollable) -->
+    <div class="p-6 overflow-y-auto text-sm text-gray-700 space-y-8 bg-gray-50">
+      
+      <!-- Section 1: User Manual -->
+      <section>
+        <div class="flex items-center gap-2 mb-3 border-b-2 border-blue-200 pb-2">
+          <span class="bg-blue-600 text-white p-1 rounded"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></span>
+          <h3 class="text-lg font-bold text-blue-900">1. Operation Manual & Workflows</h3>
+        </div>
+        
+        <ol class="list-decimal pl-5 space-y-3">
+          <li>
+            <b>Data Ingestion:</b> Load your datasets (e.g., Beneficiaries, Product Catalogs, IoT Logs) by pasting raw CSV text or utilizing the drag-and-drop file uploader. The system supports multi-source merging natively.
+          </li>
+          <li>
+            <b>Generic Field Mapping (Critical Step):</b> Map your CSV columns to the engine's core matching parameters. 
+            <ul class="list-disc pl-5 mt-1 text-gray-600 text-[13px] space-y-1">
+              <li><i>Unique ID:</i> Used for deterministic (exact) matching.</li>
+              <li><i>Primary Name / Title:</i> The main string identifier (heavily weighted).</li>
+              <li><i>Dynamic Capture:</i> Any columns <b>not mapped</b> to the core engine are not discarded. They are dynamically swept into the <b>Other Data (Dynamic)</b> payload to ensure zero data loss.</li>
+            </ul>
+          </li>
+          <li>
+            <b>Configure Confidence Thresholds:</b> 
+            <ul class="list-disc pl-5 mt-1 text-gray-600 text-[13px] space-y-1">
+              <li><b>Auto-Merge Threshold (e.g., 92%):</b> Scores above this line are considered definitive matches. The engine will automatically fuse them into a single record.</li>
+              <li><b>Review Threshold (e.g., 75%):</b> Scores falling between this value and the auto-merge line are flagged as "Probable Matches" and routed to the Human Adjudication Queue.</li>
+            </ul>
+          </li>
+          <li>
+            <b>Run Resolution Pipeline:</b> Execute the engine. You can monitor the computational steps in real-time via the interactive terminal on the right.
+          </li>
+          <li>
+            <b>Human-in-the-Loop Adjudication:</b> Navigate to the <b>⚖ Review Queue</b> tab. Here, human operators act as the final decision-makers to manually <i>Merge</i> or <i>Keep Separate</i> borderline cases, preventing algorithmic false positives.
+          </li>
+          <li>
+            <b>Export & Interoperability:</b> Export your deduplicated Master Registry to CSV, Excel (XLSX) for business users, JSON for API integrations, or DCMI XML for institutional data archiving.
+          </li>
+        </ol>
+      </section>
+
+      <!-- Section 2: Under the Hood -->
+      <section>
+        <div class="flex items-center gap-2 mb-3 border-b-2 border-teal-200 pb-2">
+          <span class="bg-teal-600 text-white p-1 rounded"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg></span>
+          <h3 class="text-lg font-bold text-teal-900">2. Under the Hood: Python Processing Architecture</h3>
+        </div>
+        <p class="mb-3 text-[13px]">
+          Upon pipeline execution, the embedded <b>Python (Pyodide)</b> environment performs an advanced <b>Record Linkage / Identity Resolution</b> sequence entirely on the client-side (Zero-Trust architecture—no data leaves your browser). Here is the lifecycle of a record:
+        </p>
+        
+        <div class="space-y-3">
+          
+          <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition">
+            <h4 class="font-bold text-purple-800 flex items-center gap-2">A. Dynamic Schema Ingestion</h4>
+            <p class="text-gray-600 mt-1 text-[13px] leading-relaxed">
+              The engine utilizes Python's <code>csv.DictReader</code> to parse rows. Mapped fields are extracted for the matching algorithm, while all unknown columns are swept into a dynamic dictionary object <code>(*kwargs format)</code>, enabling the engine to process highly heterogeneous datasets without strict predefined schemas.
+            </p>
+          </div>
+
+          <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition">
+            <h4 class="font-bold text-purple-800 flex items-center gap-2">B. Quality & Completeness Scoring</h4>
+            <p class="text-gray-600 mt-1 text-[13px] leading-relaxed">
+              Before matching, each record is evaluated for data quality. The system calculates a completeness ratio by verifying the presence of expected core fields, generating a normalized Quality Score (0-100%).
+            </p>
+          </div>
+
+          <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition">
+            <h4 class="font-bold text-purple-800 flex items-center gap-2">C. Composite Matching Algorithm</h4>
+            <p class="text-gray-600 mt-1 text-[13px] leading-relaxed mb-2">
+              The system compares incoming data against the unified Master Registry using a hybrid approach:
+            </p>
+            <ul class="list-disc pl-5 text-gray-600 text-[13px] space-y-1">
+              <li><b>Deterministic Match:</b> Immediate 100% score if the Unique IDs match exactly.</li>
+              <li><b>Fuzzy String Matching:</b> Utilizes <code>difflib.SequenceMatcher</code> (Gestalt Pattern Matching) to measure the Levenshtein-like distance between strings. This accounts for typos, phonetic variations, and missing characters (e.g., "Jon Doe" vs "John Doe").</li>
+              <li><b>Weighted Aggregation:</b> Variables are scored independently and aggregated based on mathematical weights (e.g., Primary Title similarity contributes heavily, while Secondary Description contributes less) to form the final confidence score.</li>
+            </ul>
+          </div>
+
+          <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition">
+            <h4 class="font-bold text-purple-800 flex items-center gap-2">D. Resolution Matrix & Data Provenance</h4>
+            <p class="text-gray-600 mt-1 text-[13px] leading-relaxed mb-3">
+              The final composite score dictates the routing of the data block:
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-[12px]">
+              <div class="bg-emerald-50 p-3 border border-emerald-200 rounded text-emerald-900">
+                <b class="text-emerald-700 uppercase tracking-wider">🟢 Auto-Merge</b><br>
+                High confidence score. The system automatically performs a <code>merge_into()</code> operation, fusing attributes and updating source tags.
+              </div>
+              <div class="bg-amber-50 p-3 border border-amber-200 rounded text-amber-900">
+                <b class="text-amber-700 uppercase tracking-wider">🟡 Human Adjudication</b><br>
+                Probable match. Routed to the <code>review_queue</code>. The engine halts automated merging to prevent data corruption.
+              </div>
+              <div class="bg-slate-100 p-3 border border-slate-200 rounded text-slate-800">
+                <b class="text-slate-700 uppercase tracking-wider">⚪ Mint New Entity</b><br>
+                Low confidence. The engine calls <code>make_master()</code> to instantiate a brand new UUID in the registry.
+              </div>
+            </div>
+            <p class="text-gray-600 mt-3 text-[13px] leading-relaxed border-t pt-2">
+              <b>Audit Trail:</b> Throughout this process, every action is logged into an immutable Audit Log. When fields are overwritten, the engine maintains <i>Data Provenance</i>, logging the timestamp, operator, and origin source of the modification.
+            </p>
+          </div>
+
+        </div>
+      </section>
+
+    </div>
+    
+    <!-- Modal Footer -->
+    <div class="bg-slate-100 border-t px-6 py-4 flex justify-end">
+      <button onclick="closeGuide()" class="bg-slate-700 hover:bg-slate-800 text-white font-semibold py-2 px-6 rounded-lg transition-all shadow-md focus:ring-2 focus:ring-slate-400 focus:outline-none">
+        Understood, Close Guide
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- UI JS -->
 <script>
   window.uploadedFilesData = [];
+
+  // Fungsi untuk Modal Panduan
+  function openGuide() { document.getElementById('guide-modal').classList.remove('hidden'); }
+  function closeGuide() { document.getElementById('guide-modal').classList.add('hidden'); }
 
   function showTab(id, btn){
     ['tab-review','tab-registry','tab-household','tab-audit'].forEach(t=>document.getElementById(t).classList.add('hidden'));
@@ -220,19 +368,25 @@
     const headers=csv.split('\n')[0].split(',').map(h=>h.trim().replace(/"/g,''));
     const sels=['map-doc','map-name','map-dob','map-sex','map-location','map-household','map-source'];
     sels.forEach(id=>{const el=document.getElementById(id);el.innerHTML='<option value="">-- Not present --</option>';headers.forEach(h=>{if(h)el.innerHTML+=`<option value="${h}">${h}</option>`;});});
-    autoSelect('map-doc',headers,['id','nik','ktp','passport','doc','number','no']);
-    autoSelect('map-name',headers,['name','nama','fullname']);
-    autoSelect('map-dob',headers,['dob','birth','lahir','tanggal','born']);
-    autoSelect('map-sex',headers,['sex','gender','jenis','kelamin']);
-    autoSelect('map-location',headers,['location','address','alamat','village','desa','camp','region','lokasi','district']);
-    autoSelect('map-household',headers,['household','hh','family','keluarga','kk']);
-    autoSelect('map-source',headers,['agency','source','sumber','instansi','org','vendor','partner']);
+    autoSelect('map-doc',headers,['id','code','kode','no','nomor','key','uuid']);
+    autoSelect('map-name',headers,['name','nama','title','judul','item']);
+    autoSelect('map-dob',headers,['date','tanggal','year','tahun','dob','created','time']);
+    autoSelect('map-sex',headers,['type','tipe','category','kategori','status','jenis','sex','gender']);
+    autoSelect('map-location',headers,['location','lokasi','desc','keterangan','address','country','city']);
+    autoSelect('map-household',headers,['group','grup','parent','batch','household','kumpulan']);
+    autoSelect('map-source',headers,['source','sumber','origin','agency','vendor','supplier']);
   }
   function autoSelect(id,headers,kw){const el=document.getElementById(id);for(const h of headers){if(kw.some(k=>h.toLowerCase().includes(k))){el.value=h;break;}}}
 
   function downloadFile(filename,content,mime){
     const blob=new Blob([content],{type:mime});const url=URL.createObjectURL(blob);
     const a=document.createElement('a');a.href=url;a.download=filename;a.click();URL.revokeObjectURL(url);
+  }
+
+  function downloadBinaryFile(filename, uint8array, mime){
+    const blob = new Blob([uint8array], {type: mime});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = filename; a.click(); URL.revokeObjectURL(url);
   }
 
   function loadSampleBeneficiaryData(){
@@ -312,14 +466,10 @@ def next_id():
 # ---------- SCORING ----------
 def quality_score(fields):
     if not EXPECTED_FIELDS: return 0
-    present=sum(1 for k in EXPECTED_FIELDS if fields.get(k)); completeness=present/len(EXPECTED_FIELDS)
-    vt=0; vp=0
-    if "dob" in EXPECTED_FIELDS:
-        vt+=1; vp+= 1 if normalize_date(fields.get("dob","")) else 0
-    if "sex" in EXPECTED_FIELDS:
-        vt+=1; vp+= 1 if normalize_sex(fields.get("sex","")) in ("M","F") else 0
-    validity = vp/vt if vt else 1
-    return round((0.7*completeness + 0.3*validity)*100)
+    # Cukup hitung persentase kolom yang terisi, karena jenis data sekarang dinamis/bebas
+    present=sum(1 for k in EXPECTED_FIELDS if fields.get(k))
+    completeness = present / len(EXPECTED_FIELDS)
+    return round(completeness * 100)
 
 def composite_score(inc, rec):
     w={"name":0.40,"dob":0.30,"sex":0.10,"location":0.20}
@@ -332,9 +482,12 @@ def composite_score(inc, rec):
         if a and b:
             if key in ("name","location"): s=string_similarity(a,b)
             elif key=="dob":
+                # Coba baca sebagai tanggal, kalau gagal anggap sebagai teks biasa
                 na,nb=normalize_date(a),normalize_date(b)
-                s=1.0 if (na and na==nb) else string_similarity(a,b)
-            else: s=1.0 if normalize_sex(a)==normalize_sex(b) else 0.0
+                if na and nb: s=1.0 if na==nb else string_similarity(a,b)
+                else: s=string_similarity(a,b)
+            else: # Ini untuk Category / Type (sebelumnya sex) -> Pencocokan teks persis tapi tidak case-sensitive
+                s=1.0 if a.strip().lower() == b.strip().lower() else 0.0
             bd[key]=round(s,3); acc+=s*w[key]; tw+=w[key]
     return (acc/tw if tw else 0.0), bd
 
@@ -422,8 +575,17 @@ async def start_pipeline(event):
             stats["processed"]+=1
             def g(key):
                 col=current_map.get(key); return (row.get(col,"") or "").strip() if col else ""
-            fields={"document_id":g("document_id"),"name":g("name"),"dob":g("dob"),
-                    "sex":g("sex"),"location":g("location"),"household_id":g("household_id")}
+            
+            # 1. Ambil SEMUA kolom dinamis apa pun dari CSV bawaan
+            fields = {k: (v or "").strip() for k, v in row.items() if k}
+            
+            # 2. Timpa/pastikan kolom inti (core) yang di-mapping tetap disisipkan untuk algoritma pencocokan
+            fields["document_id"] = g("document_id")
+            fields["name"] = g("name")
+            fields["dob"] = g("dob")
+            fields["sex"] = g("sex")
+            fields["location"] = g("location")
+            fields["household_id"] = g("household_id")
             source=g("source") or fname
             inc={"fields":fields,"source":source,"raw":dict(row),"quality":quality_score(fields)}
             label=fields["name"] or fields["document_id"] or "Unknown"
@@ -549,6 +711,12 @@ def render_registry():
         src="".join([badge(s,"blue") for s in r["sources"]])
         vuln="".join([badge(t,"rose") for t in r["vuln"]]) or "<span class='text-gray-300'>—</span>"
         conf="⚠" if r["conflicts"] else ""
+        
+        # Ekstrak data dinamis yang tidak termasuk dalam kolom utama
+        core_keys = ["document_id", "name", "dob", "sex", "location", "household_id"]
+        extra_data = "".join([f"<span class='text-[10px] bg-gray-200 text-gray-700 px-1 py-0.5 rounded mr-1 mb-1 inline-block'><b>{k}:</b> {v}</span>" for k, v in f.items() if k not in core_keys and v])
+        if not extra_data: extra_data = "—"
+
         rows+=f"""<tr class='border-b hover:bg-gray-50'>
           <td class='px-3 py-2 font-mono font-semibold'>{r['hid']} {conf}</td>
           <td class='px-3 py-2'>{f.get('name') or '—'}</td>
@@ -556,6 +724,7 @@ def render_registry():
           <td class='px-3 py-2'>{normalize_sex(f.get('sex','')) or '—'}</td>
           <td class='px-3 py-2'>{f.get('location') or '—'}</td>
           <td class='px-3 py-2'>{f.get('household_id') or '—'}</td>
+          <td class='px-3 py-2 max-w-xs'>{extra_data}</td>
           <td class='px-3 py-2'>{badge(str(q)+'%',qc)}</td>
           <td class='px-3 py-2 text-[11px]'>{r['verification']}</td>
           <td class='px-3 py-2'>{vuln}</td>
@@ -596,13 +765,29 @@ def render_audit():
 # ---------- EXPORTS ----------
 def export_registry_csv(event=None):
     if not unified_db: return
-    cols=["beneficiary_id","name","dob","sex","location","household_id","document_id","quality","verification","vulnerability","sources"]
-    out=StringIO(); w=csv.writer(out); w.writerow(cols)
+    
+    # 1. Cari tahu semua header kolom dinamis yang masuk ke dalam database
+    core_cols = ["beneficiary_id","name","dob","sex","location","household_id","document_id","quality","verification","vulnerability","sources"]
+    dynamic_cols = set()
     for r in unified_db:
-        f=r["fields"]
-        w.writerow([r["hid"],f.get("name",""),f.get("dob",""),normalize_sex(f.get("sex","")),
+        for k in r["fields"].keys():
+            if k not in ["name", "dob", "sex", "location", "household_id", "document_id"]:
+                dynamic_cols.add(k)
+    dynamic_cols = list(dynamic_cols)
+    all_cols = core_cols + dynamic_cols # Gabungkan header utama + dinamis
+    
+    out=StringIO(); w=csv.writer(out); w.writerow(all_cols)
+    
+    # 2. Tulis data baris demi baris
+    for r in unified_db:
+        f = r["fields"]
+        base_row = [r["hid"],f.get("name",""),f.get("dob",""),normalize_sex(f.get("sex","")),
                     f.get("location",""),f.get("household_id",""),f.get("document_id",""),
-                    r["quality"],r["verification"],"|".join(r["vuln"]),"|".join(r["sources"])])
+                    r["quality"],r["verification"],"|".join(r["vuln"]),"|".join(r["sources"])]
+        
+        dynamic_row = [f.get(col, "") for col in dynamic_cols]
+        w.writerow(base_row + dynamic_row)
+        
     window.downloadFile("unified_registry.csv",out.getvalue(),"text/csv")
 
 def export_registry_json(event=None):
@@ -611,6 +796,81 @@ def export_registry_json(event=None):
            "quality":r["quality"],"verification":r["verification"],"vulnerability":r["vuln"],
            "provenance":r["provenance"],"conflicts":r["conflicts"]} for r in unified_db]
     window.downloadFile("unified_registry.json",json.dumps(data,indent=2),"application/json")
+
+def export_registry_xlsx(event=None):
+    if not unified_db: return
+    import openpyxl
+    import io
+    from pyodide.ffi import to_js
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Master Registry"
+
+    # 1. Siapkan header (termasuk semua kolom dinamis yang masuk)
+    core_cols = ["beneficiary_id","name","dob","sex","location","household_id","document_id","quality","verification","vulnerability","sources"]
+    dynamic_cols = set()
+    for r in unified_db:
+        for k in r["fields"].keys():
+            if k not in ["name", "dob", "sex", "location", "household_id", "document_id"]:
+                dynamic_cols.add(k)
+    dynamic_cols = list(dynamic_cols)
+    all_cols = core_cols + dynamic_cols
+
+    ws.append(all_cols)
+
+    # 2. Masukkan data ke cell Excel
+    for r in unified_db:
+        f = r["fields"]
+        base_row = [r["hid"], f.get("name",""), f.get("dob",""), f.get("sex",""),
+                    f.get("location",""), f.get("household_id",""), f.get("document_id",""),
+                    r["quality"], r["verification"], "|".join(r["vuln"]), "|".join(r["sources"])]
+        
+        dynamic_row = [f.get(col, "") for col in dynamic_cols]
+        ws.append(base_row + dynamic_row)
+
+    # 3. Export file secara binary (agar tidak corrupt saat di-download oleh browser)
+    out = io.BytesIO()
+    wb.save(out)
+    out.seek(0)
+    js_bytes = to_js(out.getvalue()) # Konversi data Python ke Javascript Uint8Array
+    window.downloadBinaryFile("unified_registry.xlsx", js_bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+def export_registry_dcmi(event=None):
+    if not unified_db: return
+    import xml.sax.saxutils as saxutils # Untuk memastikan karakter seperti <, >, & tidak merusak XML
+
+    xml = ['<?xml version="1.0" encoding="UTF-8"?>']
+    xml.append('<metadata xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">')
+
+    for r in unified_db:
+        f = r["fields"]
+        xml.append('  <record>')
+        
+        # Mapping Identitas Inti
+        xml.append(f'    <dc:identifier>{saxutils.escape(r["hid"])}</dc:identifier>')
+        name_val = f.get("name") or f.get("document_id") or "Unknown"
+        xml.append(f'    <dc:title>{saxutils.escape(name_val)}</dc:title>')
+        
+        # Mapping Tanggal, Sumber, Lokasi
+        if f.get("dob"): xml.append(f'    <dc:date>{saxutils.escape(f.get("dob"))}</dc:date>')
+        xml.append(f'    <dc:source>{saxutils.escape("|".join(r["sources"]))}</dc:source>')
+        if f.get("location"): xml.append(f'    <dc:coverage>{saxutils.escape(f.get("location"))}</dc:coverage>')
+
+        # Masukkan sisa kolom dinamis (Data Umum) ke dalam tag Description
+        dynamic_desc = []
+        for k, v in f.items():
+            if k not in ["name", "dob", "location"] and v:
+                dynamic_desc.append(f"{k}: {v}")
+        if dynamic_desc:
+            desc_text = " | ".join(dynamic_desc)
+            xml.append(f'    <dc:description>{saxutils.escape(desc_text)}</dc:description>')
+
+        xml.append('  </record>')
+
+    xml.append('</metadata>')
+
+    window.downloadFile("unified_registry_dcmi.xml", "\n".join(xml), "application/xml")
 
 def export_audit(event=None):
     if not audit_log: return
