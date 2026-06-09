@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unified Beneficiary Registry Engine — IDM Prototype</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://pyscript.net/releases/2024.1.1/core.css" />
+<script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
+
+<style>
+  .terminal{background:#1e1e1e;color:#d4d4d4;font-family:'Courier New',monospace;font-size:.8rem;padding:1rem;height:380px;overflow-y:auto;border-radius:.5rem;box-shadow:inset 0 4px 6px rgba(0,0,0,.3)}
+  .log-info{color:#4fc1ff}.log-warn{color:#ce9178}.log-error{color:#f44747}
+  .log-success{color:#b5cea8;font-weight:bold}.log-fuzzy{color:#dcdcaa}.log-review{color:#c586c0;font-weight:bold}
+  .terminal::-webkit-scrollbar{width:8px}.terminal::-webkit-scrollbar-thumb{background:#555;border-radius:4px}
+  .tab-btn.active{background:#1e3a8a;color:#fff}
+  input[type=range]{accent-color:#1d4ed8}
+</style>
+</head>
+<body class="bg-gray-100 min-h-screen text-gray-800">
+
+<header class="bg-blue-900 text-white p-5 shadow">
+  <div class="max-w-7xl mx-auto flex justify-between items-center">
+    <div>
+      <h1 class="text-2xl font-bold">Unified Beneficiary Registry Engine</h1>
+      <p class="text-xs text-blue-200 mt-1">Identity Resolution • Human Adjudication • Data Governance • Offline-Capable</p>
+    </div>
+    <div class="text-right text-xs bg-blue-800 p-2 rounded border border-blue-700">
+      <span class="block text-blue-300">Engine Status</span>
+      <span class="font-bold text-green-400">Python (Pyodide) Active</span>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-7xl mx-auto p-5 grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+  <!-- LEFT: Ingestion + Config -->
+  <div class="space-y-5">
+
+    <div class="bg-white p-5 rounded-lg shadow border">
+      <div class="flex justify-between items-center mb-3">
+        <h2 class="text-lg font-semibold">1. Data Ingestion</h2>
+        <button onclick="loadSampleBeneficiaryData()" class="text-sm bg-gray-200 hover:bg-gray-300 py-1 px-3 rounded">Load Sample Beneficiaries</button>
+      </div>
+
+      <label class="block text-sm font-semibold text-gray-600 mb-1">Option A: Paste CSV</label>
+      <textarea id="csv-input" oninput="handlePasteData()" class="w-full h-20 p-2 border rounded text-xs font-mono focus:ring-2 focus:ring-blue-500" placeholder="Paste CSV text..."></textarea>
+
+      <div class="flex items-center py-2"><div class="flex-grow border-t"></div><span class="mx-3 text-gray-400 text-xs font-bold">OR</span><div class="flex-grow border-t"></div></div>
+
+      <label class="block text-sm font-semibold text-gray-600 mb-1">Option B: Upload CSV file(s)</label>
+      <div class="border-2 border-dashed rounded-lg p-3 text-center hover:bg-gray-50 relative bg-gray-50">
+        <input type="file" id="csv-file-input" multiple accept=".csv" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="handleFileUpload(event)">
+        <p class="text-sm text-gray-600">Drag &amp; drop multiple agency CSVs</p>
+      </div>
+      <p class="text-xs font-bold text-blue-600 bg-blue-50 py-1 rounded text-center mt-2" id="file-count-display">0 data source(s) loaded</p>
+
+      <!-- Mapping -->
+      <div id="mapping-section" class="mt-3 hidden bg-blue-50 p-3 rounded border border-blue-100">
+        <h3 class="text-sm font-semibold text-blue-800 mb-2">💡 Identity Field Mapping</h3>
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <div><label class="font-semibold text-gray-700">Document/ID (exact)</label><select id="map-doc" class="w-full border rounded p-1"></select></div>
+          <div><label class="font-semibold text-gray-700">Full Name</label><select id="map-name" class="w-full border rounded p-1"></select></div>
+          <div><label class="font-semibold text-gray-700">Date of Birth</label><select id="map-dob" class="w-full border rounded p-1"></select></div>
+          <div><label class="font-semibold text-gray-700">Sex</label><select id="map-sex" class="w-full border rounded p-1"></select></div>
+          <div><label class="font-semibold text-gray-700">Location</label><select id="map-location" class="w-full border rounded p-1"></select></div>
+          <div><label class="font-semibold text-gray-700">Household ID</label><select id="map-household" class="w-full border rounded p-1"></select></div>
+          <div class="col-span-2"><label class="font-semibold text-gray-700">Source / Agency</label><select id="map-source" class="w-full border rounded p-1"></select></div>
+        </div>
+      </div>
+
+      <button py-click="start_pipeline" id="btn-process" disabled
+        class="mt-3 w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded shadow transition disabled:opacity-50 disabled:cursor-not-allowed">
+        Run Identity Resolution Pipeline
+      </button>
+    </div>
+
+    <!-- Config -->
+    <div class="bg-white p-5 rounded-lg shadow border">
+      <h2 class="text-lg font-semibold mb-3">2. Matching Policy (Configurable)</h2>
+      <div class="space-y-4 text-sm">
+        <div>
+          <div class="flex justify-between"><span class="font-semibold">Auto-merge threshold</span><span id="auto-val" class="font-bold text-green-700">92%</span></div>
+          <input type="range" id="auto-thresh" min="80" max="100" value="92" class="w-full" oninput="document.getElementById('auto-val').innerText=this.value+'%'">
+          <p class="text-[11px] text-gray-500">Above this score → merged automatically (high confidence).</p>
+        </div>
+        <div>
+          <div class="flex justify-between"><span class="font-semibold">Review threshold</span><span id="review-val" class="font-bold text-purple-700">75%</span></div>
+          <input type="range" id="review-thresh" min="50" max="90" value="75" class="w-full" oninput="document.getElementById('review-val').innerText=this.value+'%'">
+          <p class="text-[11px] text-gray-500">Between this and auto-merge → routed to <b>Human Review Queue</b>.</p>
+        </div>
+        <div>
+          <label class="font-semibold">Reviewing Officer (for decision log)</label>
+          <input id="operator-name" value="A. Reviewer" class="w-full border rounded p-1 mt-1 text-sm">
+        </div>
+      </div>
+      <div class="mt-4 text-xs text-gray-600 bg-gray-50 p-3 rounded border">
+        <p class="font-semibold mb-1">Resolution tiers:</p>
+        <p>🔵 <b>Deterministic:</b> identical Document/ID → auto-merge.</p>
+        <p>🟢 <b>High confidence:</b> composite score ≥ auto-merge → auto-merge.</p>
+        <p>🟣 <b>Probable:</b> review band → <b>held for human adjudication</b> (never auto-merged).</p>
+        <p>⚪ <b>Distinct:</b> below review → new beneficiary.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Terminal -->
+  <div class="space-y-5">
+    <div class="bg-gray-900 rounded-lg shadow border border-gray-700">
+      <div class="bg-gray-800 px-4 py-2 rounded-t-lg border-b border-gray-700 flex justify-between items-center">
+        <div class="flex space-x-2"><div class="w-3 h-3 rounded-full bg-red-500"></div><div class="w-3 h-3 rounded-full bg-yellow-500"></div><div class="w-3 h-3 rounded-full bg-green-500"></div></div>
+        <span class="text-xs text-gray-400 font-mono">Live Resolution Engine</span>
+      </div>
+      <div id="terminal" class="terminal rounded-b-lg">
+        <span class="text-gray-500">&gt;&gt; System ready. Awaiting beneficiary data...</span><br>
+      </div>
+    </div>
+
+    <!-- Export -->
+    <div class="bg-white p-4 rounded-lg shadow border">
+      <h2 class="text-sm font-semibold mb-2">Export / Interoperability</h2>
+      <div class="flex gap-2 flex-wrap">
+        <button py-click="export_registry_csv" class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white py-2 px-3 rounded">⬇ Registry (CSV)</button>
+        <button py-click="export_registry_json" class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white py-2 px-3 rounded">⬇ Registry (JSON)</button>
+        <button py-click="export_audit" class="text-xs bg-slate-600 hover:bg-slate-700 text-white py-2 px-3 rounded">⬇ Audit Log (CSV)</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- DASHBOARD -->
+<section class="max-w-7xl mx-auto px-5">
+  <div id="dashboard" class="grid grid-cols-2 md:grid-cols-6 gap-3 mb-4">
+    <!-- filled by Python -->
+  </div>
+</section>
+
+<!-- TABS -->
+<section class="max-w-7xl mx-auto px-5 pb-10">
+  <div class="bg-white rounded-lg shadow border">
+    <div class="flex border-b text-sm font-semibold overflow-x-auto">
+      <button class="tab-btn active px-5 py-3" onclick="showTab('tab-review',this)">⚖ Review Queue <span id="review-badge" class="ml-1 bg-purple-600 text-white text-[10px] px-2 py-0.5 rounded-full">0</span></button>
+      <button class="tab-btn px-5 py-3" onclick="showTab('tab-registry',this)">📇 Master Registry</button>
+      <button class="tab-btn px-5 py-3" onclick="showTab('tab-household',this)">🏠 Households</button>
+      <button class="tab-btn px-5 py-3" onclick="showTab('tab-audit',this)">📜 Audit Log</button>
+    </div>
+
+    <div id="tab-review" class="p-4">
+      <p class="text-xs text-gray-500 mb-3">Probable matches require <b>human adjudication</b> — the engine never auto-merges people in this band. This is the core protection control of any beneficiary system.</p>
+      <div id="review-list" class="space-y-3">
+        <p class="text-gray-400 italic text-sm">No items pending review.</p>
+      </div>
+    </div>
+
+    <div id="tab-registry" class="p-4 hidden overflow-x-auto">
+      <table class="w-full text-xs text-left">
+        <thead class="text-gray-700 uppercase bg-gray-100">
+          <tr>
+            <th class="px-3 py-2">Beneficiary ID</th><th class="px-3 py-2">Name</th><th class="px-3 py-2">DOB</th>
+            <th class="px-3 py-2">Sex</th><th class="px-3 py-2">Location</th><th class="px-3 py-2">Household</th>
+            <th class="px-3 py-2">Quality</th><th class="px-3 py-2">Status</th><th class="px-3 py-2">Vulnerability</th><th class="px-3 py-2">Sources</th>
+          </tr>
+        </thead>
+        <tbody id="registry-body">
+          <tr><td colspan="10" class="text-center py-8 text-gray-400 italic">No data processed yet.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div id="tab-household" class="p-4 hidden">
+      <div id="household-list" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <p class="text-gray-400 italic text-sm">No households mapped.</p>
+      </div>
+    </div>
+
+    <div id="tab-audit" class="p-4 hidden overflow-x-auto">
+      <table class="w-full text-xs text-left">
+        <thead class="text-gray-700 uppercase bg-gray-100"><tr>
+          <th class="px-3 py-2">Time</th><th class="px-3 py-2">Action</th><th class="px-3 py-2">Detail</th><th class="px-3 py-2">Score</th><th class="px-3 py-2">By</th>
+        </tr></thead>
+        <tbody id="audit-body"><tr><td colspan="5" class="text-center py-8 text-gray-400 italic">No events logged.</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- UI JS -->
+<script>
+  window.uploadedFilesData = [];
+
+  function showTab(id, btn){
+    ['tab-review','tab-registry','tab-household','tab-audit'].forEach(t=>document.getElementById(t).classList.add('hidden'));
+    document.getElementById(id).classList.remove('hidden');
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    if(btn) btn.classList.add('active');
+  }
+
+  function handlePasteData(){
+    const text=document.getElementById('csv-input').value.trim();
+    document.getElementById('csv-file-input').value="";
+    if(!text){window.uploadedFilesData=[];updateStatus(0);return;}
+    window.uploadedFilesData=[{name:"Pasted_Data.csv",content:text}];
+    updateStatus(1,"pasted source"); extractAndMapHeaders(text);
+  }
+  async function handleFileUpload(e){
+    const files=e.target.files; document.getElementById('csv-input').value="";
+    window.uploadedFilesData=[];
+    if(!files.length){updateStatus(0);return;}
+    updateStatus(files.length,"file(s)");
+    for(let i=0;i<files.length;i++){const t=await files[i].text();window.uploadedFilesData.push({name:files[i].name,content:t});}
+    extractAndMapHeaders(window.uploadedFilesData[0].content);
+  }
+  function updateStatus(c,label=""){
+    const d=document.getElementById('file-count-display');
+    if(c===0){d.innerText="0 data source(s) loaded";document.getElementById('mapping-section').classList.add('hidden');document.getElementById('btn-process').disabled=true;}
+    else{d.innerText=`${c} ${label} loaded`;document.getElementById('mapping-section').classList.remove('hidden');document.getElementById('btn-process').disabled=false;}
+  }
+  function extractAndMapHeaders(csv){
+    const headers=csv.split('\n')[0].split(',').map(h=>h.trim().replace(/"/g,''));
+    const sels=['map-doc','map-name','map-dob','map-sex','map-location','map-household','map-source'];
+    sels.forEach(id=>{const el=document.getElementById(id);el.innerHTML='<option value="">-- Not present --</option>';headers.forEach(h=>{if(h)el.innerHTML+=`<option value="${h}">${h}</option>`;});});
+    autoSelect('map-doc',headers,['id','nik','ktp','passport','doc','number','no']);
+    autoSelect('map-name',headers,['name','nama','fullname']);
+    autoSelect('map-dob',headers,['dob','birth','lahir','tanggal','born']);
+    autoSelect('map-sex',headers,['sex','gender','jenis','kelamin']);
+    autoSelect('map-location',headers,['location','address','alamat','village','desa','camp','region','lokasi','district']);
+    autoSelect('map-household',headers,['household','hh','family','keluarga','kk']);
+    autoSelect('map-source',headers,['agency','source','sumber','instansi','org','vendor','partner']);
+  }
+  function autoSelect(id,headers,kw){const el=document.getElementById(id);for(const h of headers){if(kw.some(k=>h.toLowerCase().includes(k))){el.value=h;break;}}}
+
+  function downloadFile(filename,content,mime){
+    const blob=new Blob([content],{type:mime});const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download=filename;a.click();URL.revokeObjectURL(url);
+  }
+
+  function loadSampleBeneficiaryData(){
+    const sample=`Agency,DocID,FullName,BirthDate,Gender,Village,HouseholdID
+WFP,ID-1001,Ahmed Al-Sayed,1985-04-12,M,Camp Alpha,HH-01
+UNHCR,ID-1001,Ahmad Alsayed,1985-04-12,Male,Camp Alpha,HH-01
+ICRC,,Fatima Al-Sayed,1990-08-03,F,Camp Alpha,HH-01
+WFP,ID-2002,Fatma Alsayed,1990-08-03,Female,Camp Alpha,HH-01
+UNICEF,ID-3003,Yusuf Al-Sayed,2015-01-20,M,Camp Alpha,HH-01
+WFP,ID-4004,Mariam Hassan,1956-11-02,F,Camp Beta,HH-02
+UNHCR,ID-4004,Mariam Hassan,1956-11-02,Female,Camp Beta,HH-02
+ICRC,ID-5005,Omar Khalil,1978-06-15,M,Camp Beta,HH-03
+WFP,ID-5006,Omar Khaleel,1978-06-16,M,Camp Beta,HH-03
+UNICEF,,,,,Camp Gamma,`;
+    document.getElementById('csv-input').value=sample; handlePasteData();
+    const t=document.getElementById('terminal');t.innerHTML+="<br><span style='color:#4fc1ff'>&gt; Sample multi-agency beneficiary data loaded.</span>";t.scrollTop=t.scrollHeight;
+  }
+</script>
+
+<!-- PYTHON ENGINE -->
+<script type="py">
+import asyncio, csv, uuid, json, difflib, datetime
+from io import StringIO
+from pyscript import document, window
+from pyodide.ffi import create_proxy
+
+# ---------- GLOBAL STATE ----------
+unified_db = []
+review_queue = []
+audit_log = []
+stats = {}
+current_map = {}
+EXPECTED_FIELDS = []
+_counter = 0
+
+# ---------- HELPERS ----------
+def now(): return datetime.datetime.now().strftime("%H:%M:%S")
+
+def string_similarity(a,b):
+    return difflib.SequenceMatcher(None, a.lower().strip(), b.lower().strip()).ratio()
+
+def normalize_sex(v):
+    v=(v or "").strip().lower()
+    if v in ("m","male","l","laki","laki-laki","pria"): return "M"
+    if v in ("f","female","p","perempuan","wanita"): return "F"
+    return ""
+
+def normalize_date(v):
+    v=(v or "").strip()
+    if not v: return ""
+    for fmt in ("%Y-%m-%d","%d/%m/%Y","%m/%d/%Y","%d-%m-%Y","%Y/%m/%d","%d.%m.%Y"):
+        try: return datetime.datetime.strptime(v,fmt).date().isoformat()
+        except: pass
+    return ""
+
+def age_from_dob(v):
+    iso=normalize_date(v)
+    if not iso: return None
+    try:
+        b=datetime.date.fromisoformat(iso); t=datetime.date.today()
+        return t.year-b.year-((t.month,t.day)<(b.month,b.day))
+    except: return None
+
+async def log(msg, style="text-gray-400", delay=0.02):
+    term=document.querySelector("#terminal")
+    term.innerHTML += f"<span class='{style}'>{msg}</span><br>"
+    term.scrollTop=term.scrollHeight
+    await asyncio.sleep(delay)
+
+def log_audit(action, detail, score=None, operator="system"):
+    audit_log.append({"time":now(),"action":action,"detail":detail,
+                      "score":(f"{score*100:.1f}%" if score is not None else ""),"operator":operator})
+
+def next_id():
+    global _counter; _counter+=1; return f"BNF-{_counter:05d}"
+
+# ---------- SCORING ----------
+def quality_score(fields):
+    if not EXPECTED_FIELDS: return 0
+    present=sum(1 for k in EXPECTED_FIELDS if fields.get(k)); completeness=present/len(EXPECTED_FIELDS)
+    vt=0; vp=0
+    if "dob" in EXPECTED_FIELDS:
+        vt+=1; vp+= 1 if normalize_date(fields.get("dob","")) else 0
+    if "sex" in EXPECTED_FIELDS:
+        vt+=1; vp+= 1 if normalize_sex(fields.get("sex","")) in ("M","F") else 0
+    validity = vp/vt if vt else 1
+    return round((0.7*completeness + 0.3*validity)*100)
+
+def composite_score(inc, rec):
+    w={"name":0.40,"dob":0.30,"sex":0.10,"location":0.20}
+    rf=rec["fields"]; bd={}; acc=0; tw=0
+    checks=[("name",inc["fields"].get("name",""),rf.get("name","")),
+            ("dob",inc["fields"].get("dob",""),rf.get("dob","")),
+            ("sex",inc["fields"].get("sex",""),rf.get("sex","")),
+            ("location",inc["fields"].get("location",""),rf.get("location",""))]
+    for key,a,b in checks:
+        if a and b:
+            if key in ("name","location"): s=string_similarity(a,b)
+            elif key=="dob":
+                na,nb=normalize_date(a),normalize_date(b)
+                s=1.0 if (na and na==nb) else string_similarity(a,b)
+            else: s=1.0 if normalize_sex(a)==normalize_sex(b) else 0.0
+            bd[key]=round(s,3); acc+=s*w[key]; tw+=w[key]
+    return (acc/tw if tw else 0.0), bd
+
+def find_best_match(inc):
+    best=None; best_s=0; best_bd={}
+    for rec in unified_db:
+        di=inc["fields"].get("document_id",""); dr=rec["fields"].get("document_id","")
+        if di and dr and di.strip().upper()==dr.strip().upper():
+            return ("exact", rec, 1.0, {"document_id":1.0})
+        s,bd=composite_score(inc,rec)
+        if s>best_s: best_s,best,best_bd=s,rec,bd
+    return ("probabilistic", best, best_s, best_bd)
+
+# ---------- VULNERABILITY ----------
+def vulnerability_tags(fields):
+    tags=[]
+    age=age_from_dob(fields.get("dob",""))
+    if age is not None:
+        if age>=60: tags.append("Elderly")
+        elif age<=5: tags.append("Infant/U5")
+        elif age<18: tags.append("Child")
+    return tags
+
+# ---------- RECORD OPS ----------
+def make_master(inc):
+    f=dict(inc["fields"])
+    rec={"uuid":str(uuid.uuid4()),"hid":next_id(),"fields":f,
+         "sources":[inc["source"]],
+         "provenance":{k:{"value":v,"source":inc["source"],"time":now()} for k,v in f.items() if v},
+         "raw":[inc["raw"]],"conflicts":[],
+         "quality":quality_score(f),
+         "verification":"Document on file" if f.get("document_id") else "Unverified (biometric-ready)",
+         "vuln":vulnerability_tags(f)}
+    unified_db.append(rec); return rec
+
+def merge_into(rec, inc):
+    if inc["source"] not in rec["sources"]: rec["sources"].append(inc["source"])
+    for k,v in inc["fields"].items():
+        if not v: continue
+        cur=rec["fields"].get(k,"")
+        if not cur:
+            rec["fields"][k]=v
+            rec["provenance"][k]={"value":v,"source":inc["source"],"time":now()}
+        elif cur.strip()!=v.strip() and k in ("name","dob","location"):
+            note=f"{k}: '{cur}' ({rec['provenance'].get(k,{}).get('source','?')}) vs '{v}' ({inc['source']})"
+            if note not in rec["conflicts"]: rec["conflicts"].append(note)
+    rec["raw"].append(inc["raw"])
+    rec["quality"]=quality_score(rec["fields"])
+    rec["verification"]="Document on file" if rec["fields"].get("document_id") else rec["verification"]
+    rec["vuln"]=vulnerability_tags(rec["fields"])
+
+# ---------- PIPELINE ----------
+async def start_pipeline(event):
+    global unified_db, review_queue, audit_log, stats, current_map, EXPECTED_FIELDS, _counter
+    unified_db, review_queue, audit_log = [], [], []
+    _counter=0
+    stats={"processed":0,"dropped":0,"auto":0,"manual":0,"queued":0,"new":0,"separate":0}
+
+    btn=document.querySelector("#btn-process"); btn.innerText="Processing..."; btn.disabled=True
+    term=document.querySelector("#terminal"); term.innerHTML="<span class='log-info'>=== IDENTITY RESOLUTION PIPELINE STARTED ===</span><br>"
+
+    files=window.uploadedFilesData.to_py()
+    if not files:
+        await log("[ERROR] No data in memory.","log-error"); btn.innerText="Run Identity Resolution Pipeline"; btn.disabled=False; return
+
+    current_map={"document_id":document.querySelector("#map-doc").value,
+                 "name":document.querySelector("#map-name").value,
+                 "dob":document.querySelector("#map-dob").value,
+                 "sex":document.querySelector("#map-sex").value,
+                 "location":document.querySelector("#map-location").value,
+                 "household_id":document.querySelector("#map-household").value,
+                 "source":document.querySelector("#map-source").value}
+    EXPECTED_FIELDS=[k for k in ("document_id","name","dob","sex","location","household_id") if current_map[k]]
+
+    auto_t=int(document.querySelector("#auto-thresh").value)/100
+    review_t=int(document.querySelector("#review-thresh").value)/100
+
+    await log(f"[POLICY] Auto-merge ≥ {auto_t*100:.0f}% | Review band {review_t*100:.0f}–{auto_t*100:.0f}%","log-warn")
+    await log("-"*42)
+
+    for fo in files:
+        fname=fo["name"]; await log(f">>> Source: {fname}","log-info")
+        reader=csv.DictReader(StringIO(fo["content"]))
+        for row in reader:
+            stats["processed"]+=1
+            def g(key):
+                col=current_map.get(key); return (row.get(col,"") or "").strip() if col else ""
+            fields={"document_id":g("document_id"),"name":g("name"),"dob":g("dob"),
+                    "sex":g("sex"),"location":g("location"),"household_id":g("household_id")}
+            source=g("source") or fname
+            inc={"fields":fields,"source":source,"raw":dict(row),"quality":quality_score(fields)}
+            label=fields["name"] or fields["document_id"] or "Unknown"
+
+            # Quality gate
+            if not fields["name"] and not fields["document_id"]:
+                stats["dropped"]+=1
+                await log(f"   [QUALITY FAIL] '{label}' lacks name & ID → dropped.","log-error")
+                log_audit("DROP","No usable identifier")
+                continue
+
+            tier,rec,score,bd=find_best_match(inc)
+            await log(f"-> {label} (Q={inc['quality']})")
+
+            if tier=="exact":
+                merge_into(rec,inc); stats["auto"]+=1
+                await log(f"   [DETERMINISTIC] ID match → merged into {rec['hid']}","log-success")
+                log_audit("AUTO-MERGE (ID)",f"{label} → {rec['hid']}",1.0)
+            elif rec and score>=auto_t:
+                merge_into(rec,inc); stats["auto"]+=1
+                await log(f"   [HIGH CONF {score*100:.1f}%] {bd} → merged into {rec['hid']}","log-success")
+                log_audit("AUTO-MERGE (score)",f"{label} → {rec['hid']}",score)
+            elif rec and score>=review_t:
+                stats["queued"]+=1
+                review_queue.append({"rid":f"REV-{len(review_queue)+1}","inc":inc,
+                                     "candidate":rec["uuid"],"cand_hid":rec["hid"],
+                                     "score":score,"bd":bd,"status":"pending"})
+                await log(f"   [REVIEW {score*100:.1f}%] Probable match to {rec['hid']} → queued for adjudication","log-review")
+                log_audit("QUEUED",f"{label} vs {rec['hid']}",score)
+            else:
+                m=make_master(inc); stats["new"]+=1
+                await log(f"   [NEW] Registered {m['hid']}","log-success")
+                log_audit("NEW",f"{label} → {m['hid']}")
+
+    await log("-"*42)
+    await log("=== PIPELINE COMPLETE ===","log-info")
+    await log(f"Processed {stats['processed']} | Unique {len(unified_db)} | Auto-merged {stats['auto']} | Pending review {stats['queued']} | Dropped {stats['dropped']}","log-success")
+
+    render_all()
+    btn.innerText="Run Identity Resolution Pipeline"; btn.disabled=False
+
+# ---------- REVIEW DECISIONS ----------
+def handle_review_click(event):
+    btn=event.target.closest("button[data-action]")
+    if not btn: return
+    action=btn.dataset.action; rid=btn.dataset.rid
+    item=next((x for x in review_queue if x["rid"]==rid and x["status"]=="pending"),None)
+    if not item: return
+    operator=document.querySelector("#operator-name").value or "Reviewer"
+    label=item["inc"]["fields"].get("name") or item["inc"]["fields"].get("document_id") or "Unknown"
+
+    if action=="merge":
+        rec=next((r for r in unified_db if r["uuid"]==item["candidate"]),None)
+        if rec:
+            merge_into(rec,item["inc"]); stats["manual"]+=1; item["status"]="merged"
+            log_audit("CONFIRM MERGE",f"{label} → {rec['hid']}",item["score"],operator)
+    elif action=="separate":
+        m=make_master(item["inc"]); stats["separate"]+=1; item["status"]="separated"
+        log_audit("KEEP SEPARATE",f"{label} → new {m['hid']}",item["score"],operator)
+    render_all()
+
+# ---------- RENDERING ----------
+def badge(text,color): return f"<span class='bg-{color}-100 text-{color}-800 text-[10px] px-2 py-0.5 rounded mr-1'>{text}</span>"
+
+def render_all():
+    render_dashboard(); render_review(); render_registry(); render_households(); render_audit()
+
+def render_dashboard():
+    pending=sum(1 for x in review_queue if x["status"]=="pending")
+    qs=[r["quality"] for r in unified_db]; avgq=round(sum(qs)/len(qs)) if qs else 0
+    hh=len({r["fields"].get("household_id") for r in unified_db if r["fields"].get("household_id")})
+    cards=[("Raw Records",stats.get("processed",0),"slate"),
+           ("Unique Individuals",len(unified_db),"blue"),
+           ("Duplicates Resolved",stats.get("auto",0)+stats.get("manual",0),"green"),
+           ("Pending Review",pending,"purple"),
+           ("Avg Data Quality",f"{avgq}%","amber"),
+           ("Households",hh,"teal")]
+    html=""
+    for label,val,c in cards:
+        html+=f"<div class='bg-white p-4 rounded-lg shadow border'><p class='text-xs text-gray-500'>{label}</p><p class='text-2xl font-bold text-{c}-700'>{val}</p></div>"
+    document.querySelector("#dashboard").innerHTML=html
+    document.querySelector("#review-badge").innerText=str(pending)
+
+def render_review():
+    pending=[x for x in review_queue if x["status"]=="pending"]
+    cont=document.querySelector("#review-list")
+    if not pending:
+        cont.innerHTML="<p class='text-gray-400 italic text-sm'>No items pending review. ✅</p>"; return
+    html=""
+    for it in pending:
+        f=it["inc"]["fields"]; rec=next((r for r in unified_db if r["uuid"]==it["candidate"]),None)
+        rf=rec["fields"] if rec else {}
+        bd=" ".join([f"<span class='text-[10px] bg-gray-200 px-1 rounded'>{k}:{int(v*100)}%</span>" for k,v in it["bd"].items()])
+        def cmp(k):
+            a=f.get(k,"") or "—"; b=rf.get(k,"") or "—"
+            hl="text-red-600 font-semibold" if (a!="—" and b!="—" and a.strip().lower()!=b.strip().lower()) else "text-gray-700"
+            return f"<div class='grid grid-cols-3 gap-1'><span class='text-gray-400'>{k}</span><span class='{hl}'>{a}</span><span class='{hl}'>{b}</span></div>"
+        html+=f"""
+        <div class='border rounded-lg p-3 bg-purple-50'>
+          <div class='flex justify-between items-center mb-2'>
+            <span class='font-semibold text-purple-800'>Probable match — {it['score']*100:.1f}% confidence</span>
+            <span>{bd}</span>
+          </div>
+          <div class='text-xs bg-white rounded p-2 mb-2'>
+            <div class='grid grid-cols-3 gap-1 font-bold text-gray-500 border-b pb-1 mb-1'><span>Field</span><span>Incoming ({it['inc']['source']})</span><span>Existing ({it['cand_hid']})</span></div>
+            {cmp('name')}{cmp('dob')}{cmp('sex')}{cmp('location')}{cmp('document_id')}
+          </div>
+          <div class='flex gap-2'>
+            <button data-action='merge' data-rid='{it['rid']}' class='flex-1 bg-green-600 hover:bg-green-700 text-white text-xs py-2 rounded font-semibold'>✓ Confirm Same Person (Merge)</button>
+            <button data-action='separate' data-rid='{it['rid']}' class='flex-1 bg-gray-500 hover:bg-gray-600 text-white text-xs py-2 rounded font-semibold'>✗ Not a Match (Keep Separate)</button>
+          </div>
+        </div>"""
+    cont.innerHTML=html
+
+def render_registry():
+    body=document.querySelector("#registry-body")
+    if not unified_db:
+        body.innerHTML="<tr><td colspan='10' class='text-center py-8 text-gray-400 italic'>No data processed yet.</td></tr>"; return
+    rows=""
+    for r in unified_db:
+        f=r["fields"]
+        q=r["quality"]; qc="green" if q>=75 else ("amber" if q>=50 else "red")
+        src="".join([badge(s,"blue") for s in r["sources"]])
+        vuln="".join([badge(t,"rose") for t in r["vuln"]]) or "<span class='text-gray-300'>—</span>"
+        conf="⚠" if r["conflicts"] else ""
+        rows+=f"""<tr class='border-b hover:bg-gray-50'>
+          <td class='px-3 py-2 font-mono font-semibold'>{r['hid']} {conf}</td>
+          <td class='px-3 py-2'>{f.get('name') or '—'}</td>
+          <td class='px-3 py-2'>{f.get('dob') or '—'}</td>
+          <td class='px-3 py-2'>{normalize_sex(f.get('sex','')) or '—'}</td>
+          <td class='px-3 py-2'>{f.get('location') or '—'}</td>
+          <td class='px-3 py-2'>{f.get('household_id') or '—'}</td>
+          <td class='px-3 py-2'>{badge(str(q)+'%',qc)}</td>
+          <td class='px-3 py-2 text-[11px]'>{r['verification']}</td>
+          <td class='px-3 py-2'>{vuln}</td>
+          <td class='px-3 py-2'>{src}</td></tr>"""
+    body.innerHTML=rows
+
+def render_households():
+    cont=document.querySelector("#household-list")
+    groups={}
+    for r in unified_db:
+        h=r["fields"].get("household_id")
+        if h: groups.setdefault(h,[]).append(r)
+    if not groups:
+        cont.innerHTML="<p class='text-gray-400 italic text-sm'>No households mapped.</p>"; return
+    html=""
+    for hid,members in groups.items():
+        size=len(members)
+        tags=[]
+        if size>=5: tags.append(badge("Large household","rose"))
+        if any("Elderly" in m["vuln"] for m in members): tags.append(badge("Elderly member","rose"))
+        if any(("Child" in m["vuln"] or "Infant/U5" in m["vuln"]) for m in members): tags.append(badge("Children present","rose"))
+        mem="".join([f"<li class='flex justify-between'><span>{m['fields'].get('name') or m['hid']}</span><span class='text-gray-400'>{m['fields'].get('dob') or ''}</span></li>" for m in members])
+        html+=f"""<div class='border rounded-lg p-3'>
+          <div class='flex justify-between items-center mb-1'><span class='font-bold text-teal-700'>🏠 {hid}</span><span class='text-xs text-gray-500'>{size} member(s)</span></div>
+          <div class='mb-2'>{''.join(tags) or ''}</div>
+          <ul class='text-xs space-y-1'>{mem}</ul></div>"""
+    cont.innerHTML=html
+
+def render_audit():
+    body=document.querySelector("#audit-body")
+    if not audit_log:
+        body.innerHTML="<tr><td colspan='5' class='text-center py-8 text-gray-400 italic'>No events logged.</td></tr>"; return
+    rows=""
+    for e in reversed(audit_log):
+        rows+=f"<tr class='border-b'><td class='px-3 py-1 font-mono'>{e['time']}</td><td class='px-3 py-1 font-semibold'>{e['action']}</td><td class='px-3 py-1'>{e['detail']}</td><td class='px-3 py-1'>{e['score']}</td><td class='px-3 py-1'>{e['operator']}</td></tr>"
+    body.innerHTML=rows
+
+# ---------- EXPORTS ----------
+def export_registry_csv(event=None):
+    if not unified_db: return
+    cols=["beneficiary_id","name","dob","sex","location","household_id","document_id","quality","verification","vulnerability","sources"]
+    out=StringIO(); w=csv.writer(out); w.writerow(cols)
+    for r in unified_db:
+        f=r["fields"]
+        w.writerow([r["hid"],f.get("name",""),f.get("dob",""),normalize_sex(f.get("sex","")),
+                    f.get("location",""),f.get("household_id",""),f.get("document_id",""),
+                    r["quality"],r["verification"],"|".join(r["vuln"]),"|".join(r["sources"])])
+    window.downloadFile("unified_registry.csv",out.getvalue(),"text/csv")
+
+def export_registry_json(event=None):
+    if not unified_db: return
+    data=[{"beneficiary_id":r["hid"],"fields":r["fields"],"sources":r["sources"],
+           "quality":r["quality"],"verification":r["verification"],"vulnerability":r["vuln"],
+           "provenance":r["provenance"],"conflicts":r["conflicts"]} for r in unified_db]
+    window.downloadFile("unified_registry.json",json.dumps(data,indent=2),"application/json")
+
+def export_audit(event=None):
+    if not audit_log: return
+    out=StringIO(); w=csv.writer(out); w.writerow(["time","action","detail","score","operator"])
+    for e in audit_log: w.writerow([e["time"],e["action"],e["detail"],e["score"],e["operator"]])
+    window.downloadFile("audit_log.csv",out.getvalue(),"text/csv")
+
+# ---------- BIND DELEGATED REVIEW HANDLER ----------
+document.querySelector("#review-list").addEventListener("click", create_proxy(handle_review_click))
+</script>
+</body>
+</html>
