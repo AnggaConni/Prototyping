@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Policy Communication Analyzer — AIDA · Thought Leadership · Policy Score · Predictive Model</title>
+    <style>
+        :root {
+            --bg: #fdfcfb;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --text-secondary: #64748b;
+            --border: #e8ecf1;
+            --blue: #3b82f6;
+            --blue-light: #eff6ff;
+            --cyan: #06b6d4;
+            --cyan-light: #ecfeff;
+            --amber: #f59e0b;
+            --amber-light: #fffbeb;
+            --emerald: #10b981;
+            --emerald-light: #ecfdf5;
+            --violet: #8b5cf6;
+            --violet-light: #f5f3ff;
+            --rose: #f43f5e;
+            --rose-light: #fff1f2;
+            --teal: #14b8a6;
+            --teal-light: #f0fdfa;
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 10px 15px rgba(0, 0, 0, 0.03);
+            --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.08), 0 20px 40px rgba(0, 0, 0, 0.04);
+            --radius: 16px;
+            --radius-sm: 10px;
+            --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(160deg, #fdfcfb 0%, #f0f4f8 25%, #fef9f0 50%, #f0f9ff 75%, #fdfcfb 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            color: var(--text);
+            line-height: 1.6;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -200px;
+            right: -200px;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.04) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        body::after {
+            content: '';
+            position: fixed;
+            bottom: -150px;
+            left: -150px;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.04) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+        .header .badge {
+            display: inline-block;
+            background: var(--violet-light);
+            color: var(--violet);
+            font-weight: 600;
+            font-size: 0.8rem;
+            padding: 6px 16px;
+            border-radius: 20px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+        .header h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.02em;
+        }
+        .header .subtitle {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            margin-top: 4px;
+        }
+
+        /* Guide button */
+        .guide-btn {
+            margin-top: 15px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: white;
+            border: 2px solid #e0e7ff;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--blue);
+            cursor: pointer;
+            transition: var(--transition);
+            font-family: inherit;
+            background: var(--blue-light);
+        }
+        .guide-btn:hover {
+            background: #dbeafe;
+            border-color: var(--blue);
+            transform: translateY(-2px);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(6px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        .modal {
+            background: white;
+            border-radius: 20px;
+            max-width: 700px;
+            width: 100%;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+            padding: 30px;
+            position: relative;
+            border: 1px solid var(--border);
+            animation: modalIn 0.3s ease;
+        }
+        @keyframes modalIn {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        .modal-close {
+            position: absolute;
+            top: 16px;
+            right: 20px;
+            background: none;
+            border: none;
+            font-size: 1.6rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: var(--transition);
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+        .modal-close:hover {
+            background: #f1f5f9;
+            color: var(--text);
+        }
+        .modal h2 {
+            font-size: 1.7rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .modal .model-block {
+            margin-bottom: 24px;
+            padding: 18px;
+            border-radius: 14px;
+            background: #f9fafb;
+            border-left: 4px solid var(--blue);
+        }
+        .model-block.violet {
+            border-left-color: var(--violet);
+        }
+        .model-block.emerald {
+            border-left-color: var(--emerald);
+        }
+        .model-block.amber {
+            border-left-color: var(--amber);
+        }
+        .model-block h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        .model-block p,
+        .model-block ul {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+        .model-block ul {
+            padding-left: 18px;
+        }
+
+        /* Input Card */
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 24px 28px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            transition: var(--transition);
+            margin-bottom: 20px;
+        }
+        .card:hover {
+            box-shadow: var(--shadow-lg);
+        }
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+            font-weight: 700;
+            font-size: 1.05rem;
+            color: var(--text);
+        }
+        .icon-circle {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+        .icon-blue {
+            background: var(--blue-light);
+            color: var(--blue);
+        }
+        .icon-cyan {
+            background: var(--cyan-light);
+            color: var(--cyan);
+        }
+        .icon-amber {
+            background: var(--amber-light);
+            color: var(--amber);
+        }
+        .icon-emerald {
+            background: var(--emerald-light);
+            color: var(--emerald);
+        }
+        .icon-violet {
+            background: var(--violet-light);
+            color: var(--violet);
+        }
+        .icon-rose {
+            background: var(--rose-light);
+            color: var(--rose);
+        }
+        .icon-teal {
+            background: var(--teal-light);
+            color: var(--teal);
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 140px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            resize: vertical;
+            transition: var(--transition);
+            background: #fafbfc;
+            color: var(--text);
+            line-height: 1.7;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: var(--blue);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.08);
+            background: #fff;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 14px;
+        }
+        .btn {
+            padding: 11px 22px;
+            border-radius: 25px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border: none;
+            transition: var(--transition);
+            letter-spacing: 0.01em;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-family: inherit;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6, #6366f1);
+            color: #fff;
+            box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 22px rgba(59, 130, 246, 0.4);
+        }
+        .btn-secondary {
+            background: #fff;
+            color: var(--blue);
+            border: 2px solid #e0e7ff;
+        }
+        .btn-secondary:hover {
+            background: var(--blue-light);
+            border-color: var(--blue);
+        }
+        .btn-outline {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 2px solid var(--border);
+        }
+        .btn-outline:hover {
+            border-color: #c0c8d4;
+            background: #f9fafb;
+        }
+
+        .aida-toggles {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 12px;
+        }
+        .toggle-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #f9fafb;
+            padding: 10px 14px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: var(--transition);
+            border: 2px solid transparent;
+            user-select: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        .toggle-item:hover {
+            background: #f0f4f8;
+        }
+        .toggle-item.active {
+            background: var(--blue-light);
+            border-color: var(--blue);
+            color: var(--blue);
+            font-weight: 600;
+        }
+        .toggle-dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid #cbd5e1;
+            flex-shrink: 0;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            background: #fff;
+        }
+        .toggle-item.active .toggle-dot {
+            background: var(--blue);
+            border-color: var(--blue);
+            color: #fff;
+        }
+
+        .score-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .score-card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 20px 22px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            text-align: center;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+        .score-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-lg);
+        }
+        .score-ring {
+            width: 110px;
+            height: 110px;
+            margin: 0 auto 12px;
+            position: relative;
+        }
+        .score-ring svg {
+            transform: rotate(-90deg);
+        }
+        .score-value {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.8rem;
+            font-weight: 800;
+        }
+        .score-label {
+            font-weight: 700;
+            font-size: 0.95rem;
+            margin-bottom: 4px;
+        }
+        .score-sub {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+        }
+        .mini-bar-row {
+            display: flex;
+            gap: 3px;
+            justify-content: center;
+            margin-top: 8px;
+        }
+        .mini-bar {
+            height: 6px;
+            border-radius: 3px;
+            flex: 1;
+            max-width: 40px;
+            background: #e5e7eb;
+            transition: var(--transition);
+        }
+        .mini-bar.filled {
+            opacity: 1 !important;
+            background: currentColor;
+        }
+        .score-card.accent-blue .score-value {
+            color: var(--blue);
+        }
+        .score-card.accent-violet .score-value {
+            color: var(--violet);
+        }
+        .score-card.accent-emerald .score-value {
+            color: var(--emerald);
+        }
+        .score-card.accent-amber .score-value {
+            color: var(--amber);
+        }
+
+        .category-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 14px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-top: 6px;
+        }
+        .badge-generic {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        .badge-informative {
+            background: #fef3c7;
+            color: #d97706;
+        }
+        .badge-thought {
+            background: #dbeafe;
+            color: #2563eb;
+        }
+        .badge-signature {
+            background: #ede9fe;
+            color: #7c3aed;
+        }
+
+        .breakdown-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        .breakdown-table th,
+        .breakdown-table td {
+            padding: 10px 14px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        .breakdown-table th {
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            background: #fafbfc;
+        }
+        .bar-cell {
+            width: 140px;
+        }
+        .bar-track {
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .bar-blue {
+            background: var(--blue);
+        }
+        .bar-violet {
+            background: var(--violet);
+        }
+        .bar-emerald {
+            background: var(--emerald);
+        }
+        .bar-amber {
+            background: var(--amber);
+        }
+        .bar-cyan {
+            background: var(--cyan);
+        }
+        .bar-rose {
+            background: var(--rose);
+        }
+
+        .recommendation-box {
+            background: linear-gradient(135deg, #fffbeb, #fff7ed);
+            border: 2px solid #fde68a;
+            border-radius: var(--radius);
+            padding: 18px 22px;
+            margin-top: 12px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            font-weight: 500;
+            color: #92400e;
+            animation: fadeInUp 0.4s ease;
+        }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        @media (max-width: 768px) {
+            .two-col {
+                grid-template-columns: 1fr;
+            }
+            .score-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .header h1 {
+                font-size: 1.5rem;
+            }
+        }
+        @media (max-width: 500px) {
+            .score-grid {
+                grid-template-columns: 1fr;
+            }
+            .aida-toggles {
+                grid-template-columns: 1fr;
+            }
+            .btn-row {
+                flex-direction: column;
+            }
+            .btn {
+                justify-content: center;
+            }
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--emerald);
+            display: inline-block;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5);
+            }
+            50% {
+                box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+            }
+        }
+
+        .text-muted {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+        .mt-2 {
+            margin-top: 8px;
+        }
+        .mt-3 {
+            margin-top: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="badge">📋 Policy Communication Analyzer</div>
+            <h1>Analyze Your LinkedIn Draft</h1>
+            <p class="subtitle">AIDA · Thought Leadership · Policy Score · Predictive Engagement — all in one place</p>
+            <button class="guide-btn" onclick="openGuide()">📖 How It Works</button>
+        </div>
+
+        <!-- GUIDE MODAL -->
+        <div class="modal-overlay" id="guideModal">
+            <div class="modal">
+                <button class="modal-close" onclick="closeGuide()">✕</button>
+                <h2>📘 How the Analyzer Works</h2>
+                <p class="text-muted" style="margin-bottom:18px;">This tool evaluates your LinkedIn draft using four complementary models. Here's exactly what each score measures and how it's calculated.</p>
+
+                <div class="model-block">
+                    <h3>🎯 AIDA Score (Attention, Interest, Desire, Action)</h3>
+                    <p><strong>What it measures:</strong> How well your post grabs attention, maintains interest, builds desire, and drives action.</p>
+                    <p><strong>How we calculate:</strong> Each component is scored 0–100 based on:</p>
+                    <ul>
+                        <li><strong>Attention:</strong> Presence of a question, numbers, strong opening.</li>
+                        <li><strong>Interest:</strong> Personal stories, data, paragraph structure.</li>
+                        <li><strong>Desire:</strong> Storytelling, policy relevance, evidence.</li>
+                        <li><strong>Action:</strong> Call-to-action phrases, discussion triggers.</li>
+                    </ul>
+                    <p><em>Final AIDA Score = average of the four components.</em></p>
+                </div>
+
+                <div class="model-block violet">
+                    <h3>💡 Thought Leadership Score</h3>
+                    <p><strong>What it measures:</strong> Originality, credibility, and conversation-starting potential.</p>
+                    <p><strong>Dimensions (0–25 each):</strong></p>
+                    <ul>
+                        <li>Original Insight</li>
+                        <li>Personal Experience</li>
+                        <li>Evidence / Data</li>
+                        <li>Discussion Trigger</li>
+                    </ul>
+                    <p><strong>Total (0–100):</strong> 0-40 Generic · 41-70 Informative · 71-85 Thought Leadership · 86-100 Signature Insight.</p>
+                </div>
+
+                <div class="model-block emerald">
+                    <h3>🏛 Policy Communication Score</h3>
+                    <p><strong>What it measures:</strong> How effectively your post communicates policy issues.</p>
+                    <p><strong>Five components (0–20 each):</strong> Problem · Evidence · Analysis · Policy Implication · Solution.</p>
+                    <p><strong>Total (0–100):</strong> Based on keyword detection and structural analysis.</p>
+                </div>
+
+                <div class="model-block amber">
+                    <h3>📈 Predictive Engagement Score</h3>
+                    <p><strong>What it measures:</strong> Estimated post performance based on a regression model.</p>
+                    <p><strong>Formula:</strong> y = β₀ + β₁(post length) + β₂(paragraphs) + β₃(hashtags) + β₄(sentiment) + β₅(personal story) + β₆(data presence) + β₇(question) + β₈(CTA).</p>
+                    <p>Coefficients are pre-set based on typical engagement patterns. The result is scaled to a 0–100% engagement score.</p>
+                </div>
+
+                <p style="margin-top:10px; font-size:0.9rem; color:var(--text-secondary);">💡 <strong>Pro tip:</strong> Use the toggles under the input box to manually adjust AIDA detections and see how it affects your scores.</p>
+            </div>
+        </div>
+
+        <!-- Input Card -->
+        <div class="card" id="inputCard">
+            <div class="card-header">
+                <span class="icon-circle icon-blue">📝</span>
+                Paste Your LinkedIn Draft
+            </div>
+            <textarea id="draftInput" placeholder="Paste your LinkedIn post draft here...&#10;&#10;Example:&#10;Is inequality rising in rural areas? New data from 2024 shows the Gini ratio reached 0.41 in our village survey of 1,200 households. When I visited last month, I met farmers struggling with access to markets. This isn't just a statistic — it's a call for better infrastructure policy. What's your take on rural-urban disparity?"></textarea>
+            <div class="btn-row">
+                <button class="btn btn-primary" onclick="analyzeDraft()">🔍 Analyze Draft</button>
+                <button class="btn btn-secondary" onclick="loadExample()">📥 Load Example</button>
+                <button class="btn btn-outline" onclick="clearAll()">🗑 Clear</button>
+            </div>
+            <p class="text-muted mt-3" style="font-weight:600;">Quick AIDA checklist (auto-detected, click to override):</p>
+            <div class="aida-toggles" id="aidaToggles">
+                <div class="toggle-item" data-aida="question" onclick="toggleAIDA(this)"><span class="toggle-dot">✓</span> Title contains a question?</div>
+                <div class="toggle-item" data-aida="numbers" onclick="toggleAIDA(this)"><span class="toggle-dot">✓</span> Contains numbers/data?</div>
+                <div class="toggle-item" data-aida="story" onclick="toggleAIDA(this)"><span class="toggle-dot">✓</span> Contains a story?</div>
+                <div class="toggle-item" data-aida="cta" onclick="toggleAIDA(this)"><span class="toggle-dot">✓</span> Has call-to-action?</div>
+            </div>
+        </div>
+
+        <!-- Score Dashboard -->
+        <div class="score-grid" id="scoreDashboard">
+            <div class="score-card accent-blue" id="aidaCard">
+                <div class="score-label">🎯 AIDA Score</div>
+                <div class="score-ring" id="aidaRing">
+                    <svg width="110" height="110" viewBox="0 0 110 110">
+                        <circle cx="55" cy="55" r="46" fill="none" stroke="#e5e7eb" stroke-width="8"/>
+                        <circle cx="55" cy="55" r="46" fill="none" stroke="#3b82f6" stroke-width="8" stroke-linecap="round" stroke-dasharray="289" stroke-dashoffset="289" id="aidaCircle"/>
+                    </svg>
+                    <span class="score-value" id="aidaValue">--</span>
+                </div>
+                <div class="mini-bar-row">
+                    <div class="mini-bar" id="aidaBarA"></div>
+                    <div class="mini-bar" id="aidaBarI"></div>
+                    <div class="mini-bar" id="aidaBarD"></div>
+                    <div class="mini-bar" id="aidaBarAc"></div>
+                </div>
+                <div class="score-sub">Attention · Interest · Desire · Action</div>
+            </div>
+
+            <div class="score-card accent-violet" id="tlCard">
+                <div class="score-label">💡 Thought Leadership</div>
+                <div class="score-ring" id="tlRing">
+                    <svg width="110" height="110" viewBox="0 0 110 110">
+                        <circle cx="55" cy="55" r="46" fill="none" stroke="#e5e7eb" stroke-width="8"/>
+                        <circle cx="55" cy="55" r="46" fill="none" stroke="#8b5cf6" stroke-width="8" stroke-linecap="round" stroke-dasharray="289" stroke-dashoffset="289" id="tlCircle"/>
+                    </svg>
+                    <span class="score-value" id="tlValue">--</span>
+                </div>
+                <span class="category-badge" id="tlCategory" style="display:none;">--</span>
+                <div class="score-sub">Original · Experience · Evidence · Trigger</div>
+            </div>
+
+            <div class="score-card accent-emerald" id="policyCard">
+                <div class="score-label">🏛 Policy Comm Score</div>
+                <div class="score-ring" id="policyRing">
+                    <svg width="110" height="110" viewBox="0 0 110 110">
+                        <circle cx="55" cy="55" r="46" fill="none" stroke="#e5e7eb" stroke-width="8"/>
+                        <circle cx="55" cy="55" r="46" fill="none" stroke="#10b981" stroke-width="8" stroke-linecap="round" stroke-dasharray="289" stroke-dashoffset="289" id="policyCircle"/>
+                    </svg>
+                    <span class="score-value" id="policyValue">--</span>
+                </div>
+                <div class="mini-bar-row">
+                    <div class="mini-bar" id="polBarP"></div>
+                    <div class="mini-bar" id="polBarE"></div>
+                    <div class="mini-bar" id="polBarA"></div>
+                    <div class="mini-bar" id="polBarI"></div>
+                    <div class="mini-bar" id="polBarS"></div>
+                </div>
+                <div class="score-sub">Problem · Evidence · Analysis · Implication · Solution</div>
+            </div>
+
+            <div class="score-card accent-amber" id="predCard">
+                <div class="score-label">📈 Predicted Engagement</div>
+                <div class="score-ring" id="predRing">
+                    <svg width="110" height="110" viewBox="0 0 110 110">
+                        <circle cx="55" cy="55" r="46" fill="none" stroke="#e5e7eb" stroke-width="8"/>
+                        <circle cx="55" cy="55" r="46" fill="none" stroke="#f59e0b" stroke-width="8" stroke-linecap="round" stroke-dasharray="289" stroke-dashoffset="289" id="predCircle"/>
+                    </svg>
+                    <span class="score-value" id="predValue">--</span>
+                </div>
+                <span class="pulse-dot" style="display:none;" id="pulseDot"></span>
+                <div class="score-sub" id="predSub">Based on regression model</div>
+            </div>
+        </div>
+
+        <!-- Detailed Breakdowns -->
+        <div class="two-col">
+            <div class="card" id="aidaBreakdownCard" style="display:none;">
+                <div class="card-header"><span class="icon-circle icon-blue">🎯</span> AIDA Component Breakdown</div>
+                <table class="breakdown-table">
+                    <thead><tr><th>Component</th><th>Score</th><th class="bar-cell">Indicator</th></tr></thead>
+                    <tbody>
+                        <tr><td>Attention</td><td id="aidaAttVal">--</td><td class="bar-cell"><div class="bar-track"><div class="bar-fill bar-blue" id="aidaAttBar" style="width:0%"></div></div></td></tr>
+                        <tr><td>Interest</td><td id="aidaIntVal">--</td><td class="bar-cell"><div class="bar-track"><div class="bar-fill bar-cyan" id="aidaIntBar" style="width:0%"></div></div></td></tr>
+                        <tr><td>Desire</td><td id="aidaDesVal">--</td><td class="bar-cell"><div class="bar-track"><div class="bar-fill bar-violet" id="aidaDesBar" style="width:0%"></div></div></td></tr>
+                        <tr><td>Action</td><td id="aidaActVal">--</td><td class="bar-cell"><div class="bar-track"><div class="bar-fill bar-amber" id="aidaActBar" style="width:0%"></div></div></td></tr>
+                    </tbody>
+                </table>
+                <div id="aidaRecommendation"></div>
+            </div>
+
+            <div class="card" id="tlBreakdownCard" style="display:none;">
+                <div class="card-header"><span class="icon-circle icon-violet">💡</span> Thought Leadership Breakdown</div>
+                <table class="breakdown-table">
+                    <thead><tr><th>Dimension</th><th>Score (0–25)</th><th class="bar-cell">Indicator</th></tr></thead>
+                    <tbody>
+                        <tr><td>Original Insight</td><td id="tlOrigVal">--</td><td class="bar-cell"><div class="bar-track"><div class="bar-fill bar-violet" id="tlOrigBar" style="width:0%"></div></div></td></tr>
+                        <tr><td>Personal Experience</td><td id="tlPersVal">--</td><td class="bar-cell"><div class="bar-track"><div class="bar-fill bar-cyan" id="tlPersBar" style="width:0%"></div></div></td></tr>
+                        <tr><td>Evidence / Data</td><td id="tlEvidVal">--</td><td class="bar-cell"><div class="bar-track"><div class="bar-fill bar-emerald" id="tlEvidBar" style="width:0%"></div></div></td></tr>
+                        <tr><td>Discussion Trigger</td><td id="tlDiscVal">--</td><td class="bar-cell"><div class="bar-track"><div class="bar-fill bar-amber" id="tlDiscBar" style="width:0%"></div></div></td></tr>
+                    </tbody>
+                </table>
+                <div id="tlCategoryDisplay" class="mt-2 text-muted"></div>
+            </div>
+
+            <div class="card" id="policyBreakdownCard" style="display:none;">
+                <div class="card-header"><span class="icon-circle icon-emerald">🏛</span> Policy Communication Breakdown</div>
+                <table class="breakdown-table">
+                    <thead><tr><th>Component</th><th>Score (0–20)</th><th class="bar-cell">Indicator</th></tr></thead>
+                    <tbody>
+                        <tr><td>Problem</td><td id="polProbVal">--</td><td class="bar-cell"><div class="bar-track"><div class="bar-fill bar-rose" id="polProbBar" style="width:0%"></div></div></td></tr>
+                        <tr><td>Evidence</td><td id="polEvidVal">--</td><td class="bar-cell"><div class="bar-track"><div class="bar-fill bar-emerald" id="polEvidBar" style="width:0%"></div></div></td></tr>
+                        <tr><td>Analysis</td><td id="polAnalVal">--</td><td class="bar-cell"><div class="bar-track"><div class="bar-fill bar-blue" id="polAnalBar" style="width:0%"></div></div></td></tr>
+                        <tr><td>Policy Implication</td><td id="polImplVal">--</td><td class="bar-cell"><div class="bar-track"><div class="bar-fill bar-violet" id="polImplBar" style="width:0%"></div></div></td></tr>
+                        <tr><td>Solution</td><td id="polSolVal">--</td><td class="bar-cell"><div class="bar-track"><div class="bar-fill bar-amber" id="polSolBar" style="width:0%"></div></div></td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card" id="predBreakdownCard" style="display:none;">
+                <div class="card-header"><span class="icon-circle icon-amber">📈</span> Predictive Model Variables</div>
+                <table class="breakdown-table">
+                    <thead><tr><th>Variable</th><th>Value</th><th>Coefficient (β)</th></tr></thead>
+                    <tbody>
+                        <tr><td>Post Length (chars)</td><td id="predLen">--</td><td>β₁ = +0.18</td></tr>
+                        <tr><td>Paragraphs</td><td id="predPara">--</td><td>β₂ = +0.12</td></tr>
+                        <tr><td>Hashtags</td><td id="predHash">--</td><td>β₃ = +0.09</td></tr>
+                        <tr><td>Sentiment</td><td id="predSent">--</td><td>β₄ = +0.22</td></tr>
+                        <tr><td>Personal Story</td><td id="predStory">--</td><td>β₅ = +0.20</td></tr>
+                        <tr><td>Data Presence</td><td id="predData">--</td><td>β₆ = +0.15</td></tr>
+                    </tbody>
+                </table>
+                <p class="text-muted mt-2" style="font-size:0.8rem;">Model: y = β₀ + Σ(βᵢ × xᵢ) &nbsp;|&nbsp; β₀ (intercept) = 0.08</p>
+            </div>
+        </div>
+
+        <div id="overallRecommendation" style="display:none;"></div>
+    </div>
+
+<script>
+        const CIRCUMFERENCE = 2 * Math.PI * 46;
+        let aidaState = { question: false, numbers: false, story: false, cta: false };
+
+        function $(id) { return document.getElementById(id); }
+
+        function openGuide() { $('guideModal').classList.add('active'); }
+        function closeGuide() { $('guideModal').classList.remove('active'); }
+        window.onclick = function(event) {
+            if (event.target === $('guideModal')) closeGuide();
+        };
+
+        function toggleAIDA(el) {
+            el.classList.toggle('active');
+            const key = el.dataset.aida;
+            aidaState[key] = el.classList.contains('active');
+            if ($('draftInput').value.trim()) analyzeDraft();
+        }
+
+        function syncTogglesFromState() {
+            document.querySelectorAll('#aidaToggles .toggle-item').forEach(el => {
+                const key = el.dataset.aida;
+                if (aidaState[key]) el.classList.add('active');
+                else el.classList.remove('active');
+            });
+        }
+
+        function autoDetectAIDA(text) {
+            const firstLine = text.split('\n')[0].trim();
+            // EXPANDED KEYWORD BANK: Question Starters & Hooks
+            const hasQuestion = firstLine.includes('?') || /\b(what|why|how|when|where|who|is|are|do|does|can|could|should|would|will|did|has|have|isn't|aren't|don't|doesn't|won't|wouldn't|hasn't|haven't|can't)\b.*\?/i.test(text.slice(0,200));
+            const hasNumbers = /\d+/.test(text);
+            // EXPANDED KEYWORD BANK: Storytelling & Personal Pronouns
+            const hasStory = /\b(I |my |we |our |when I|I've|I'm|personally|in my experience|I visited|I met|I saw|I heard|story|experience|journey|throughout my career|looking back|reflecting on|firsthand|conversations with)\b/i.test(text);
+            // EXPANDED KEYWORD BANK: Call to Action (CTA)
+            const hasCTA = /\b(what do you think|share your|comment|let me know|what's your|tell me|join|subscribe|follow|click|learn more|reach out|connect|discuss|your thoughts|weigh in|drop a comment|sound off|your take|anyone else|eager to hear|open to debate|link below|check out|read more|apply now)\b/i.test(text);
+            
+            aidaState = { question: hasQuestion, numbers: hasNumbers, story: hasStory, cta: hasCTA };
+            syncTogglesFromState();
+        }
+
+        function countHashtags(text) { const m = text.match(/#\w+/g); return m ? m.length : 0; }
+        function countParagraphs(text) { const paras = text.split(/\n{2,}/).filter(p => p.trim().length > 0); return Math.max(1, paras.length); }
+        
+        function detectSentiment(text) {
+            // FULL ENGLISH KEYWORD BANK: Positive Sentiment & Power Words
+            const pos = [
+                'good','great','excellent','positive','improve','improved','better','best','success','successful','hope','opportunity','progress','solution','solved','benefit','growth','growing','promising','effective','efficient','innovation','innovative','collaboration','empower','empowering','inclusive','sustainable','thriving','prosperity','optimistic','remarkable','outstanding','exceptional','valuable','insightful',
+                'phenomenal','revolutionary','groundbreaking','transformational','paradigm','robust','stellar','optimal','imperative','pivotal','catalyst','breakthrough','triumph','lucrative','strategic','synergy','milestone','visionary','resilient','agile','impactful','meaningful','uplifting','inspiring','advantage','win','excellence','brilliant'
+            ];
+            // FULL ENGLISH KEYWORD BANK: Negative Sentiment, Risks & Challenges
+            const neg = [
+                'bad','worse','worst','negative','problem','crisis','fail','failing','failure','poor','struggle','struggling','inequality','disparity','gap','decline','declining','threat','risk','dangerous','concerning','alarming','troubling','deficit','lack','insufficient','inadequate','corruption','inefficient','stagnant','regression','deteriorating',
+                'catastrophic','disastrous','detrimental','severe','adverse','bottleneck','obstacle','hurdle','systemic','persistent','vulnerable','vulnerability','harmful','flaw','flawed','barrier','setback','loss','challenge','challenging','warning','critical','damage','disruption','fragile','instability','unstable','bias','biased'
+            ];
+            
+            const words = text.toLowerCase().split(/\W+/);
+            let pc=0,nc=0;
+            words.forEach(w => { if(pos.includes(w)) pc++; if(neg.includes(w)) nc++; });
+            const total = pc+nc;
+            return total===0 ? 0.5 : Math.round((pc/total)*100)/100;
+        }
+
+        function detectPersonalStory(text) {
+            // FULL ENGLISH KEYWORD BANK: Personal Anecdotes & Experiences
+            const patterns = [
+                /\bI\s+(visited|met|saw|heard|felt|experienced|witnessed|observed|spoke|talked|went|traveled|journeyed|realized|learned|discovered|navigated)\b/i, 
+                /\bmy\s+(experience|story|journey|visit|trip|observation|take|view|career|background|perspective|mentor|colleague|team)\b/i, 
+                /\bpersonally\b/i, 
+                /\bin my\s+(opinion|experience|career|view|book)\b/i, 
+                /\bI've\s+(seen|been|found|learned|discovered|realized|noticed|struggled|managed|built)\b/i, 
+                /\bI'm\s+(convinced|reminded|inspired|moved|proud|honored|thrilled|excited)\b/i,
+                /\b(early in my career|throughout my career|looking back|reflecting on|a few years ago|recently I|it reminds me)\b/i
+            ];
+            return patterns.some(r=>r.test(text));
+        }
+
+        function detectDataPresence(text) {
+            // FULL ENGLISH KEYWORD BANK: Statistics, Metrics & Empirical Evidence
+            const patterns = [
+                /\d+%/, /\d+\.\d+/, 
+                /\d+\s*(respondents|households|participants|samples|surveys|studies|users|clients|customers|patients|citizens)/i, 
+                /\b(data|statistic|figure|ratio|index|rate|percentage|survey|study|research|evidence|finding|metrics|analytics|quantitative|qualitative|empirical|dataset|baseline|variance|cohort|percentile|correlation|benchmark)\b/i, 
+                /\b(according to|based on|research shows|data shows|study found|survey reveals|report highlights|analysis indicates|numbers dictate|statistics reveal)\b/i, 
+                /\b(Gini|GDP|HDI|CPI|index|coefficient|ROI|KPI|CAGR|EBITDA|inflation)\b/i, 
+                /\b\d+\s*\/\s*\d+\b/
+            ];
+            return patterns.some(r=>r.test(text));
+        }
+
+        function detectPolicyTerms(text) {
+            // FULL ENGLISH KEYWORD BANK: Governance, Public Policy & Economics
+            const patterns = [
+                /\b(policy|regulation|legislation|law|reform|governance|infrastructure|budget|fiscal|subsidy|ordinance|statutory|regulatory|compliance|oversight|framework|mandate|directive|treaty|jurisdiction)\b/i, 
+                /\b(government|ministry|agency|parliament|council|institution|public sector|bureaucracy|cabinet|senate|congress|municipality|policymakers|lawmakers)\b/i, 
+                /\b(implementation|guideline|accountability|transparency|procurement|allocation|distribution|decentralization|centralization|intervention|mitigation)\b/i, 
+                /\b(social|economic|public|welfare|development|urban|rural|environmental|health|education|foreign|domestic|monetary|macro|micro|socio-economic)\s+(policy|program|initiative|affairs|issue)\b/i, 
+                /\b(stakeholder|community|citizen|population|demographic|constituency|grassroots|bipartisan|equity|equality|civil society|NGO|public-private)\b/i
+            ];
+            return patterns.some(r=>r.test(text));
+        }
+
+        function detectDiscussionTrigger(text) {
+            // FULL ENGLISH KEYWORD BANK: Engagement & Debate Prompts
+            const patterns = [
+                /\?/, 
+                /\b(what do you think|your thoughts|let me know|share your|how would you|do you agree|what are we missing|what is your take)\b/i, 
+                /\b(discuss|debate|conversation|dialogue|exchange|weigh in|sound off|drop a comment|brainstorm)\b/i, 
+                /\b(agree\?|disagree\?|thoughts\?|opinion\?|perspective\?|experiences\?)\b/i,
+                /\b(I would love to hear|I'd love to hear|eager to know|open to feedback|leave a comment)\b/i
+            ];
+            return patterns.some(r=>r.test(text));
+        }
+
+        function calculateAIDA(text) {
+            const hasQ = aidaState.question, hasNum = aidaState.numbers, hasStory = aidaState.story, hasCTA = aidaState.cta;
+            const len = text.length, strongOpen = hasQ || (text.split('\n')[0].length < 100 && /[A-Z]/.test(text[0]));
+            let att=40; if(hasQ) att+=25; if(hasNum) att+=15; if(strongOpen) att+=15; if(len>300) att+=5; att=Math.min(100,att);
+            let int=30; if(hasStory) int+=30; if(hasNum) int+=15; if(len>200) int+=15; if(countParagraphs(text)>=3) int+=10; int=Math.min(100,int);
+            let des=35; if(hasStory) des+=25; if(detectPolicyTerms(text)) des+=20; if(detectDataPresence(text)) des+=15; if(detectSentiment(text)>0.5) des+=5; des=Math.min(100,des);
+            let act=20; if(hasCTA) act+=40; if(detectDiscussionTrigger(text)) act+=25; if(hasQ) act+=10; if(text.includes('?') && text.split('?').length>2) act+=5; act=Math.min(100,act);
+            const total = Math.round((att+int+des+act)/4);
+            return { total, attention:Math.round(att), interest:Math.round(int), desire:Math.round(des), action:Math.round(act),
+                recommendation: act<50 ? '💡 <strong>Recommendation:</strong> Add a closing question or clear call-to-action to boost your Action score.' :
+                               act<70 ? '💡 <strong>Tip:</strong> Your CTA could be stronger — try inviting specific discussion.' :
+                               '✅ Action component looks strong!' };
+        }
+
+        function calculateThoughtLeadership(text) {
+            const hasStory = detectPersonalStory(text), hasData = detectDataPresence(text), hasDisc = detectDiscussionTrigger(text), hasPolicy = detectPolicyTerms(text);
+            const unique = new Set(text.toLowerCase().split(/\W+/).filter(w=>w.length>3));
+            const ratio = unique.size / Math.max(1, text.split(/\W+/).filter(w=>w.length>3).length);
+            let orig=8; if(ratio>0.6) orig+=7; if(text.length>400) orig+=5; if(hasPolicy && hasData) orig+=5; orig=Math.min(25,orig);
+            let pers=5; if(hasStory) pers+=16; if(/\bI\b/.test(text) && text.split(/\bI\b/).length>3) pers+=4; pers=Math.min(25,pers);
+            let evid=6; if(hasData) evid+=14; if((text.match(/\d+/g)||[]).length>3) evid+=5; evid=Math.min(25,evid);
+            let disc=7; if(hasDisc) disc+=13; if(text.includes('?')) disc+=5; disc=Math.min(25,disc);
+            const total = orig+pers+evid+disc;
+            let cat = total>=86 ? 'Signature Insight' : total>=71 ? 'Thought Leadership' : total>=41 ? 'Informative' : 'Generic';
+            return { total, original:orig, personal:pers, evidence:evid, discussion:disc, category:cat };
+        }
+
+        function calculatePolicyComm(text) {
+            // FULL ENGLISH KEYWORD BANK: Problem & Solution Framework
+            const hasProb = /\b(problem|issue|crisis|challenge|gap|disparity|inequality|deficit|lack|shortage|decline|threat|risk|concern|trouble|struggle|hardship|obstacle|hurdle|bottleneck|dilemma|barrier)\b/i.test(text);
+            const hasEv = detectDataPresence(text);
+            const hasAn = text.length>300 && /\b(because|therefore|thus|hence|consequently|as a result|this means|this implies|analysis|analyze|examine|investigate|correlation|causation|factor|driver|root cause|consequence|impact|variable)\b/i.test(text);
+            const hasPol = detectPolicyTerms(text);
+            const hasSol = /\b(solution|recommend|propose|suggest|way forward|action plan|strategy|approach|intervention|measure|initiative|program|reform|improve|address|tackle|resolve|fix|remedy|mitigate|optimize|implement)\b/i.test(text);
+            
+            let prob = hasProb ? 16+Math.floor(Math.random()*4) : 5+Math.floor(Math.random()*6);
+            let ev = hasEv ? 15+Math.floor(Math.random()*5) : 4+Math.floor(Math.random()*5);
+            let an = hasAn ? 14+Math.floor(Math.random()*5) : 5+Math.floor(Math.random()*6);
+            let imp = hasPol ? 16+Math.floor(Math.random()*4) : 3+Math.floor(Math.random()*5);
+            let sol = hasSol ? 13+Math.floor(Math.random()*5) : 4+Math.floor(Math.random()*5);
+            prob=Math.min(20,prob); ev=Math.min(20,ev); an=Math.min(20,an); imp=Math.min(20,imp); sol=Math.min(20,sol);
+            return { total: prob+ev+an+imp+sol, problem:prob, evidence:ev, analysis:an, policyImplication:imp, solution:sol };
+        }
+
+        function calculatePredictive(text) {
+            const len = text.length, para = countParagraphs(text), hash = countHashtags(text), sent = detectSentiment(text);
+            const story = detectPersonalStory(text)?1:0, data = detectDataPresence(text)?1:0, q = aidaState.question?1:0, cta = aidaState.cta?1:0;
+            const nLen = Math.min(1,len/2000), nPara = Math.min(1,para/8), nHash = Math.min(1,hash/10), nSent = sent, nStory=story, nData=data, nQ=q, nCTA=cta;
+            const b0=0.08, b1=0.18, b2=0.12, b3=0.09, b4=0.22, b5=0.20, b6=0.15, b7=0.10, b8=0.14;
+            let y = b0 + b1*nLen + b2*nPara + b3*nHash + b4*nSent + b5*nStory + b6*nData + b7*nQ + b8*nCTA;
+            let score = Math.round(y*100);
+            score = Math.max(5, Math.min(98, score));
+            return { score, postLength:len, paragraphs:para, hashtags:hash, sentiment:sent, hasStory:story, hasData:data, hasQuestion:q, hasCTA:cta };
+        }
+
+        function animateCircle(id, percent) {
+            const circle = $(id); if(!circle) return;
+            const offset = CIRCUMFERENCE - (percent/100)*CIRCUMFERENCE;
+            const start = parseFloat(circle.getAttribute('stroke-dashoffset'))||CIRCUMFERENCE;
+            const duration=800, startTime=performance.now();
+            function step(ts){ const prog = Math.min(1,(ts-startTime)/duration); const eased=1-Math.pow(1-prog,3); circle.setAttribute('stroke-dashoffset',start+(offset-start)*eased); if(prog<1) requestAnimationFrame(step); }
+            requestAnimationFrame(step);
+        }
+        function animateValue(id, target){ const el=$(id); if(!el) return; const start=parseInt(el.textContent)||0, startTime=performance.now(); function step(ts){ const prog=Math.min(1,(ts-startTime)/600); const eased=1-Math.pow(1-prog,3); el.textContent=Math.round(start+(target-start)*eased); if(prog<1) requestAnimationFrame(step); } requestAnimationFrame(step); }
+        function updateMiniBars(id, percent){ const bar=$(id); if(!bar) return; bar.classList.toggle('filled', percent>=35); bar.style.opacity = percent>=35 ? '1' : '0.3'; }
+        function animateBar(id, percent){ const bar=$(id); if(!bar) return; bar.style.width = Math.min(100,percent)+'%'; }
+
+        function analyzeDraft() {
+            const text = $('draftInput').value.trim();
+            if(!text){ alert('Please paste your LinkedIn draft first!'); return; }
+            if(!document.querySelector('#aidaToggles .toggle-item.active')) autoDetectAIDA(text);
+            const aida = calculateAIDA(text);
+            const tl = calculateThoughtLeadership(text);
+            const policy = calculatePolicyComm(text);
+            const pred = calculatePredictive(text);
+
+            $('aidaBreakdownCard').style.display=''; $('tlBreakdownCard').style.display=''; $('policyBreakdownCard').style.display=''; $('predBreakdownCard').style.display='';
+
+            animateCircle('aidaCircle', aida.total); animateValue('aidaValue', aida.total);
+            updateMiniBars('aidaBarA', aida.attention); updateMiniBars('aidaBarI', aida.interest); updateMiniBars('aidaBarD', aida.desire); updateMiniBars('aidaBarAc', aida.action);
+            $('aidaAttVal').textContent=aida.attention+'/100'; $('aidaIntVal').textContent=aida.interest+'/100'; $('aidaDesVal').textContent=aida.desire+'/100'; $('aidaActVal').textContent=aida.action+'/100';
+            animateBar('aidaAttBar', aida.attention); animateBar('aidaIntBar', aida.interest); animateBar('aidaDesBar', aida.desire); animateBar('aidaActBar', aida.action);
+            $('aidaRecommendation').innerHTML = aida.recommendation ? `<div class="recommendation-box"><span class="rec-icon">💡</span><span>${aida.recommendation}</span></div>` : '';
+
+            animateCircle('tlCircle', tl.total); animateValue('tlValue', tl.total);
+            const catBadge = $('tlCategory'); catBadge.style.display='inline-block'; catBadge.textContent=tl.category; catBadge.className='category-badge '+(tl.category==='Signature Insight'?'badge-signature':tl.category==='Thought Leadership'?'badge-thought':tl.category==='Informative'?'badge-informative':'badge-generic');
+            $('tlOrigVal').textContent=tl.original+'/25'; $('tlPersVal').textContent=tl.personal+'/25'; $('tlEvidVal').textContent=tl.evidence+'/25'; $('tlDiscVal').textContent=tl.discussion+'/25';
+            animateBar('tlOrigBar', (tl.original/25)*100); animateBar('tlPersBar', (tl.personal/25)*100); animateBar('tlEvidBar', (tl.evidence/25)*100); animateBar('tlDiscBar', (tl.discussion/25)*100);
+            $('tlCategoryDisplay').innerHTML = `<strong>Category:</strong> <span style="font-weight:700;">${tl.category}</span> &nbsp;(${tl.category==='Signature Insight'?'Exceptional':tl.category==='Thought Leadership'?'Strong':tl.category==='Informative'?'Solid':'Needs improvement'})`;
+
+            animateCircle('policyCircle', policy.total); animateValue('policyValue', policy.total);
+            updateMiniBars('polBarP', (policy.problem/20)*100); updateMiniBars('polBarE', (policy.evidence/20)*100); updateMiniBars('polBarA', (policy.analysis/20)*100); updateMiniBars('polBarI', (policy.policyImplication/20)*100); updateMiniBars('polBarS', (policy.solution/20)*100);
+            $('polProbVal').textContent=policy.problem+'/20'; $('polEvidVal').textContent=policy.evidence+'/20'; $('polAnalVal').textContent=policy.analysis+'/20'; $('polImplVal').textContent=policy.policyImplication+'/20'; $('polSolVal').textContent=policy.solution+'/20';
+            animateBar('polProbBar', (policy.problem/20)*100); animateBar('polEvidBar', (policy.evidence/20)*100); animateBar('polAnalBar', (policy.analysis/20)*100); animateBar('polImplBar', (policy.policyImplication/20)*100); animateBar('polSolBar', (policy.solution/20)*100);
+
+            animateCircle('predCircle', pred.score); animateValue('predValue', pred.score);
+            $('pulseDot').style.display='inline-block'; $('predSub').textContent = pred.score>=70 ? '🔥 High engagement predicted' : pred.score>=40 ? '📊 Moderate engagement predicted' : '📉 Low engagement predicted';
+            $('predLen').textContent=pred.postLength+' chars'; $('predPara').textContent=pred.paragraphs; $('predHash').textContent=pred.hashtags;
+            $('predSent').textContent=(pred.sentiment*100).toFixed(0)+'% positive'; $('predStory').textContent=pred.hasStory?'✅ Present':'❌ Absent'; $('predData').textContent=pred.hasData?'✅ Present':'❌ Absent';
+
+            const recs=[];
+            if(aida.action<50) recs.push('🎯 <strong>Boost Action:</strong> Add a closing question or CTA.');
+            if(tl.total<41) recs.push('💡 <strong>Elevate Thought Leadership:</strong> Include original insights or data.');
+            if(tl.total>=41 && tl.total<71) recs.push('📈 <strong>Push toward Thought Leadership:</strong> Add a unique angle or personal story.');
+            if(policy.total<60) recs.push('🏛 <strong>Strengthen Policy Relevance:</strong> Connect points to policy implications.');
+            if(!detectDataPresence(text) && text.length>100) recs.push('📊 <strong>Add Evidence:</strong> Data or research can boost credibility.');
+            if(pred.score<40) recs.push('📉 <strong>Low predicted engagement:</strong> Enrich with personal narrative and a question.');
+            if(recs.length===0) recs.push('🌟 <strong>Great draft!</strong> Fine-tune minor details for even better performance.');
+            $('overallRecommendation').innerHTML = `<div class="card" style="border-left:5px solid #3b82f6;"><div class="card-header"><span class="icon-circle icon-rose">📋</span> Overall Recommendations</div>${recs.map(r=>`<div class="recommendation-box"><span class="rec-icon">💡</span><span>${r}</span></div>`).join('')}</div>`;
+            $('overallRecommendation').style.display='';
+            $('scoreDashboard').scrollIntoView({behavior:'smooth',block:'start'});
+        }
+
+        function loadExample() {
+            const ex = `Is Rural Inequality Widening? New 2024 Data Tells a Story\n\nWhen I visited Desa Sukamaju last month, I met Ibu Ratna — a farmer who travels 12 km on damaged roads just to sell her harvest. Her story isn't unique.\n\nOur latest survey of 1,200 rural households reveals:\n📊 The local Gini ratio rose from 0.38 to 0.41 in just 2 years\n📊 67% of farmers lack reliable road access to markets\n📊 Only 23% have received any infrastructure subsidy\n\nThis isn't just about statistics. It's a clear policy signal:\n→ Infrastructure gaps directly worsen income inequality\n→ Current subsidy programs aren't reaching the most vulnerable\n→ Without targeted intervention, the gap will keep widening\n\nI believe the solution lies in:\n1️⃣ Data-driven infrastructure prioritization\n2️⃣ Community-based monitoring of subsidy distribution\n3️⃣ Public-private partnerships for rural road development\n\nWhat's your experience with rural infrastructure policy? Have you seen successful models that bridge this gap? Let's discuss. 👇`;
+            $('draftInput').value = ex;
+            autoDetectAIDA(ex);
+            analyzeDraft();
+        }
+
+        function clearAll() {
+            $('draftInput').value='';
+            aidaState={question:false,numbers:false,story:false,cta:false};
+            syncTogglesFromState();
+            ['aidaValue','tlValue','policyValue','predValue'].forEach(id=>$(id).textContent='--');
+            ['aidaCircle','tlCircle','policyCircle','predCircle'].forEach(id=>{ const c=$(id); if(c) c.setAttribute('stroke-dashoffset',CIRCUMFERENCE); });
+            ['aidaBreakdownCard','tlBreakdownCard','policyBreakdownCard','predBreakdownCard'].forEach(id=>{ const el=$(id); if(el) el.style.display='none'; });
+            $('overallRecommendation').style.display='none'; $('tlCategory').style.display='none'; $('pulseDot').style.display='none';
+            $('predSub').textContent='Based on regression model';
+            document.querySelectorAll('.mini-bar').forEach(b=>{b.classList.remove('filled'); b.style.opacity='0.3';});
+            document.querySelectorAll('.bar-fill').forEach(b=>b.style.width='0%');
+            $('aidaRecommendation').innerHTML=''; $('tlCategoryDisplay').innerHTML='';
+        }
+
+        document.addEventListener('DOMContentLoaded',()=>{
+            document.querySelectorAll('#aidaToggles .toggle-dot').forEach(d=>d.textContent='');
+            ['aidaCircle','tlCircle','policyCircle','predCircle'].forEach(id=>{ const c=$(id); if(c) c.setAttribute('stroke-dashoffset',CIRCUMFERENCE); });
+            document.querySelectorAll('.mini-bar').forEach(b=>b.style.opacity='0.3');
+        });
+        $('draftInput').addEventListener('keydown',function(e){ if((e.ctrlKey||e.metaKey)&&e.key==='Enter') analyzeDraft(); });
+    </script>
+
+</body>
+</html>
