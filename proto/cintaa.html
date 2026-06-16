@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Important Survey</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fdf2f8; /* Tailwind pink-50 */
+            overflow-x: hidden;
+        }
+
+        .shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+
+        .glitch-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.15),
+                rgba(0, 0, 0, 0.15) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.5;
+            display: none;
+        }
+
+        .pulse-strong {
+            animation: pulse-strong 1.5s infinite;
+        }
+
+        @keyframes pulse-strong {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(236, 72, 153, 0.7); }
+            70% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(236, 72, 153, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(236, 72, 153, 0); }
+        }
+
+        /* The runaway button styling */
+        #btn-runaway {
+            transition: top 0.2s ease, left 0.2s ease;
+        }
+
+        /* Print styles for PDF */
+        #certificate {
+            background-image: radial-gradient(#fbcfe8 1px, transparent 1px);
+            background-size: 20px 20px;
+            background-color: white;
+        }
+
+        /* Custom Slider Styling */
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #ec4899; /* pink-500 */
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(236, 72, 153, 0.6);
+            transition: transform 0.1s;
+        }
+        input[type=range]::-webkit-slider-thumb:active {
+            transform: scale(1.2);
+        }
+        input[type=range]::-moz-range-thumb {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #ec4899;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(236, 72, 153, 0.6);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <!-- Glitch Overlay -->
+    <div id="glitch-overlay" class="glitch-screen"></div>
+
+    <!-- Main App Container -->
+    <main id="app-container" class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden relative">
+        
+        <!-- Header -->
+        <header class="bg-pink-600 text-white p-6 text-center shadow-md relative z-10">
+            <h1 class="text-2xl font-bold tracking-tight">Mandatory Survey</h1>
+            <p class="text-pink-200 text-sm mt-1">Please answer honestly.</p>
+        </header>
+
+        <!-- Content Area -->
+        <div id="content-area" class="p-6 relative min-h-[400px] flex flex-col justify-center">
+            
+            <!-- Setup Screen -->
+            <div id="setup-screen" class="step block">
+                <h2 class="text-2xl font-bold text-gray-800 mb-2 text-center">Initialization</h2>
+                <p class="text-gray-500 text-center text-sm mb-6">Please identify yourself and the survey issuer.</p>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-bold text-pink-600 mb-1">Survey Issuer (Your Name):</label>
+                        <input type="text" id="input-creator" placeholder="e.g. John" class="w-full px-4 py-3 rounded-xl border-2 border-pink-100 focus:border-pink-500 focus:outline-none transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-pink-600 mb-1">Respondent (Target Name):</label>
+                        <input type="text" id="input-crush" placeholder="e.g. Jane" class="w-full px-4 py-3 rounded-xl border-2 border-pink-100 focus:border-pink-500 focus:outline-none transition-colors">
+                    </div>
+                    <button onclick="startSurvey()" class="pulse-strong w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-4 px-6 rounded-xl mt-4 transition-all">
+                        Start Survey
+                    </button>
+                </div>
+            </div>
+
+            <!-- Question 1: The Forced Slider -->
+            <div id="q1" class="step hidden">
+                <h2 class="text-xl font-bold text-gray-800 mb-6 text-center">1. How much do you love <span class="creator-name">me</span>?</h2>
+                <div class="relative pt-1 px-2">
+                    <input type="range" id="love-slider" min="0" max="100" value="0" class="w-full h-4 bg-pink-100 rounded-lg appearance-none cursor-pointer outline-none" oninput="forceLove()" ontouchmove="forceLove()">
+                    <div class="flex justify-between text-sm text-pink-600 mt-3 font-extrabold">
+                        <span>0%</span>
+                        <span>100%</span>
+                    </div>
+                    <p id="slider-msg" class="text-center text-pink-500 font-bold mt-6 h-6 transition-opacity opacity-0">Calibrating to true feelings...</p>
+                    <button id="btn-next-1" onclick="nextStep(2)" class="w-full bg-gray-300 text-gray-500 font-bold py-4 px-6 rounded-xl mt-6 cursor-not-allowed transition-all" disabled>
+                        Please slide to 100% first
+                    </button>
+                </div>
+            </div>
+
+            <!-- Question 2: The Error Buttons (Old Q1) -->
+            <div id="q2" class="step hidden">
+                <h2 class="text-xl font-bold text-gray-800 mb-6 text-center">2. Do you agree to go out with <span class="creator-name">me</span>?</h2>
+                <div class="space-y-4">
+                    <button onclick="nextStep(3)" class="pulse-strong w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-4 px-6 rounded-xl border-b-4 border-pink-700 active:border-b-0 active:mt-1 transition-all">
+                        A. I Absolutely Agree
+                    </button>
+                    <button onclick="triggerError('SYSTEM FATAL ERROR: Invalid choice detected. The universe rejects this option.')" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-600 font-semibold py-3 px-6 rounded-xl border border-gray-300 transition-colors">
+                        B. I Disagree
+                    </button>
+                    <button onclick="triggerError('ERROR 404: Time not found. Please choose option A.')" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-600 font-semibold py-3 px-6 rounded-xl border border-gray-300 transition-colors">
+                        C. Give me some time
+                    </button>
+                </div>
+            </div>
+
+            <!-- Question 3: The Fake Checkbox (Terms & Conditions) -->
+            <div id="q3" class="step hidden">
+                <h2 class="text-xl font-bold text-gray-800 mb-4 text-center">3. Terms & Conditions</h2>
+                <div class="bg-pink-50 p-4 rounded-xl text-sm text-gray-700 mb-5 h-32 overflow-y-auto border-2 border-pink-100 shadow-inner">
+                    <p class="font-bold mb-2">By proceeding, you agree to:</p>
+                    <ul class="list-disc pl-5 space-y-1">
+                        <li>Share your food, especially fries.</li>
+                        <li>Let me choose the Netflix movie (even if I sleep midway).</li>
+                        <li>Provide infinite hugs on demand.</li>
+                        <li>Acknowledge that I am always right.</li>
+                    </ul>
+                </div>
+                <div class="space-y-3">
+                    <label class="flex items-center space-x-3 p-3 border-2 border-pink-200 rounded-xl hover:bg-pink-50 cursor-pointer transition-colors" id="label-agree">
+                        <input type="checkbox" id="chk-agree" onchange="checkTNC()" class="w-6 h-6 text-pink-600 rounded focus:ring-pink-500 cursor-pointer">
+                        <span class="font-bold text-gray-800 text-lg">I Agree unconditionally</span>
+                    </label>
+                    <label class="flex items-center space-x-3 p-3 border border-gray-200 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors opacity-70" id="label-disagree">
+                        <input type="checkbox" id="chk-disagree" onchange="forceAgree()" class="w-5 h-5 text-gray-400 rounded focus:ring-gray-400 cursor-pointer">
+                        <span class="font-semibold text-gray-500">I Disagree (Illegal)</span>
+                    </label>
+                </div>
+                <button id="btn-next-3" onclick="nextStep(4)" class="pulse-strong w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-4 px-6 rounded-xl mt-6 hidden transition-all">
+                    Continue Journey ->
+                </button>
+            </div>
+
+            <!-- Question 4: Disabled Button (Old Q2) -->
+            <div id="q4" class="step hidden">
+                <h2 class="text-xl font-bold text-gray-800 mb-6 text-center">4. Do you want to live with <span class="creator-name">me</span>?</h2>
+                <div class="flex flex-col gap-2">
+                    <button onclick="nextStep(5)" class="w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-12 text-2xl rounded-xl shadow-lg transform transition hover:scale-105">
+                        YES, OF COURSE!
+                    </button>
+                    <button onclick="triggerError('NETWORK TIMEOUT: This option is under maintenance until the end of time.')" class="w-full opacity-30 text-xs text-gray-400 py-1 cursor-not-allowed">
+                        no (unavailable)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Question 5: Bait and Switch (Old Q3) -->
+            <div id="q5" class="step hidden">
+                <h2 class="text-xl font-bold text-gray-800 mb-6 text-center">5. Will you come with <span class="creator-name">me</span> on this journey?</h2>
+                <div class="flex gap-4">
+                    <button onclick="nextStep(6)" class="flex-1 bg-pink-500 text-white font-bold py-4 rounded-xl shadow-md">
+                        YES
+                    </button>
+                    <button id="btn-bait" onmouseover="baitAndSwitch()" onclick="nextStep(6)" ontouchstart="baitAndSwitch()" class="flex-1 bg-gray-200 text-gray-700 font-bold py-4 rounded-xl shadow-md transition-colors duration-300">
+                        NO
+                    </button>
+                </div>
+                <p id="bait-msg" class="text-center text-pink-500 text-sm mt-4 hidden font-semibold">Good choice! You clicked YES! 😉</p>
+            </div>
+
+            <!-- Question 6: The Runaway Button (Old Q4) -->
+            <div id="q6" class="step hidden h-full">
+                <h2 class="text-2xl font-extrabold text-pink-600 mb-8 text-center mt-4">6. Will you marry <span class="creator-name">me</span>? 💍</h2>
+                <div class="flex flex-col gap-6 relative h-[250px]">
+                    <button onclick="showResult()" class="w-full bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black text-2xl py-6 rounded-2xl shadow-xl hover:shadow-2xl transform transition hover:-translate-y-1 z-10">
+                        YES! 💖
+                    </button>
+                    <!-- Runaway button logic handles both mouse and touch -->
+                    <button id="btn-runaway" onmouseover="moveRunaway()" ontouchstart="moveRunaway()" class="absolute w-[100px] bg-gray-300 text-gray-600 font-bold py-2 rounded-lg left-1/2 -ml-[50px] bottom-10 z-20">
+                        No
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Certificate / PDF Target -->
+    <div id="certificate-container" class="hidden w-full max-w-2xl">
+        <div id="certificate" class="bg-white p-10 rounded-xl shadow-2xl border-8 border-pink-100 text-center relative">
+            <div class="absolute top-4 left-4 text-pink-200 text-6xl">❝</div>
+            <div class="absolute bottom-4 right-4 text-pink-200 text-6xl rotate-180">❝</div>
+            
+            <h1 class="text-4xl font-black text-pink-600 mb-2 font-serif tracking-tight">Official Declaration</h1>
+            <p class="text-gray-500 mb-8 uppercase tracking-widest text-sm font-semibold">Legally Binding Document</p>
+            
+            <div class="text-lg text-gray-700 space-y-4 mb-8 text-left max-w-md mx-auto bg-pink-50 p-6 rounded-xl">
+                <p><strong>Date:</strong> <span id="cert-date"></span></p>
+                <p>This document officially certifies that <strong class="crush-name text-pink-600 uppercase">the user</strong> has completed the mandatory survey with the following irrefutable results regarding <strong class="creator-name text-pink-600 uppercase">me</strong>:</p>
+                <ul class="list-disc pl-5 space-y-2 font-semibold text-pink-800 text-sm">
+                    <li>Love capacity measured: <span class="font-bold text-pink-600">100% Maximum</span></li>
+                    <li>Agreed to go out: <span class="font-bold text-pink-600">100% Yes</span></li>
+                    <li>Accepted Dating Terms & Conditions: <span class="font-bold text-pink-600">Unconditionally</span></li>
+                    <li>Agreed to live together: <span class="font-bold text-pink-600">100% Yes</span></li>
+                    <li>Agreed to come along: <span class="font-bold text-pink-600">100% Yes</span></li>
+                    <li>Agreed to marry: <span class="font-bold text-purple-600 text-xl">1000% YES 💍</span></li>
+                </ul>
+            </div>
+            
+            <div class="flex justify-between items-end mt-12 px-8">
+                <div class="text-center">
+                    <div class="font-signature text-2xl text-gray-800 mb-1 crush-name">Applicant</div>
+                    <div class="w-32 border-b-2 border-gray-400 mb-2 mx-auto"></div>
+                    <p class="text-sm text-gray-500">Applicant Signature</p>
+                </div>
+                <div class="text-center">
+                    <div class="font-signature text-2xl text-pink-600 mb-1 creator-name">Approved ♥</div>
+                    <div class="w-32 border-b-2 border-gray-400 mb-2 mx-auto"></div>
+                    <p class="text-sm text-gray-500">System Administrator</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-8 text-center flex flex-col gap-4">
+            <button onclick="downloadPDF()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-8 rounded-full shadow-lg transition-transform hover:scale-105 flex items-center justify-center gap-2 mx-auto w-full md:w-auto">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Export as PDF
+            </button>
+            <p class="text-pink-400 text-sm font-medium">Download this as proof! 😉</p>
+        </div>
+    </div>
+
+    <!-- Custom Error Modal -->
+    <div id="error-modal" class="fixed inset-0 bg-black bg-opacity-60 hidden flex-center items-center justify-center z-50 p-4 transition-opacity">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl border-t-8 border-red-500 transform scale-95 transition-transform" id="modal-content">
+            <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+            </div>
+            <h3 class="text-xl font-bold text-gray-900 mb-2">SYSTEM ERROR</h3>
+            <p id="error-msg" class="text-gray-600 mb-6">Error text here.</p>
+            <button onclick="closeError()" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded-lg w-full transition-colors">
+                I Understand, I Will Choose 'A'
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Set Date for Certificate
+        document.getElementById('cert-date').innerText = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+        // Setup Data
+        let creatorName = "me";
+        let crushName = "the user";
+
+        function startSurvey() {
+            const creatorInput = document.getElementById('input-creator').value.trim();
+            const crushInput = document.getElementById('input-crush').value.trim();
+
+            if (creatorInput) creatorName = creatorInput;
+            if (crushInput) crushName = crushInput;
+
+            // Update text in all questions and certificate
+            document.querySelectorAll('.creator-name').forEach(el => el.innerText = creatorName);
+            document.querySelectorAll('.crush-name').forEach(el => el.innerText = crushName);
+
+            // Hide setup and show Q1
+            document.getElementById('setup-screen').classList.replace('block', 'hidden');
+            nextStep(1);
+        }
+
+        // Navigation Logic
+        function nextStep(stepNum) {
+            // Hide all steps
+            document.querySelectorAll('.step').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.step').forEach(el => el.classList.remove('block'));
+            
+            // Show target step
+            const target = document.getElementById('q' + stepNum);
+            if(target) {
+                target.classList.remove('hidden');
+                target.classList.add('block');
+                
+                // Add fade-in effect
+                target.style.opacity = 0;
+                setTimeout(() => {
+                    target.style.transition = 'opacity 0.5s ease';
+                    target.style.opacity = 1;
+                }, 50);
+            }
+        }
+
+        // Fake Error System (Q1 & Q2)
+        function triggerError(message) {
+            const app = document.getElementById('app-container');
+            const overlay = document.getElementById('glitch-overlay');
+            const modal = document.getElementById('error-modal');
+            const modalContent = document.getElementById('modal-content');
+            
+            // Glitch and Shake effect
+            app.classList.add('shake');
+            overlay.style.display = 'block';
+            
+            // Vibrate phone if supported
+            if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+
+            setTimeout(() => {
+                app.classList.remove('shake');
+                overlay.style.display = 'none';
+                
+                // Show custom modal
+                document.getElementById('error-msg').innerText = message;
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                setTimeout(() => modalContent.classList.remove('scale-95'), 10);
+            }, 600);
+        }
+
+        function closeError() {
+            const modal = document.getElementById('error-modal');
+            const modalContent = document.getElementById('modal-content');
+            modalContent.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 200);
+        }
+
+        // Bait and Switch Logic (Q3)
+        let baitSwitched = false;
+        function baitAndSwitch() {
+            if(baitSwitched) return;
+            const btnBait = document.getElementById('btn-bait');
+            btnBait.innerText = "YES ALSO!";
+            btnBait.classList.remove('bg-gray-200', 'text-gray-700');
+            btnBait.classList.add('bg-pink-400', 'text-white');
+            document.getElementById('bait-msg').classList.remove('hidden');
+            baitSwitched = true;
+        }
+
+        // Runaway Button Logic (Q4)
+        function moveRunaway() {
+            const btn = document.getElementById('btn-runaway');
+            const container = document.getElementById('q4');
+            
+            // Switch position to absolute if not already
+            if (btn.style.position !== 'absolute') {
+                btn.style.position = 'absolute';
+            }
+
+            // Calculate safe boundaries
+            const containerRect = container.getBoundingClientRect();
+            const btnWidth = btn.offsetWidth;
+            const btnHeight = btn.offsetHeight;
+            
+            // Randomize position within container
+            const maxLeft = containerRect.width - btnWidth;
+            const maxTop = containerRect.height - btnHeight - 40; // padding
+            
+            const newLeft = Math.max(0, Math.floor(Math.random() * maxLeft));
+            const newTop = Math.max(0, Math.floor(Math.random() * maxTop));
+
+            btn.style.left = newLeft + 'px';
+            btn.style.top = newTop + 'px';
+            btn.style.marginLeft = '0'; // reset initial negative margin
+            btn.style.bottom = 'auto';
+        }
+
+        // Final Result Display
+        function showResult() {
+            document.getElementById('app-container').classList.add('hidden');
+            const certContainer = document.getElementById('certificate-container');
+            certContainer.classList.remove('hidden');
+            certContainer.classList.add('block');
+            
+            // Confetti effect using simple DOM creation
+            createConfetti();
+        }
+
+        // PDF Export function using html2pdf
+        function downloadPDF() {
+            const element = document.getElementById('certificate');
+            const opt = {
+                margin:       10,
+                filename:     'official_proposal_result.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            
+            // Change button text while processing
+            const btn = document.querySelector('button[onclick="downloadPDF()"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = 'Generating PDF...';
+            btn.disabled = true;
+
+            html2pdf().set(opt).from(element).save().then(() => {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            });
+        }
+
+        // Simple Confetti Generator for the win screen
+        function createConfetti() {
+            const colors = ['#fce7f3', '#fbcfe8', '#f9a8d4', '#f472b6', '#ec4899'];
+            for(let i=0; i<50; i++) {
+                const conf = document.createElement('div');
+                conf.style.position = 'fixed';
+                conf.style.width = '10px';
+                conf.style.height = '10px';
+                conf.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                conf.style.left = Math.random() * 100 + 'vw';
+                conf.style.top = '-10px';
+                conf.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                conf.style.zIndex = '9999';
+                conf.style.pointerEvents = 'none';
+                
+                // Random animation duration and delay
+                const duration = Math.random() * 3 + 2;
+                const delay = Math.random() * 2;
+                
+                conf.style.animation = `fall ${duration}s linear ${delay}s forwards`;
+                document.body.appendChild(conf);
+            }
+        }
+
+        // Inject Confetti CSS
+        const style = document.createElement('style');
+        style.innerHTML = `
+            @keyframes fall {
+                to { transform: translateY(100vh) rotate(360deg); }
+            }
+        `;
+        document.head.appendChild(style);
+
+        /* --- NEW DARK PATTERN LOGIC --- */
+        
+        // Logic for Q1: Forced Slider
+        function forceLove() {
+            const slider = document.getElementById('love-slider');
+            const msg = document.getElementById('slider-msg');
+            const btn = document.getElementById('btn-next-1');
+            
+            // Provide feedback while dragging
+            if (slider.value > 0 && slider.value < 100) {
+                msg.innerText = "Keep going... don't be shy! 🥺";
+                msg.classList.remove('opacity-0');
+            }
+
+            // Snap to 100% logic
+            setTimeout(() => {
+                if (slider.value > 0 && slider.value < 100) {
+                    slider.value = 100;
+                    msg.innerText = "System correcting obvious typo... 💖";
+                    // Vibrate for feedback
+                    if (navigator.vibrate) navigator.vibrate(50);
+                    checkSliderCompletion();
+                }
+            }, 300);
+
+            checkSliderCompletion();
+        }
+
+        function checkSliderCompletion() {
+            const slider = document.getElementById('love-slider');
+            const btn = document.getElementById('btn-next-1');
+            const msg = document.getElementById('slider-msg');
+
+            if (slider.value == 100) {
+                msg.innerText = "100% Detected! You may proceed! 🥰";
+                msg.classList.remove('opacity-0');
+                btn.disabled = false;
+                btn.classList.remove('bg-gray-300', 'text-gray-500', 'cursor-not-allowed');
+                btn.classList.add('bg-pink-500', 'hover:bg-pink-600', 'text-white', 'pulse-strong');
+                btn.innerText = "Proceed to Next Question";
+            }
+        }
+
+        // Logic for Q3: Checkbox Trickery
+        function forceAgree() {
+            const chkDisagree = document.getElementById('chk-disagree');
+            const chkAgree = document.getElementById('chk-agree');
+            
+            if (chkDisagree.checked) {
+                // Immediately uncheck disagree and check agree
+                setTimeout(() => {
+                    chkDisagree.checked = false;
+                    chkAgree.checked = true;
+                    checkTNC();
+                    triggerError("ILLEGAL ACTION: Your finger slipped. We have automatically corrected it to 'I Agree' for your safety.");
+                }, 100);
+            }
+        }
+
+        function checkTNC() {
+            const chkAgree = document.getElementById('chk-agree');
+            const btn = document.getElementById('btn-next-3');
+            const chkDisagree = document.getElementById('chk-disagree');
+            
+            if (chkAgree.checked) {
+                btn.classList.remove('hidden');
+                chkDisagree.checked = false; // Ensure mutually exclusive visually
+            } else {
+                btn.classList.add('hidden');
+            }
+        }
+
+    </script>
+</body>
+</html>
