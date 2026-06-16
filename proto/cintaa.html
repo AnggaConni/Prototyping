@@ -384,10 +384,11 @@
             baitSwitched = true;
         }
 
-        // Runaway Button Logic (Q4)
+        // Runaway Button Logic (Q6)
         function moveRunaway() {
             const btn = document.getElementById('btn-runaway');
-            const container = document.getElementById('q4');
+            // FIX: Mengambil ukuran wadah induknya secara dinamis, bukan hardcode 'q4' lagi
+            const container = btn.parentElement;
             
             // Switch position to absolute if not already
             if (btn.style.position !== 'absolute') {
@@ -399,9 +400,9 @@
             const btnWidth = btn.offsetWidth;
             const btnHeight = btn.offsetHeight;
             
-            // Randomize position within container
+            // Randomize position strictly within the parent container's bounds
             const maxLeft = containerRect.width - btnWidth;
-            const maxTop = containerRect.height - btnHeight - 40; // padding
+            const maxTop = containerRect.height - btnHeight;
             
             const newLeft = Math.max(0, Math.floor(Math.random() * maxLeft));
             const newTop = Math.max(0, Math.floor(Math.random() * maxTop));
@@ -409,7 +410,7 @@
             btn.style.left = newLeft + 'px';
             btn.style.top = newTop + 'px';
             btn.style.marginLeft = '0'; // reset initial negative margin
-            btn.style.bottom = 'auto';
+            btn.style.bottom = 'auto';  // lepas constraint dari CSS awal
         }
 
         // Final Result Display
