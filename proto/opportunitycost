@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Opportunity Cost Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Scrollbar for better UI - Light Theme */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f8fafc; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        .fade-in { animation: fadeIn 0.4s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .progress-bar-fill { transition: width 1s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        .tabular { font-variant-numeric: tabular-nums; }
+
+        .chart-path { transition: d 0.6s ease; }
+        .chart-point { transition: cy 0.6s ease, cx 0.6s ease; }
+
+        .toast { animation: toastIn 0.25s ease-out, toastOut 0.25s ease-in 1.75s forwards; }
+        @keyframes toastIn { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translate(-50%, 0); } }
+        @keyframes toastOut { from { opacity: 1; } to { opacity: 0; } }
+
+        .info-dot { cursor: help; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen">
+
+    <!-- Header -->
+    <header class="text-center py-12 px-4">
+        <div class="inline-flex items-center justify-center p-3 bg-blue-100 rounded-2xl mb-4 shadow-sm border border-blue-200">
+            <span class="text-3xl">⏱️</span>
+        </div>
+        <h1 class="text-4xl md:text-5xl font-bold text-slate-900 mb-3 tracking-tight">Opportunity Cost Calculator</h1>
+        <p class="text-slate-500 text-lg italic">"What did waiting really cost?"</p>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 pb-20">
+
+        <!-- Mode Selector -->
+        <div class="flex flex-wrap justify-center gap-2 md:gap-3 mb-10">
+            <button onclick="setMode('stakeholder')" id="btn-stakeholder" data-color="blue" class="mode-btn px-5 py-3 rounded-full font-medium transition-all duration-200 bg-blue-600 text-white shadow-lg shadow-blue-500/30">🏛️ Stakeholder Delay</button>
+            <button onclick="setMode('vendor')" id="btn-vendor" data-color="amber" class="mode-btn px-5 py-3 rounded-full font-medium transition-all duration-200 bg-white text-slate-500 border border-slate-200 hover:bg-slate-100">💳 Vendor Payment</button>
+            <button onclick="setMode('career')" id="btn-career" data-color="emerald" class="mode-btn px-5 py-3 rounded-full font-medium transition-all duration-200 bg-white text-slate-500 border border-slate-200 hover:bg-slate-100">📈 Career / Investment</button>
+            <button onclick="setMode('relationship')" id="btn-relationship" data-color="purple" class="mode-btn px-5 py-3 rounded-full font-medium transition-all duration-200 bg-white text-slate-500 border border-slate-200 hover:bg-slate-100">💜 Relationship</button>
+        </div>
+
+        <!-- Inputs Section -->
+        <div class="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 mb-8 shadow-sm">
+            <h2 class="text-2xl font-bold text-slate-900 mb-1 border-b border-slate-100 pb-4" id="form-title">Stakeholder / Government Delay</h2>
+            <p class="text-sm text-slate-400 mt-3 mb-4" id="form-subtitle">A decision left unmade by a government body, board, or committee, and the value that quietly leaks away while it waits.</p>
+
+            <!-- Form: Stakeholder -->
+            <form id="form-stakeholder" class="input-form grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-600 mb-2">Project Value ($)</label>
+                    <input type="number" id="s_value" value="2000000" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-600 mb-2">Delay Duration (Days)</label>
+                    <input type="number" id="s_delay" value="60" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-600 mb-2">Est. Cost Increase (%) <span class="info-dot text-slate-400" title="Materials, labor, and contractor re-quoting typically inflate with each month of delay.">ⓘ</span></label>
+                    <input type="number" step="0.1" id="s_inflation" value="3.0" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-600 mb-2">Opportunity Loss / Day (%) <span class="info-dot text-slate-400" title="The share of project value that could have been generating returns elsewhere, per day of delay.">ⓘ</span></label>
+                    <input type="number" step="0.01" id="s_opp_rate" value="0.05" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors">
+                </div>
+            </form>
+
+            <!-- Form: Vendor -->
+            <form id="form-vendor" class="input-form hidden grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-600 mb-2">Invoice Value ($)</label>
+                    <input type="number" id="v_invoice" value="500000" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-600 mb-2">Days Late (Days)</label>
+                    <input type="number" id="v_delay" value="45" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-600 mb-2">Cost of Capital (% / Year)</label>
+                    <input type="number" step="0.1" id="v_interest" value="12" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-600 mb-2">Operational Cost ($ / Day) <span class="info-dot text-slate-400" title="Extra admin, chasing, and reconciliation work the delay creates each day.">ⓘ</span></label>
+                    <input type="number" id="v_op_cost" value="300" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors">
+                </div>
+            </form>
+
+            <!-- Form: Career / Investment -->
+            <form id="form-career" class="input-form hidden grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-600 mb-2">Value at Stake ($) <span class="info-dot text-slate-400" title="Salary, investment principal, or the annual value of the opportunity you're sitting on.">ⓘ</span></label>
+                    <input type="number" id="c_value" value="15000" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-600 mb-2">Decision Delay (Months)</label>
+                    <input type="number" id="c_delay" value="8" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-600 mb-2">Growth / Return Rate (% / Year) <span class="info-dot text-slate-400" title="Compounding rate this value would have grown at, had you acted now: raises, promotions, market returns, or compound interest.">ⓘ</span></label>
+                    <input type="number" step="0.1" id="c_rate" value="15" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-600 mb-2">Restart / Switching Cost ($) <span class="info-dot text-slate-400" title="One-off cost of re-entering later: relearning, re-negotiating, re-applying, or re-establishing momentum.">ⓘ</span></label>
+                    <input type="number" id="c_switch" value="1000" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors">
+                </div>
+            </form>
+
+            <!-- Form: Relationship -->
+            <form id="form-relationship" class="input-form hidden grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-600 mb-2">Relationship Duration (Years)</label>
+                    <input type="number" id="r_duration" value="5" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-600 mb-2">Commitment Delay (Years)</label>
+                    <input type="number" id="r_delay" value="3" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-600 mb-2">Alternatives Declined (People)</label>
+                    <input type="number" id="r_alternatives" value="7" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-600 mb-2">Current Age</label>
+                    <input type="number" id="r_age" value="35" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-semibold text-slate-600 mb-2">Desire to Have Children</label>
+                    <select id="r_children" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors">
+                        <option value="yes">Yes, very important</option>
+                        <option value="maybe">Maybe</option>
+                        <option value="no">No / Doesn't matter</option>
+                    </select>
+                </div>
+            </form>
+
+            <button onclick="calculate()" id="calc-btn" class="mt-8 w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-4 rounded-xl transition-all shadow-md hover:shadow-lg flex justify-center items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" /></svg>
+                Analyze Decision Cost
+            </button>
+        </div>
+
+        <!-- Results Section (Hidden default) -->
+        <div id="results-section" class="hidden fade-in">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-sm font-bold text-slate-400 tracking-widest uppercase">Your Result</h3>
+                <div class="flex gap-2">
+                    <button onclick="copySummary()" class="text-xs font-semibold px-3 py-1.5 rounded-full border border-slate-200 text-slate-500 bg-white hover:bg-slate-100 transition-colors flex items-center gap-1">📋 Copy Summary</button>
+                    <button onclick="saveScenario()" class="text-xs font-semibold px-3 py-1.5 rounded-full border border-slate-200 text-slate-500 bg-white hover:bg-slate-100 transition-colors flex items-center gap-1">➕ Save to Compare</button>
+                </div>
+            </div>
+
+            <!-- Key Metrics -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                <div class="bg-white border border-slate-200 rounded-2xl p-6 text-center shadow-sm">
+                    <p class="text-slate-500 text-sm font-medium mb-1">Total Delay</p>
+                    <p id="res_delay" class="text-3xl font-bold text-slate-900 tabular">60 Days</p>
+                </div>
+                <div class="bg-white border border-slate-200 rounded-2xl p-6 text-center shadow-sm">
+                    <p id="res_cost_label" class="text-slate-500 text-sm font-medium mb-1">Financial Cost</p>
+                    <p id="res_cost" class="text-3xl font-bold text-rose-600 tabular">$ 120,000</p>
+                </div>
+                <div class="bg-white border border-slate-200 rounded-2xl p-6 text-center shadow-sm relative overflow-hidden">
+                    <div id="risk_bg" class="absolute inset-0 opacity-10"></div>
+                    <p class="text-slate-500 text-sm font-medium mb-1 relative z-10">Opportunity Index & Risk</p>
+                    <div class="flex items-end justify-center gap-2 relative z-10">
+                        <p id="res_index" class="text-3xl font-bold text-slate-900 tabular">87<span class="text-sm text-slate-400 font-normal">/100</span></p>
+                    </div>
+                    <p id="res_risk" class="mt-2 text-xs font-bold inline-block px-3 py-1 rounded-full relative z-10 uppercase">🔴 High Risk</p>
+                </div>
+            </div>
+
+            <!-- Cost Over Time Chart -->
+            <div class="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 mb-8 shadow-sm">
+                <div class="flex items-center justify-between mb-4">
+                    <h4 class="text-xl font-bold text-slate-900">Cost Accumulation Over Time</h4>
+                    <span id="chart-total-label" class="text-sm font-semibold text-slate-400">by day 60</span>
+                </div>
+                <svg id="cost-chart" viewBox="0 0 600 220" class="w-full h-48 md:h-56" preserveAspectRatio="none">
+                    <defs>
+                        <linearGradient id="chart-fill" x1="0" y1="0" x2="0" y2="1">
+                            <stop id="chart-fill-stop1" offset="0%" stop-color="#3b82f6" stop-opacity="0.25"/>
+                            <stop id="chart-fill-stop2" offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
+                        </linearGradient>
+                    </defs>
+                    <line x1="0" y1="180" x2="600" y2="180" stroke="#e2e8f0" stroke-width="1"/>
+                    <path id="chart-area" d="" fill="url(#chart-fill)" stroke="none"></path>
+                    <path id="chart-line" class="chart-path" d="" fill="none" stroke="#3b82f6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+                <div class="flex justify-between text-xs text-slate-400 mt-1 px-1">
+                    <span>Day / Month 0</span>
+                    <span id="chart-mid-label">Midpoint</span>
+                    <span id="chart-end-label">End of Delay</span>
+                </div>
+                <p class="text-xs text-slate-400 mt-3">This curve shows how cost builds the longer the decision sits — the steeper the climb near the end, the more urgency matters.</p>
+            </div>
+
+            <!-- Delay Analyzer (Progress Bars) -->
+            <div class="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 mb-8 shadow-sm">
+                <h4 class="text-xl font-bold text-slate-900 mb-6">Decision Delay Analyzer</h4>
+                <div class="space-y-5" id="analyzer-bars">
+                    <!-- Bars injected by JS -->
+                </div>
+                <div class="mt-8 pt-6 border-t border-slate-100 flex justify-between items-center">
+                    <span class="text-slate-600 font-bold">Overall Delay Cost</span>
+                    <span id="overall_score" class="text-2xl font-black text-slate-900 tabular">87 / 100</span>
+                </div>
+            </div>
+
+            <!-- Recommendations & Interactive Tips -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
+                    <h4 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                        <span>💡</span> Tips & Reflection
+                    </h4>
+                    <div id="questions-container" class="space-y-3">
+                        <!-- Questions injected by JS -->
+                    </div>
+                    <div id="ai-insight" class="mt-5 p-4 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-900 text-sm hidden fade-in shadow-inner">
+                        <!-- Insight text -->
+                    </div>
+                </div>
+
+                <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
+                    <h4 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                        <span>📋</span> Recommendations
+                    </h4>
+                    <ul id="recommendations-list" class="space-y-3 text-slate-600 text-sm">
+                        <!-- Recommendations injected by JS -->
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Scenario Comparison -->
+            <div id="comparison-section" class="hidden bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-sm fade-in">
+                <div class="flex items-center justify-between mb-5">
+                    <h4 class="text-xl font-bold text-slate-900 flex items-center gap-2"><span>⚖️</span> Compare Scenarios</h4>
+                    <button onclick="clearScenarios()" class="text-xs font-semibold text-slate-400 hover:text-rose-500 transition-colors">Clear all</button>
+                </div>
+                <div id="comparison-list" class="space-y-4"></div>
+                <p class="text-xs text-slate-400 mt-4">Save up to 4 scenarios — try different delay lengths or modes side by side to see which decision actually costs the most.</p>
+            </div>
+        </div>
+    </main>
+
+    <div id="toast-container" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50"></div>
+
+    <script>
+        let currentMode = 'stakeholder';
+        let lastResult = null;
+        let savedScenarios = [];
+
+        const MODE_ACCENT = {
+            stakeholder: { hex: '#3b82f6', text: 'text-blue-600', bg: 'bg-blue-600', ring: 'shadow-blue-500/30', grad: 'from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700' },
+            vendor:      { hex: '#f59e0b', text: 'text-amber-600', bg: 'bg-amber-500', ring: 'shadow-amber-500/30', grad: 'from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700' },
+            career:      { hex: '#10b981', text: 'text-emerald-600', bg: 'bg-emerald-500', ring: 'shadow-emerald-500/30', grad: 'from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700' },
+            relationship:{ hex: '#8b5cf6', text: 'text-purple-600', bg: 'bg-purple-500', ring: 'shadow-purple-500/30', grad: 'from-purple-500 to-fuchsia-600 hover:from-purple-600 hover:to-fuchsia-700' }
+        };
+        const COLOR_HEX = { blue:'#3b82f6', rose:'#f43f5e', amber:'#f59e0b', emerald:'#10b981', purple:'#8b5cf6' };
+
+        const formatCurrency = (num) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(num);
+
+        function showToast(msg) {
+            const c = document.getElementById('toast-container');
+            const el = document.createElement('div');
+            el.className = 'toast bg-slate-900 text-white text-sm font-medium px-4 py-2.5 rounded-full shadow-lg mb-2';
+            el.innerText = msg;
+            c.appendChild(el);
+            setTimeout(() => el.remove(), 2000);
+        }
+
+        function setMode(mode) {
+            currentMode = mode;
+            const accent = MODE_ACCENT[mode];
+
+            // Reset Buttons
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.className = 'mode-btn px-5 py-3 rounded-full font-medium transition-all duration-200 bg-white text-slate-500 border border-slate-200 hover:bg-slate-100';
+            });
+
+            // Set Active Button
+            const activeBtn = document.getElementById(`btn-${mode}`);
+            activeBtn.className = `mode-btn px-5 py-3 rounded-full font-medium transition-all duration-200 ${accent.bg} text-white shadow-lg ${accent.ring}`;
+
+            // Recolor the primary action button to match the mode
+            document.getElementById('calc-btn').className = `mt-8 w-full bg-gradient-to-r ${accent.grad} text-white font-bold py-4 rounded-xl transition-all shadow-md hover:shadow-lg flex justify-center items-center gap-2`;
+
+            // Hide all forms
+            document.querySelectorAll('.input-form').forEach(form => form.classList.add('hidden'));
+
+            // Show target form
+            document.getElementById(`form-${mode}`).classList.remove('hidden');
+
+            // Update Title & Subtitle
+            const titles = {
+                'stakeholder': 'Stakeholder / Government Delay',
+                'vendor': 'Vendor Payment Delay',
+                'career': 'Career / Investment Delay',
+                'relationship': 'Relationship Opportunity Cost'
+            };
+            const subtitles = {
+                'stakeholder': 'A decision left unmade by a government body, board, or committee, and the value that quietly leaks away while it waits.',
+                'vendor': 'What a late payment really costs once capital, operations, and trust are all counted.',
+                'career': 'The compounding price of sitting on a raise, offer, promotion, or investment decision.',
+                'relationship': 'The time, alternatives, and life-stage cost of an unresolved commitment.'
+            };
+            document.getElementById('form-title').innerText = titles[mode];
+            document.getElementById('form-subtitle').innerText = subtitles[mode];
+
+            // Hide results when switching
+            document.getElementById('results-section').classList.add('hidden');
+        }
+
+        function calculate() {
+            document.getElementById('results-section').classList.remove('hidden');
+
+            // Scroll to results
+            setTimeout(() => {
+                document.getElementById('results-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+
+            if (currentMode === 'stakeholder') calcStakeholder();
+            else if (currentMode === 'vendor') calcVendor();
+            else if (currentMode === 'career') calcCareer();
+            else if (currentMode === 'relationship') calcRelationship();
+        }
+
+        function renderBars(metrics, overall) {
+            const container = document.getElementById('analyzer-bars');
+            container.innerHTML = '';
+
+            metrics.forEach(m => {
+                const colorMap = {
+                    'blue': 'bg-blue-500',
+                    'rose': 'bg-rose-500',
+                    'amber': 'bg-amber-500',
+                    'emerald': 'bg-emerald-500',
+                    'purple': 'bg-purple-500'
+                };
+
+                container.innerHTML += `
+                    <div>
+                        <div class="flex justify-between text-sm mb-1.5">
+                            <span class="text-slate-700 font-medium">${m.label}</span>
+                            <span class="text-slate-500 font-semibold tabular">${Math.round(m.score)}/100</span>
+                        </div>
+                        <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden shadow-inner">
+                            <div class="${colorMap[m.color]} h-2.5 rounded-full progress-bar-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Animate bars
+            setTimeout(() => {
+                const bars = container.querySelectorAll('.progress-bar-fill');
+                bars.forEach((bar, i) => {
+                    bar.style.width = `${Math.min(100, Math.max(0, metrics[i].score))}%`;
+                });
+            }, 50);
+
+            document.getElementById('overall_score').innerText = `${Math.round(overall)} / 100`;
+        }
+
+        function renderRisk(index) {
+            const riskEl = document.getElementById('res_risk');
+            const bgEl = document.getElementById('risk_bg');
+            document.getElementById('res_index').innerHTML = `${Math.round(index)}<span class="text-sm text-slate-400 font-normal">/100</span>`;
+
+            if (index >= 70) {
+                riskEl.innerText = "🔴 HIGH RISK";
+                riskEl.className = "mt-2 text-xs font-bold inline-block px-3 py-1 rounded-full relative z-10 bg-rose-100 text-rose-700 border border-rose-200";
+                bgEl.className = "absolute inset-0 opacity-40 bg-gradient-to-br from-rose-50 to-transparent";
+            } else if (index >= 40) {
+                riskEl.innerText = "🟡 MODERATE RISK";
+                riskEl.className = "mt-2 text-xs font-bold inline-block px-3 py-1 rounded-full relative z-10 bg-amber-100 text-amber-700 border border-amber-200";
+                bgEl.className = "absolute inset-0 opacity-40 bg-gradient-to-br from-amber-50 to-transparent";
+            } else {
+                riskEl.innerText = "🟢 LOW RISK";
+                riskEl.className = "mt-2 text-xs font-bold inline-block px-3 py-1 rounded-full relative z-10 bg-emerald-100 text-emerald-700 border border-emerald-200";
+                bgEl.className = "absolute inset-0 opacity-40 bg-gradient-to-br from-emerald-50 to-transparent";
+            }
+        }
+
+        function renderRecommendations(items) {
+            const list = document.getElementById('recommendations-list');
+            list.innerHTML = items.map(item => `
+                <li class="flex items-start gap-3">
+                    <span class="text-emerald-500 font-bold mt-0.5">✓</span>
+                    <span>${item}</span>
+                </li>
+            `).join('');
+        }
+
+        function renderQuestions(questions, insightLogic) {
+            const container = document.getElementById('questions-container');
+            container.innerHTML = questions.map((q, i) => `
+                <div class="flex justify-between items-center bg-slate-50 border border-slate-200 p-3 rounded-lg">
+                    <span class="text-sm text-slate-700 pr-4">${q}</span>
+                    <div class="flex gap-2 shrink-0">
+                        <button onclick="handleQ(${i}, true)" id="q${i}-yes" class="px-3 py-1 text-xs rounded border border-slate-300 text-slate-500 bg-white hover:bg-slate-100 transition-colors font-medium">YES</button>
+                        <button onclick="handleQ(${i}, false)" id="q${i}-no" class="px-3 py-1 text-xs rounded border border-slate-300 text-slate-500 bg-white hover:bg-slate-100 transition-colors font-medium">NO</button>
+                    </div>
+                </div>
+            `).join('');
+
+            window.currentInsightLogic = insightLogic;
+            window.qAnswers = {};
+            document.getElementById('ai-insight').classList.add('hidden');
+        }
+
+        window.handleQ = function(index, isYes) {
+            window.qAnswers[index] = isYes;
+
+            // Update UI for buttons
+            document.getElementById(`q${index}-yes`).className = `px-3 py-1 text-xs rounded border transition-colors font-medium ${isYes ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-slate-300 text-slate-500 bg-white hover:bg-slate-100'}`;
+            document.getElementById(`q${index}-no`).className = `px-3 py-1 text-xs rounded border transition-colors font-medium ${!isYes ? 'bg-slate-600 border-slate-600 text-white' : 'border-slate-300 text-slate-500 bg-white hover:bg-slate-100'}`;
+
+            // Reveal insight if all are answered
+            if (Object.keys(window.qAnswers).length === document.getElementById('questions-container').children.length) {
+                const insightBox = document.getElementById('ai-insight');
+                insightBox.innerHTML = window.currentInsightLogic(window.qAnswers);
+                insightBox.classList.remove('hidden');
+            }
+        };
+
+        // --- COST OVER TIME CHART ---
+        // curveFn(t) receives t in [0,1] (fraction of the delay elapsed) and returns cumulative cost/index at that point.
+        function renderCostChart(curveFn, totalLabel, endLabel, midLabel, colorKey) {
+            const hex = COLOR_HEX[colorKey] || '#3b82f6';
+            const steps = 24;
+            const points = [];
+            let maxVal = 0;
+            for (let i = 0; i <= steps; i++) {
+                const t = i / steps;
+                const v = Math.max(0, curveFn(t));
+                points.push(v);
+                if (v > maxVal) maxVal = v;
+            }
+            if (maxVal === 0) maxVal = 1;
+
+            const width = 600, height = 220, padBottom = 40, padTop = 15;
+            const usableH = height - padBottom - padTop;
+
+            const coords = points.map((v, i) => {
+                const x = (i / steps) * width;
+                const y = padTop + usableH - (v / maxVal) * usableH;
+                return [x, y];
+            });
+
+            const linePath = coords.map((p, i) => (i === 0 ? `M${p[0]},${p[1]}` : `L${p[0]},${p[1]}`)).join(' ');
+            const areaPath = `${linePath} L${width},${height - padBottom} L0,${height - padBottom} Z`;
+
+            document.getElementById('chart-line').setAttribute('d', linePath);
+            document.getElementById('chart-line').setAttribute('stroke', hex);
+            document.getElementById('chart-area').setAttribute('d', areaPath);
+            document.getElementById('chart-fill-stop1').setAttribute('stop-color', hex);
+            document.getElementById('chart-fill-stop2').setAttribute('stop-color', hex);
+            document.getElementById('chart-total-label').innerText = totalLabel;
+            document.getElementById('chart-end-label').innerText = endLabel;
+            document.getElementById('chart-mid-label').innerText = midLabel;
+        }
+
+        // --- SCENARIO COMPARISON ---
+        function saveScenario() {
+            if (!lastResult) return;
+            if (savedScenarios.length >= 4) {
+                showToast('Max 4 scenarios — clear one to add more.');
+                return;
+            }
+            savedScenarios.push({ ...lastResult, id: Date.now() });
+            renderComparison();
+            showToast('Scenario saved for comparison.');
+        }
+
+        function clearScenarios() {
+            savedScenarios = [];
+            renderComparison();
+        }
+
+        function removeScenario(id) {
+            savedScenarios = savedScenarios.filter(s => s.id !== id);
+            renderComparison();
+        }
+
+        function renderComparison() {
+            const section = document.getElementById('comparison-section');
+            const list = document.getElementById('comparison-list');
+            if (savedScenarios.length === 0) {
+                section.classList.add('hidden');
+                return;
+            }
+            section.classList.remove('hidden');
+            const maxIndex = Math.max(...savedScenarios.map(s => s.index), 1);
+
+            list.innerHTML = savedScenarios.map(s => {
+                const accent = MODE_ACCENT[s.mode];
+                const widthPct = Math.max(4, (s.index / maxIndex) * 100);
+                return `
+                <div class="flex items-center gap-4">
+                    <div class="w-28 shrink-0">
+                        <p class="text-xs font-bold ${accent.text} uppercase tracking-wide">${s.modeLabel}</p>
+                        <p class="text-xs text-slate-400">${s.delayLabel}</p>
+                    </div>
+                    <div class="flex-1">
+                        <div class="w-full bg-slate-100 rounded-full h-6 overflow-hidden relative">
+                            <div class="${accent.bg} h-6 rounded-full progress-bar-fill flex items-center justify-end pr-2" style="width: ${widthPct}%">
+                                <span class="text-xs font-bold text-white tabular">${Math.round(s.index)}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="w-24 text-right shrink-0">
+                        <p class="text-sm font-bold text-slate-800 tabular">${s.costLabel}</p>
+                    </div>
+                    <button onclick="removeScenario(${s.id})" class="text-slate-300 hover:text-rose-500 transition-colors shrink-0" title="Remove">✕</button>
+                </div>`;
+            }).join('');
+        }
+
+        // --- COPY SUMMARY ---
+        function copySummary() {
+            if (!lastResult) return;
+            const r = lastResult;
+            const text = `Opportunity Cost Analysis — ${r.modeLabel}\n` +
+                `Delay: ${r.delayLabel}\n` +
+                `${document.getElementById('res_cost_label').innerText}: ${r.costLabel}\n` +
+                `Opportunity Index: ${Math.round(r.index)}/100 (${r.riskLabel})\n` +
+                `Overall Delay Cost Score: ${Math.round(r.index)}/100\n` +
+                `— generated by Opportunity Cost Calculator`;
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => showToast('Summary copied to clipboard.')).catch(() => showToast('Could not copy — select and copy manually.'));
+            } else {
+                showToast('Clipboard not available in this browser.');
+            }
+        }
+
+        // --- CALCULATIONS ---
+
+        function calcStakeholder() {
+            const val = parseFloat(document.getElementById('s_value').value) || 0;
+            const delay = parseFloat(document.getElementById('s_delay').value) || 0;
+            const inflation = parseFloat(document.getElementById('s_inflation').value) || 0;
+            const oppRate = parseFloat(document.getElementById('s_opp_rate').value) || 0;
+
+            const directCost = val * (inflation / 100);
+            const lostOpp = val * (oppRate / 100) * delay;
+            const totalCost = directCost + lostOpp;
+
+            const index = Math.min(100, (delay / 30) * 15 + (totalCost / (val || 1)) * 200);
+
+            document.getElementById('res_delay').innerText = `${delay} Days`;
+            document.getElementById('res_cost_label').innerText = "Financial Cost";
+            document.getElementById('res_cost').innerText = formatCurrency(totalCost);
+            document.getElementById('res_cost').className = "text-3xl font-bold text-rose-600 tabular";
+
+            renderRisk(index);
+
+            renderBars([
+                { label: 'Financial Impact', score: Math.min(100, (directCost / (val || 1)) * 500), color: 'rose' },
+                { label: 'Opportunity Loss', score: Math.min(100, (lostOpp / (val || 1)) * 200), color: 'amber' },
+                { label: 'Time Efficiency Risk', score: Math.min(100, delay), color: 'blue' },
+                { label: 'Stakeholder Trust Risk', score: index * 0.8, color: 'purple' }
+            ], index);
+
+            renderRecommendations([
+                "Don't postpone decisions without a clear reason or timeline.",
+                "Communicate transparently with affected stakeholders.",
+                "Recalculate priorities based on direct cost inflation.",
+                "Remember that every day delayed compounds the lost opportunity."
+            ]);
+
+            renderQuestions([
+                "Is the reason for the delay clearly documented?",
+                "Are all stakeholders aware of the financial impact?",
+                "Is there a hard deadline to finalize this decision?"
+            ], (ans) => {
+                let yesCount = Object.values(ans).filter(Boolean).length;
+                if (yesCount === 3) return "<strong>Analyzer Insight:</strong> You have good control over this delay. Ensure execution happens exactly on the hard deadline.";
+                if (yesCount === 0) return "<strong>Analyzer Insight:</strong> Red Alert! This delay is occurring without transparency or a deadline. The risk of cost overruns is highly tangible.";
+                return "<strong>Analyzer Insight:</strong> Your communication needs improvement. Transparency will help reduce pressure from stakeholders during the delay.";
+            });
+
+            renderCostChart((t) => (directCost * t) + (lostOpp * t), `by day ${delay}`, `Day ${delay}`, `Day ${Math.round(delay/2)}`, 'blue');
+
+            lastResult = { mode: 'stakeholder', modeLabel: 'Stakeholder Delay', delayLabel: `${delay} days`, costLabel: formatCurrency(totalCost), index, riskLabel: index >= 70 ? 'High Risk' : index >= 40 ? 'Moderate Risk' : 'Low Risk' };
+        }
+
+        function calcVendor() {
+            const inv = parseFloat(document.getElementById('v_invoice').value) || 0;
+            const delay = parseFloat(document.getElementById('v_delay').value) || 0;
+            const interest = parseFloat(document.getElementById('v_interest').value) || 0;
+            const opCost = parseFloat(document.getElementById('v_op_cost').value) || 0;
+
+            const costOfCapital = inv * (interest / 100 / 365) * delay;
+            const totalOpCost = opCost * delay;
+            const totalCost = costOfCapital + totalOpCost;
+
+            const index = Math.min(100, (delay / 15) * 20 + (totalCost / (inv || 1)) * 300);
+
+            document.getElementById('res_delay').innerText = `${delay} Days`;
+            document.getElementById('res_cost_label').innerText = "Total Opportunity Cost";
+            document.getElementById('res_cost').innerText = formatCurrency(totalCost);
+            document.getElementById('res_cost').className = "text-3xl font-bold text-rose-600 tabular";
+
+            renderRisk(index);
+
+            renderBars([
+                { label: 'Cost of Capital Loss', score: Math.min(100, (costOfCapital / (inv || 1)) * 1000), color: 'amber' },
+                { label: 'Operational Drain', score: Math.min(100, (totalOpCost / (inv || 1)) * 500), color: 'rose' },
+                { label: 'Cashflow Stress', score: index, color: 'purple' },
+                { label: 'Vendor Relationship Risk', score: Math.min(100, delay * 2), color: 'blue' }
+            ], index);
+
+            renderRecommendations([
+                "Automate payment approvals to prevent operational bottlenecks.",
+                "Negotiate better payment terms if cashflow is consistently tight.",
+                "Factor in daily operational drain when prioritizing payouts.",
+                "Protect vendor trust; it translates to better future pricing."
+            ]);
+
+            renderQuestions([
+                "Did you notify the vendor before the due date?",
+                "Is there an internal bottleneck causing this delay?",
+                "Will this delay affect the vendor's willingness to work with you?"
+            ], (ans) => {
+                if (!ans[0] && ans[2]) return "<strong>Analyzer Insight:</strong> You are damaging a strategic relationship. The lack of notification makes the vendor feel unvalued.";
+                if (ans[1]) return "<strong>Analyzer Insight:</strong> Re-evaluate your financial SOPs. Internal bottlenecks are causing unnecessary cost of capital losses.";
+                return "<strong>Analyzer Insight:</strong> Manage expectations well. Proactive communication can suppress the 'Relationship Risk' with your vendor.";
+            });
+
+            renderCostChart((t) => (costOfCapital * t) + (totalOpCost * t), `by day ${delay}`, `Day ${delay}`, `Day ${Math.round(delay/2)}`, 'amber');
+
+            lastResult = { mode: 'vendor', modeLabel: 'Vendor Payment', delayLabel: `${delay} days late`, costLabel: formatCurrency(totalCost), index, riskLabel: index >= 70 ? 'High Risk' : index >= 40 ? 'Moderate Risk' : 'Low Risk' };
+        }
+
+        function calcCareer() {
+            const val = parseFloat(document.getElementById('c_value').value) || 0;
+            const delayMonths = parseFloat(document.getElementById('c_delay').value) || 0;
+            const rate = parseFloat(document.getElementById('c_rate').value) || 0;
+            const switchCost = parseFloat(document.getElementById('c_switch').value) || 0;
+
+            const timeYears = delayMonths / 12;
+            const compoundLoss = val * (Math.pow(1 + rate / 100, timeYears) - 1);
+            const totalCost = compoundLoss + switchCost;
+
+            const index = Math.min(100, (delayMonths / 6) * 20 + (totalCost / (val || 1)) * 100);
+
+            document.getElementById('res_delay').innerText = `${delayMonths} Months`;
+            document.getElementById('res_cost_label').innerText = "Compounding Cost";
+            document.getElementById('res_cost').innerText = formatCurrency(totalCost);
+            document.getElementById('res_cost').className = "text-3xl font-bold text-rose-600 tabular";
+
+            renderRisk(index);
+
+            renderBars([
+                { label: 'Compounding Growth Lost', score: Math.min(100, (compoundLoss / (val || 1)) * 150), color: 'emerald' },
+                { label: 'Career / Investment Stagnation Risk', score: Math.min(100, delayMonths * 6), color: 'rose' },
+                { label: 'Market / Cycle Timing Risk', score: Math.min(100, index * 0.9), color: 'amber' },
+                { label: 'Restart Cost Burden', score: Math.min(100, (switchCost / (val || 1)) * 150), color: 'purple' }
+            ], index);
+
+            renderRecommendations([
+                "Small delays compound quietly — a few months rarely feels urgent, but the math says otherwise.",
+                "Set a decision deadline for yourself, the same way you would for a client.",
+                "If you're waiting for 'the right moment,' define exactly what that moment looks like.",
+                "Weigh the restart cost: re-entering later is rarely free."
+            ]);
+
+            renderQuestions([
+                "Do you have a specific, dated trigger for making this decision?",
+                "Is the delay driven by genuine new information, or by hesitation?",
+                "Would 'future you' thank 'today you' for waiting?"
+            ], (ans) => {
+                if (!ans[0] && !ans[1]) return "<strong>Analyzer Insight:</strong> This looks like hesitation without a plan. The compounding math is working against you every month.";
+                if (ans[1]) return "<strong>Analyzer Insight:</strong> Waiting for real information is reasonable — just make sure the information you need actually has an arrival date.";
+                return "<strong>Analyzer Insight:</strong> If future-you wouldn't thank present-you for the wait, that's a strong signal to move the deadline up.";
+            });
+
+            renderCostChart((t) => val * (Math.pow(1 + rate / 100, timeYears * t) - 1) + switchCost * t, `by month ${delayMonths}`, `Month ${delayMonths}`, `Month ${Math.round(delayMonths/2)}`, 'emerald');
+
+            lastResult = { mode: 'career', modeLabel: 'Career / Investment', delayLabel: `${delayMonths} months`, costLabel: formatCurrency(totalCost), index, riskLabel: index >= 70 ? 'High Risk' : index >= 40 ? 'Moderate Risk' : 'Low Risk' };
+        }
+
+        function calcRelationship() {
+            const duration = parseFloat(document.getElementById('r_duration').value) || 0;
+            const delay = parseFloat(document.getElementById('r_delay').value) || 0;
+            const alts = parseFloat(document.getElementById('r_alternatives').value) || 0;
+            const age = parseFloat(document.getElementById('r_age').value) || 0;
+            const children = document.getElementById('r_children').value;
+
+            let baseScore = (delay * 8) + (alts * 5);
+            let ageFactor = 1.0;
+            if (age > 30) ageFactor += (age - 30) * 0.05;
+
+            let childFactor = 0;
+            if (children === 'yes') childFactor = 15 + (age > 32 ? 10 : 0);
+            else if (children === 'maybe') childFactor = 5;
+
+            let finalIndex = Math.min(100, (baseScore * ageFactor) + childFactor);
+
+            document.getElementById('res_delay').innerText = `${delay} Years`;
+            document.getElementById('res_cost_label').innerText = "Lost Social Opportunities";
+            document.getElementById('res_cost').innerText = `${alts} People`;
+            document.getElementById('res_cost').className = "text-3xl font-bold text-amber-600 tabular";
+
+            renderRisk(finalIndex);
+
+            renderBars([
+                { label: 'Time Investment Loss', score: Math.min(100, (delay / (duration || 1)) * 100), color: 'amber' },
+                { label: 'Social Opportunity Cost', score: Math.min(100, alts * 12), color: 'blue' },
+                { label: 'Life Stage Urgency (Age & Goals)', score: Math.min(100, age * 2.5 + childFactor), color: 'rose' },
+                { label: 'Emotional Cost Index', score: finalIndex * 0.9, color: 'purple' }
+            ], finalIndex);
+
+            renderRecommendations([
+                "Set clear boundaries and a realistic timeline moving forward.",
+                "Evaluate if the delay is circumstantial or behavioral.",
+                "Understand that declining alternatives is an active choice with real value.",
+                "Ensure life goals (like family planning) remain aligned."
+            ]);
+
+            renderQuestions([
+                "Did you discuss a realistic timeline explicitly?",
+                "Were promises regarding commitment repeatedly delayed?",
+                "Did you decline other potential relationships because of this?"
+            ], (ans) => {
+                if (ans[1] && ans[2]) return "<strong>Analyzer Insight:</strong> Sunk Cost Fallacy detected. You continue to sacrifice new alternatives because you feel you've already 'waited too long' for delayed promises.";
+                if (!ans[0]) return "<strong>Analyzer Insight:</strong> The root problem is a lack of explicit communication. Don't make assumptions; create a clear timeline together.";
+                return "<strong>Analyzer Insight:</strong> Every choice has an opportunity cost. Evaluate if the commitment you are waiting for is worth the exclusive time you are giving.";
+            });
+
+            renderCostChart((t) => finalIndex * t, `by year ${delay}`, `Year ${delay}`, `Year ${(delay/2).toFixed(1)}`, 'purple');
+
+            lastResult = { mode: 'relationship', modeLabel: 'Relationship', delayLabel: `${delay} years`, costLabel: `${alts} alternatives declined`, index: finalIndex, riskLabel: finalIndex >= 70 ? 'High Risk' : finalIndex >= 40 ? 'Moderate Risk' : 'Low Risk' };
+        }
+
+        setMode('stakeholder');
+
+    </script>
+</body>
+</html>
