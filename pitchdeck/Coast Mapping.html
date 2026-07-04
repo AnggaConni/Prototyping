@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ocean Literacy - Pitch Deck</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary: #0077b6;
+            --secondary: #2a9d8f;
+            --accent: #e9c46a;
+            --dark: #023047;
+            --light: #f8f9fa;
+            --danger: #e76f51;
+            --mangrove: #6a994e;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        body {
+            overflow: hidden;
+            background-color: var(--dark);
+            color: var(--light);
+        }
+
+        /* Progress Bar Modern */
+        .progress-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            background: rgba(255,255,255,0.1);
+            z-index: 1000;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--secondary), var(--primary));
+            width: 0%;
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #deck-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 4rem 8%;
+            opacity: 0;
+            visibility: hidden;
+            transform: scale(0.95);
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-y: auto;
+        }
+
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+            transform: scale(1);
+        }
+
+        /* Background Variations */
+        #slide-1 { background: radial-gradient(circle at center, #00b4d8 0%, #023e8a 100%); }
+        #slide-2 { background: linear-gradient(135deg, #1d3557 0%, #457b9d 100%); }
+        #slide-3 { background: linear-gradient(135deg, #264653 0%, #2a9d8f 100%); }
+        #slide-4 { background: linear-gradient(135deg, #073b4c 0%, #118ab2 100%); }
+        #slide-5 { background: linear-gradient(135deg, #14213d 0%, #000000 100%); }
+        #slide-6 { background: linear-gradient(135deg, #1d3557 0%, #073b4c 100%); }
+        #slide-7 { background: radial-gradient(circle at top right, #48cae4, #023e8a); }
+        #slide-8 { background: linear-gradient(135deg, #03071e 0%, #1d3557 60%, #023047 100%); }
+
+        h1 {
+            font-family: 'Sora', sans-serif;
+            font-size: clamp(2rem, 5vw, 4rem);
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            line-height: 1.15;
+        }
+
+        h2 {
+            font-family: 'Sora', sans-serif;
+            font-size: clamp(1.5rem, 3vw, 2.5rem);
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: var(--accent);
+            text-align: center;
+        }
+
+        h3 { font-family: 'Sora', sans-serif; }
+
+        .subtitle {
+            font-size: 1.15rem;
+            max-width: 800px;
+            text-align: center;
+            opacity: 0.9;
+            margin-bottom: 2.5rem;
+            line-height: 1.65;
+        }
+
+        /* Grid Layouts */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 22px;
+            width: 100%;
+            max-width: 1100px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.07);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 2.2rem 1.8rem;
+            border-radius: 24px;
+            text-align: center;
+            transition: all 0.4s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            background: rgba(255, 255, 255, 0.12);
+            border-color: var(--accent);
+        }
+
+        .card i {
+            font-size: 2.6rem;
+            margin-bottom: 1.2rem;
+            background: linear-gradient(45deg, var(--accent), #fff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .card h3 { margin-bottom: 0.8rem; color: #fff; font-size: 1.15rem; }
+        .card p { font-size: 0.95rem; opacity: 0.9; line-height: 1.55; }
+
+        /* Highlight Elements */
+        .highlight { color: var(--accent); font-weight: 800; }
+
+        .badge {
+            background: var(--danger);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            margin-bottom: 1.2rem;
+        }
+
+        /* Gap comparison bars (slide 2) */
+        .gap-wrap {
+            width: 100%;
+            max-width: 720px;
+            display: flex;
+            flex-direction: column;
+            gap: 1.4rem;
+            margin-bottom: 1rem;
+        }
+        .gap-row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .gap-label {
+            width: 190px;
+            font-size: 0.95rem;
+            text-align: right;
+            opacity: 0.9;
+            flex-shrink: 0;
+        }
+        .gap-track {
+            flex: 1;
+            height: 14px;
+            background: rgba(255,255,255,0.12);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .gap-fill {
+            height: 100%;
+            border-radius: 8px;
+        }
+        .gap-fill.curriculum { background: linear-gradient(90deg, var(--secondary), #52b788); width: 78%; }
+        .gap-fill.industry { background: linear-gradient(90deg, var(--danger), var(--accent)); width: 32%; }
+        .gap-caption { text-align: center; font-size: 0.9rem; opacity: 0.7; max-width: 600px; margin-top: 0.5rem;}
+
+        /* Timeline / methodology (slide 4) */
+        .flow {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: stretch;
+            gap: 0;
+            width: 100%;
+            max-width: 1150px;
+        }
+        .flow-step {
+            flex: 1 1 220px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 1.6rem 1.2rem;
+            position: relative;
+        }
+        .flow-num {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            border: 2px solid var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Sora', sans-serif;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 0.9rem;
+        }
+        .flow-step i { font-size: 1.8rem; color: var(--accent); margin-bottom: 0.7rem; }
+        .flow-step h3 { font-size: 1rem; margin-bottom: 0.5rem; }
+        .flow-step p { font-size: 0.85rem; opacity: 0.85; line-height: 1.5; }
+        .flow-arrow {
+            display: flex;
+            align-items: center;
+            color: rgba(255,255,255,0.3);
+            font-size: 1.4rem;
+        }
+
+        /* Roadmap (slide 6) */
+        .roadmap {
+            width: 100%;
+            max-width: 950px;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            position: relative;
+        }
+        .road-item {
+            display: flex;
+            gap: 1.5rem;
+            padding-bottom: 2rem;
+            position: relative;
+        }
+        .road-item:last-child { padding-bottom: 0; }
+        .road-marker {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .road-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 0 4px rgba(233,196,106,0.2);
+        }
+        .road-line {
+            width: 2px;
+            flex: 1;
+            background: rgba(255,255,255,0.18);
+            margin-top: 4px;
+        }
+        .road-content { padding-top: -2px; }
+        .road-phase { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); font-weight: 700; margin-bottom: 0.3rem; }
+        .road-title { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 1.1rem; margin-bottom: 0.4rem; }
+        .road-desc { font-size: 0.9rem; opacity: 0.85; max-width: 620px; line-height: 1.55; }
+
+        /* Authority split (slide 8) */
+        .authority-split {
+            display: flex;
+            align-items: stretch;
+            gap: 0;
+            width: 100%;
+            max-width: 900px;
+            margin-bottom: 2rem;
+        }
+        .authority-col {
+            flex: 1;
+            padding: 1.8rem 1.5rem;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.14);
+        }
+        .authority-col.pusat { border-top: 3px solid var(--primary); }
+        .authority-col.daerah { border-top: 3px solid var(--secondary); }
+        .authority-eyebrow {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-weight: 700;
+            opacity: 0.7;
+            margin-bottom: 0.6rem;
+        }
+        .authority-col p { font-size: 0.92rem; line-height: 1.55; opacity: 0.9; }
+        .authority-gap {
+            flex: 0 0 auto;
+            width: 90px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            padding: 0 0.5rem;
+        }
+        .authority-gap i { font-size: 1.4rem; color: var(--danger); }
+        .authority-gap span { font-size: 0.7rem; text-align: center; opacity: 0.7; line-height: 1.3; }
+        .closing-note {
+            max-width: 780px;
+            text-align: center;
+            font-size: 1.05rem;
+            line-height: 1.6;
+            background: rgba(233,196,106,0.08);
+            border: 1px solid rgba(233,196,106,0.3);
+            padding: 1.4rem 1.8rem;
+            border-radius: 18px;
+        }
+        .closing-note b { color: var(--accent); }
+
+        @media (max-width: 640px) {
+            .authority-split { flex-direction: column; }
+            .authority-gap { width: 100%; flex-direction: row; padding: 0.5rem 0; }
+        }
+
+        /* Navigation */
+        .controls {
+            position: absolute;
+            bottom: 40px;
+            display: flex;
+            gap: 20px;
+            z-index: 100;
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: all 0.3s;
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            background: var(--light);
+            color: var(--dark);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.2;
+            cursor: not-allowed;
+        }
+
+        .slide-counter {
+            position: absolute;
+            bottom: 60px;
+            right: 40px;
+            font-weight: 600;
+            font-size: 1.2rem;
+            opacity: 0.5;
+        }
+
+        .dots {
+            position: absolute;
+            bottom: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 100;
+        }
+        .dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.25);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .dot.active { background: var(--accent); width: 24px; border-radius: 5px; }
+
+        /* Floating Animation */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+        .float { animation: float 4s ease-in-out infinite; }
+
+        @media (max-width: 640px) {
+            .gap-label { width: 120px; font-size: 0.8rem; }
+            .flow-arrow { display: none; }
+            .slide { padding: 3rem 6%; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="progress-container"><div class="progress-bar" id="bar"></div></div>
+
+    <div id="deck-container">
+
+        <!-- SLIDE 1: HERO -->
+        <div class="slide active" id="slide-1">
+            <i class="fa-solid fa-anchor float" style="font-size: 4rem; color: var(--accent); margin-bottom: 20px;"></i>
+            <h1>Transformasi Pendidikan <br><span class="highlight">Berbasis Pesisir</span></h1>
+            <p class="subtitle">Mewujudkan <b>Ocean Literacy</b> melalui pendataan sekolah pesisir dan kurikulum kokurikuler <i>Mangrove Carbon Stock</i> — menjembatani ruang kelas dengan ekonomi biru.</p>
+        </div>
+
+        <!-- SLIDE 2: THE PARADOX -->
+        <div class="slide" id="slide-2">
+            <span class="badge">URGENSI</span>
+            <h2>Paradoks Lulusan SMA/SMK Pesisir</h2>
+            <p class="subtitle">Wilayah pesisir kaya sumber daya maritim, tapi lulusan sekolahnya justru paling jauh dari peluang ekonomi biru di halaman rumahnya sendiri. Ini gap antara <b>hasil belajar</b> dan <b>kebutuhan dunia kerja & industri.</b></p>
+
+            <div class="gap-wrap">
+                <div class="gap-row">
+                    <div class="gap-label">Materi diajarkan di kelas</div>
+                    <div class="gap-track"><div class="gap-fill curriculum"></div></div>
+                </div>
+                <div class="gap-row">
+                    <div class="gap-label">Relevansi ke industri & konservasi lokal</div>
+                    <div class="gap-track"><div class="gap-fill industry"></div></div>
+                </div>
+            </div>
+            <p class="gap-caption">Ilustrasi kesenjangan: porsi kurikulum yang tersampaikan jauh lebih besar dari porsi yang benar-benar terpakai di lapangan kerja pesisir.</p>
+
+            <div class="grid" style="margin-top: 2rem;">
+                <div class="card">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <h3>Skills Gap</h3>
+                    <p>Kurikulum nasional bersifat generik, tidak dirancang untuk kebutuhan industri maritim dan konservasi di daerah masing-masing.</p>
+                </div>
+                <div class="card">
+                    <i class="fa-solid fa-user-slash"></i>
+                    <h3>Penonton di Rumah Sendiri</h3>
+                    <p>Lulusan lokal kalah bersaing untuk posisi di sektor kelautan, pariwisata, dan konservasi yang berkembang di wilayahnya sendiri.</p>
+                </div>
+                <div class="card">
+                    <i class="fa-solid fa-earth-asia"></i>
+                    <h3>Abai Nilai Ekologi</h3>
+                    <p>Ekosistem seperti mangrove dianggap "hanya pohon", padahal menyimpan nilai ekonomi karbon yang belum dipahami siswa maupun sekolah.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 3: THE SOLUTION -->
+        <div class="slide" id="slide-3">
+            <span class="badge" style="background: var(--secondary);">SOLUSI KAMI</span>
+            <h2>Pendataan & Ocean Literacy Terintegrasi</h2>
+            <p class="subtitle">Kami memetakan sekolah pesisir secara digital, lalu menanamkan program <b>Ocean Literacy</b> lewat kokurikuler <b>Mangrove Carbon Stock</b> — bukan pelajaran tambahan, tapi cara baru mengajarkan mapel yang sudah ada.</p>
+            <div class="grid">
+                <div class="card">
+                    <i class="fa-solid fa-database"></i>
+                    <h3>Pendataan Sekolah Pesisir</h3>
+                    <p>Profil fasilitas sekolah, data siswa, dan zonasi mangrove di sekitar sekolah — satu peta digital untuk pengambilan keputusan program.</p>
+                </div>
+                <div class="card">
+                    <i class="fa-solid fa-seedling"></i>
+                    <h3>Kokurikuler Mangrove Carbon Stock</h3>
+                    <p>Fokus utama program: siswa turun langsung menghitung stok karbon mangrove sebagai unit pembelajaran sekaligus aset ekonomi masa depan sekolah.</p>
+                </div>
+                <div class="card">
+                    <i class="fa-solid fa-compass"></i>
+                    <h3>Ocean Literacy sebagai Tujuan</h3>
+                    <p>Semua data dan aktivitas diarahkan pada satu tujuan: siswa pesisir melek laut — memahami, menjaga, dan memanfaatkan ekosistemnya secara bertanggung jawab.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 4: METHODOLOGY / HOW IT WORKS -->
+        <div class="slide" id="slide-4">
+            <span class="badge" style="background: var(--primary);">METODOLOGI</span>
+            <h2>Bagaimana Kokurikuler Ini Berjalan</h2>
+            <p class="subtitle">Empat tahap yang mengubah data lapangan menjadi kompetensi siswa — mangrove sebagai laboratorium terbuka.</p>
+            <div class="flow">
+                <div class="flow-step">
+                    <div class="flow-num">1</div>
+                    <i class="fa-solid fa-map-location-dot"></i>
+                    <h3>Petakan Sekolah & Mangrove</h3>
+                    <p>Survei digital fasilitas sekolah dan zona mangrove terdekat sebagai lokasi belajar.</p>
+                </div>
+                <div class="flow-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+                <div class="flow-step">
+                    <div class="flow-num">2</div>
+                    <i class="fa-solid fa-ruler-combined"></i>
+                    <h3>Ukur & Hitung Stok Karbon</h3>
+                    <p>Siswa mengukur diameter batang, tinggi pohon, dan kerapatan mangrove — data mentah untuk kelas.</p>
+                </div>
+                <div class="flow-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+                <div class="flow-step">
+                    <div class="flow-num">3</div>
+                    <i class="fa-solid fa-book-open"></i>
+                    <h3>Integrasi ke Mapel</h3>
+                    <p>Data diolah dalam pelajaran Matematika, Biologi, dan Geografi sebagai kokurikuler <i>embedded</i>, bukan beban jam tambahan.</p>
+                </div>
+                <div class="flow-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+                <div class="flow-step">
+                    <div class="flow-num">4</div>
+                    <i class="fa-solid fa-certificate"></i>
+                    <h3>Kompetensi & Nilai Ekonomi</h3>
+                    <p>Siswa lulus dengan literasi laut, portofolio data karbon, dan sekolah punya dasar menuju skema carbon credit.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 5: THE BENEFITS -->
+        <div class="slide" id="slide-5">
+            <span class="badge" style="background: var(--mangrove);">MANFAAT</span>
+            <h2>Dampak & Nilai Tambah</h2>
+            <p class="subtitle">Satu program kokurikuler, tiga lapis manfaat — untuk siswa, sekolah, dan ekosistem pesisir.</p>
+            <div class="grid">
+                <div class="card">
+                    <i class="fa-solid fa-brain"></i>
+                    <h3>Pembelajaran Kontekstual</h3>
+                    <p>Matematika dan Biologi jadi nyata: menghitung diameter batang mangrove, menganalisis kualitas air, membaca data lapangan sendiri — bukan sekadar rumus di papan tulis.</p>
+                </div>
+                <div class="card">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <h3>Peningkatan Ekonomi Sekolah</h3>
+                    <p>Data stok karbon yang terkumpul membuka jalan menuju skema <i>carbon credit</i> dan ekowisata mangrove yang dikelola koperasi sekolah/komunitas.</p>
+                </div>
+                <div class="card">
+                    <i class="fa-solid fa-award"></i>
+                    <h3>Hard Skill & Soft Skill</h3>
+                    <p>Siswa menguasai pengumpulan & analisis data lingkungan (hard skill), sekaligus kerja tim, kepemimpinan, dan kesadaran ekologi (soft skill).</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 6: ROADMAP -->
+        <div class="slide" id="slide-6">
+            <span class="badge" style="background: var(--danger);">RENCANA</span>
+            <h2>Peta Jalan Implementasi</h2>
+            <div class="roadmap">
+                <div class="road-item">
+                    <div class="road-marker"><div class="road-dot"></div><div class="road-line"></div></div>
+                    <div class="road-content">
+                        <div class="road-phase">Fase 1</div>
+                        <div class="road-title">Pendataan & Pemetaan Sekolah Pesisir</div>
+                        <p class="road-desc">Survei digital sekolah sasaran, profil siswa, dan zonasi mangrove terdekat sebagai baseline program.</p>
+                    </div>
+                </div>
+                <div class="road-item">
+                    <div class="road-marker"><div class="road-dot"></div><div class="road-line"></div></div>
+                    <div class="road-content">
+                        <div class="road-phase">Fase 2</div>
+                        <div class="road-title">Pilot Kokurikuler Mangrove Carbon Stock</div>
+                        <p class="road-desc">Uji coba modul di sekolah percontohan, pelatihan guru, dan penyusunan panduan pengukuran karbon untuk siswa.</p>
+                    </div>
+                </div>
+                <div class="road-item">
+                    <div class="road-marker"><div class="road-dot"></div><div class="road-line"></div></div>
+                    <div class="road-content">
+                        <div class="road-phase">Fase 3</div>
+                        <div class="road-title">Perluasan & Integrasi Kurikulum</div>
+                        <p class="road-desc">Replikasi ke sekolah pesisir lain, integrasi resmi ke kokurikuler, dan penjajakan skema carbon credit/ekowisata sekolah.</p>
+                    </div>
+                </div>
+                <div class="road-item">
+                    <div class="road-marker"><div class="road-dot"></div></div>
+                    <div class="road-content">
+                        <div class="road-phase">Fase 4</div>
+                        <div class="road-title">Ocean Literacy sebagai Standar</div>
+                        <p class="road-desc">Ocean Literacy menjadi bagian tetap identitas sekolah pesisir, dengan siswa sebagai penjaga sekaligus pelaku ekonomi biru.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- SLIDE 8: WHY THIS HASN'T HAPPENED YET -->
+        <div class="slide" id="slide-8">
+            <span class="badge" style="background: var(--primary);">KONTEKS</span>
+            <h2>Kenapa Kemendikdasmen Belum Melakukan Ini?</h2>
+            <p class="subtitle">Bukan karena tidak dilihat — tapi karena sejak <b>otonomi daerah</b>, urusan pendidikan dasar & menengah terbelah antara pusat dan daerah. Program hyper-lokal seperti ini jatuh tepat di celah pembagian itu.</p>
+
+            <div class="authority-split">
+                <div class="authority-col pusat">
+                    <div class="authority-eyebrow"><i class="fa-solid fa-landmark"></i> Pusat (Kemendikdasmen)</div>
+                    <p>Menyusun kerangka kurikulum nasional yang berlaku umum untuk seluruh Indonesia — dari Sabang sampai Merauke. Wajar bila kontennya bersifat generik, bukan spesifik ekosistem satu daerah.</p>
+                </div>
+                <div class="authority-gap">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span>Celah otonomi</span>
+                </div>
+                <div class="authority-col daerah">
+                    <div class="authority-eyebrow"><i class="fa-solid fa-map-pin"></i> Daerah (Pemda/Sekolah)</div>
+                    <p>Sejak desentralisasi, implementasi teknis & muatan lokal jadi kewenangan kabupaten/kota dan sekolah — tapi kapasitas, data, dan inisiatif tiap daerah sangat tidak merata.</p>
+                </div>
+            </div>
+
+            <p class="closing-note">Hasilnya: program kontekstual seperti <b>Ocean Literacy & Mangrove Carbon Stock</b> tidak "milik" siapa-siapa secara sistemik — terlalu spesifik untuk kurikulum pusat, terlalu berat untuk diinisiasi sendiri oleh sekolah. <b>Di celah itulah program ini hadir</b> — bekerja dari bawah bersama sekolah dan pemerintah daerah, tanpa menunggu perubahan kurikulum nasional.</p>
+        </div>
+
+                <!-- SLIDE 7: VISION -->
+        <div class="slide" id="slide-7">
+            <i class="fa-solid fa-water float" style="font-size: 3rem; color: var(--accent);"></i>
+            <h1>Visi Ocean Literacy</h1>
+            <p class="subtitle">"Menjadikan setiap anak pesisir sebagai penjaga sekaligus ahli dalam ekonomi biru Indonesia."</p>
+            <div style="display: flex; gap: 20px; margin-top: 1rem; flex-wrap: wrap; justify-content: center;">
+                <button class="nav-btn" style="width: auto; padding: 0 40px; border-radius: 30px; background: var(--accent); color: var(--dark); font-weight: bold; border: none;">
+                    MULAI BERKOLABORASI
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Kontrol -->
+    <div class="controls" style="left: 40px;">
+        <button class="nav-btn" id="prev" onclick="move(-1)"><i class="fa-solid fa-arrow-left"></i></button>
+        <button class="nav-btn" id="next" onclick="move(1)"><i class="fa-solid fa-arrow-right"></i></button>
+    </div>
+
+    <div class="dots" id="dots"></div>
+    <div class="slide-counter" id="counter">1 / 8</div>
+
+    <script>
+        let current = 0;
+        const slides = document.querySelectorAll('.slide');
+        const bar = document.getElementById('bar');
+        const counter = document.getElementById('counter');
+        const prevBtn = document.getElementById('prev');
+        const nextBtn = document.getElementById('next');
+        const dotsContainer = document.getElementById('dots');
+
+        slides.forEach((_, i) => {
+            const d = document.createElement('div');
+            d.className = 'dot';
+            d.onclick = () => { current = i; update(); };
+            dotsContainer.appendChild(d);
+        });
+        const dots = document.querySelectorAll('.dot');
+
+        function update() {
+            slides.forEach((s, i) => {
+                s.classList.toggle('active', i === current);
+            });
+
+            const progress = ((current + 1) / slides.length) * 100;
+            bar.style.width = progress + '%';
+            counter.innerText = `${current + 1} / ${slides.length}`;
+
+            dots.forEach((d, i) => d.classList.toggle('active', i === current));
+
+            prevBtn.disabled = current === 0;
+            nextBtn.disabled = current === slides.length - 1;
+        }
+
+        function move(dir) {
+            current += dir;
+            if (current < 0) current = 0;
+            if (current >= slides.length) current = slides.length - 1;
+            update();
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') move(1);
+            if (e.key === 'ArrowLeft') move(-1);
+        });
+
+        update();
+    </script>
+</body>
+</html>
