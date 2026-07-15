@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Childish vs Childlike: The Quiz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(-45deg, #FF9A9E, #FECFEF, #A1C4FD, #C2E9FB);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            min-height: 100vh;
+            margin: 0;
+            overflow-x: hidden;
+            user-select: none;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Animations */
+        .pop-in { animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        @keyframes popIn {
+            0% { opacity: 0; transform: scale(0.8) translateY(20px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .slide-out { animation: slideOut 0.4s ease-in forwards; }
+        @keyframes slideOut {
+            0% { opacity: 1; transform: translateX(0); }
+            100% { opacity: 0; transform: translateX(-50px); }
+        }
+
+        .slide-in { animation: slideIn 0.4s ease-out forwards; }
+        @keyframes slideIn {
+            0% { opacity: 0; transform: translateX(50px); }
+            100% { opacity: 1; transform: translateX(0); }
+        }
+
+        .floating { animation: floating 3s ease-in-out infinite; }
+        @keyframes floating {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        @keyframes fadeIn {
+            0% { opacity: 0; transform: translateY(10px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Option Cards Styling */
+        .option-card {
+            transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .option-card:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        .option-card:active { transform: scale(0.98); }
+
+        .selected-option {
+            background-color: #E0F2FE !important;
+            border-color: #3B82F6 !important;
+            transform: scale(0.98);
+        }
+
+        /* Particle Effects */
+        .particle {
+            position: fixed;
+            pointer-events: none;
+            z-index: 100;
+            font-size: 2rem;
+            animation: explode 1s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+        }
+
+        @keyframes explode {
+            0% { transform: translate(0, 0) scale(0.5); opacity: 1; }
+            80% { opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) scale(1.5) rotate(var(--rot)); opacity: 0; }
+        }
+
+        /* Chart Bar Animations */
+        .chart-bar-fill {
+            transition: width 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            width: 0%;
+        }
+
+        /* Confetti */
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #f00;
+            animation: fall linear forwards;
+        }
+
+        @keyframes fall {
+            to { transform: translateY(100vh) rotate(720deg); }
+        }
+
+        .cat-badge {
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            padding: 0.2rem 0.6rem;
+            border-radius: 9999px;
+            display: inline-block;
+        }
+
+        .toast {
+            animation: toastIn 0.3s ease-out forwards, toastOut 0.3s ease-in forwards 1.7s;
+        }
+        @keyframes toastIn { 0% { opacity: 0; transform: translate(-50%, 10px); } 100% { opacity: 1; transform: translate(-50%, 0); } }
+        @keyframes toastOut { 0% { opacity: 1; } 100% { opacity: 0; } }
+    </style>
+</head>
+<body class="flex items-center justify-center p-4 sm:p-8 min-h-screen">
+
+    <main id="app-container" class="glass-panel w-full max-w-3xl rounded-3xl p-6 sm:p-10 relative overflow-hidden z-10">
+
+        <!-- ================= START SCREEN ================= -->
+        <div id="start-screen" class="text-center pop-in flex flex-col items-center">
+            <div class="text-7xl mb-6 floating flex gap-4">🧸 💼 🚀</div>
+            <h1 class="text-4xl sm:text-6xl font-extrabold text-gray-800 mb-6 leading-tight">
+                <span class="text-pink-500">Childish</span> or <span class="text-blue-500">Childlike</span>?
+            </h1>
+            <p class="text-gray-600 mb-4 text-lg sm:text-xl max-w-xl">
+                Does your inner child throw tantrums at work, or explore the world with endless wonder? Answer these <span id="q-total-label">15</span> questions to find out your true psychological age!
+            </p>
+            <div class="flex gap-2 mb-8 flex-wrap justify-center">
+                <span class="cat-badge bg-indigo-100 text-indigo-700">🧠 Work</span>
+                <span class="cat-badge bg-purple-100 text-purple-700">🎨 Creativity</span>
+                <span class="cat-badge bg-teal-100 text-teal-700">🤝 Social</span>
+                <span class="cat-badge bg-amber-100 text-amber-700">💥 Conflict</span>
+            </div>
+            <button onclick="startGame()" class="bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold py-4 px-12 rounded-full text-xl sm:text-2xl hover:shadow-[0_10px_25px_rgba(217,70,239,0.5)] hover:scale-105 transition-all duration-300 active:scale-95 flex items-center gap-3">
+                Start Quiz ✨
+            </button>
+        </div>
+
+        <!-- ================= QUIZ SCREEN ================= -->
+        <div id="quiz-screen" class="hidden flex flex-col h-full min-h-[400px]">
+            <!-- Header & Progress -->
+            <div class="flex justify-between items-center mb-6">
+                <div class="flex items-center gap-2">
+                    <div class="bg-indigo-100 text-indigo-800 text-sm font-bold px-4 py-1.5 rounded-full uppercase tracking-wider" id="question-counter">
+                        Q 1/15
+                    </div>
+                </div>
+                <div class="w-1/2 sm:w-2/3 bg-gray-200 rounded-full h-4 overflow-hidden shadow-inner">
+                    <div id="progress-bar" class="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-500 h-full rounded-full transition-all duration-500 w-0 relative">
+                        <div class="absolute inset-0 bg-white/20 w-full h-full animate-pulse"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Question -->
+            <div id="question-container" class="slide-in flex-1 flex flex-col justify-center">
+                <span id="question-category" class="cat-badge bg-gray-100 text-gray-500 mb-3 self-start">Category</span>
+                <h2 id="question-text" class="text-2xl sm:text-3xl font-bold text-gray-800 mb-8 leading-snug">
+                    Question goes here?
+                </h2>
+
+                <!-- Options -->
+                <div id="options-container" class="space-y-4">
+                    <!-- Buttons generated by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= RESULT SCREEN ================= -->
+        <div id="result-screen" class="hidden text-center flex flex-col items-center w-full">
+            <div id="result-icon" class="text-8xl mb-4 floating drop-shadow-2xl"></div>
+            <h2 class="text-sm font-bold text-gray-500 uppercase tracking-widest mb-2">Diagnostic Result</h2>
+            <h1 id="result-title" class="text-4xl sm:text-5xl font-extrabold text-gray-800 mb-4">
+                Title Here
+            </h1>
+
+            <div class="bg-white/60 rounded-3xl p-6 mb-6 w-full shadow-sm border border-white/50">
+                <p id="result-desc" class="text-gray-700 text-lg leading-relaxed mb-6">
+                    Description goes here.
+                </p>
+
+                <!-- Visualization Chart -->
+                <div class="w-full space-y-4 mt-4" id="chart-container">
+                    <div class="w-full text-left">
+                        <div class="flex justify-between text-sm font-bold mb-1 text-blue-700">
+                            <span>Childlike (Wonder/Curiosity)</span>
+                            <span id="pct-childlike">0%</span>
+                        </div>
+                        <div class="w-full bg-blue-100 rounded-full h-6 overflow-hidden">
+                            <div id="bar-childlike" class="chart-bar-fill h-full bg-gradient-to-r from-blue-400 to-blue-500 rounded-full"></div>
+                        </div>
+                    </div>
+
+                    <div class="w-full text-left">
+                        <div class="flex justify-between text-sm font-bold mb-1 text-gray-700">
+                            <span>Adult (Professional/Rational)</span>
+                            <span id="pct-adult">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-6 overflow-hidden">
+                            <div id="bar-adult" class="chart-bar-fill h-full bg-gradient-to-r from-gray-400 to-gray-500 rounded-full"></div>
+                        </div>
+                    </div>
+
+                    <div class="w-full text-left">
+                        <div class="flex justify-between text-sm font-bold mb-1 text-pink-700">
+                            <span>Childish (Ego/Tantrums)</span>
+                            <span id="pct-childish">0%</span>
+                        </div>
+                        <div class="w-full bg-pink-100 rounded-full h-6 overflow-hidden">
+                            <div id="bar-childish" class="chart-bar-fill h-full bg-gradient-to-r from-pink-400 to-pink-500 rounded-full"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Insight strip -->
+                <div id="insight-strip" class="mt-6 pt-5 border-t border-gray-200 text-left text-sm text-gray-600 space-y-1"></div>
+            </div>
+
+            <div class="flex gap-3 flex-wrap justify-center">
+                <button onclick="shareResult()" class="bg-white text-gray-800 border-2 border-gray-200 font-bold py-4 px-8 rounded-full text-lg hover:bg-gray-50 hover:-translate-y-1 transition-all duration-300 active:scale-95 flex items-center gap-2">
+                    <span>🔗</span> Share Result
+                </button>
+                <button onclick="restartGame()" class="bg-gray-800 text-white font-bold py-4 px-10 rounded-full text-xl hover:bg-gray-700 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 active:scale-95 flex items-center gap-3">
+                    <span>🔄</span> Retake Quiz
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Container for Confetti -->
+    <div id="confetti-container" class="fixed inset-0 pointer-events-none z-0 overflow-hidden"></div>
+    <div id="toast-container" class="fixed bottom-6 left-1/2 z-50"></div>
+
+    <script>
+        // --- EXPANDED QUIZ DATA (15 Questions, categorized) ---
+        const questions = [
+            {
+                category: "Conflict",
+                question: "Your project proposal gets completely dismantled by your team in a meeting. Your reaction?",
+                options: [
+                    { text: "Cross my arms and give them the silent treatment for the rest of the day.", type: "childish", emoji: "😒" },
+                    { text: "My eyes light up. 'Oh wow, I didn't think of that edge case! Let's whiteboard a better flow.'", type: "childlike", emoji: "🤩" },
+                    { text: "Take notes, thank them for the feedback, and schedule a revision.", type: "adult", emoji: "📝" }
+                ]
+            },
+            {
+                category: "Work",
+                question: "You encounter a totally weird, undocumented bug in the system...",
+                options: [
+                    { text: "Treat it like a mystery puzzle! I'll poke around and try crazy things until it works.", type: "childlike", emoji: "🕵️‍♂️" },
+                    { text: "Complain loudly to whoever is sitting next to me about how awful the codebase is.", type: "childish", emoji: "😤" },
+                    { text: "Check StackOverflow, read the logs, and fix it methodically.", type: "adult", emoji: "💻" }
+                ]
+            },
+            {
+                category: "Social",
+                question: "A coworker brings a really cool, squishy stress-relief toy to the office and leaves it on their desk.",
+                options: [
+                    { text: "I walk by, squish it once, and compliment it politely.", type: "adult", emoji: "👍" },
+                    { text: "I take it without asking and keep it on my desk because I want it.", type: "childish", emoji: "😈" },
+                    { text: "I play with it for 5 minutes, ask where they bought it, and get overly excited.", type: "childlike", emoji: "🎈" }
+                ]
+            },
+            {
+                category: "Work",
+                question: "An important, grueling 2-hour meeting gets unexpectedly canceled at the last minute.",
+                options: [
+                    { text: "YAY! Free time! I'm going to use this to learn that new software I've been curious about.", type: "childlike", emoji: "🎉" },
+                    { text: "Get annoyed because I spent all night preparing and now my effort feels wasted.", type: "childish", emoji: "😡" },
+                    { text: "Sigh in relief and use the time to catch up on emails.", type: "adult", emoji: "☕" }
+                ]
+            },
+            {
+                category: "Conflict",
+                question: "Someone else on your team gets the promotion you were secretly hoping for.",
+                options: [
+                    { text: "Genuinely congratulate them and eagerly ask them to teach me their secret to success.", type: "childlike", emoji: "✨" },
+                    { text: "Say 'congrats' but secretly gossip about how they probably just sweet-talked the boss.", type: "childish", emoji: "🤫" },
+                    { text: "Congratulate them professionally and ask my manager what I need to improve.", type: "adult", emoji: "🤝" }
+                ]
+            },
+            {
+                category: "Social",
+                question: "It's the annual company gathering and they hired a magician/entertainer.",
+                options: [
+                    { text: "Sit in the back checking emails, thinking it's a waste of company budget.", type: "adult", emoji: "📱" },
+                    { text: "Push to the front row, volunteer for tricks, and clap the loudest.", type: "childlike", emoji: "🙌" },
+                    { text: "Complain that the food is taking too long while ignoring the show.", type: "childish", emoji: "🌭" }
+                ]
+            },
+            {
+                category: "Work",
+                question: "Management introduces a brand new, highly complex software tool everyone must use starting tomorrow.",
+                options: [
+                    { text: "Read the official documentation and attend the mandatory training session.", type: "adult", emoji: "📚" },
+                    { text: "Refuse to use it and loudly declare the old way was much better.", type: "childish", emoji: "🙅‍♂️" },
+                    { text: "Immediately start clicking every button to see what breaks and what features are hidden.", type: "childlike", emoji: "🕹️" }
+                ]
+            },
+            {
+                category: "Conflict",
+                question: "You make a noticeable mistake on a report sent to clients.",
+                options: [
+                    { text: "Quickly blame the intern or say 'the system glitched' to avoid trouble.", type: "childish", emoji: "🙈" },
+                    { text: "Admit it instantly, laugh at my own clumsiness, and eagerly find a creative way to fix it.", type: "childlike", emoji: "😅" },
+                    { text: "Notify my supervisor, issue a formal correction, and double-check next time.", type: "adult", emoji: "✅" }
+                ]
+            },
+            {
+                category: "Creativity",
+                question: "During a brainstorming session, things are getting very quiet and stuck.",
+                options: [
+                    { text: "Suggest the wildest, most impossible sci-fi idea just to get people laughing and thinking differently.", type: "childlike", emoji: "👽" },
+                    { text: "Look at the clock, pack my things, and say 'Let's just use last year's plan.'", type: "childish", emoji: "🥱" },
+                    { text: "Review the data again to find a logical pivot point.", type: "adult", emoji: "📊" }
+                ]
+            },
+            {
+                category: "Social",
+                question: "You find a box of old retro video games or toys in the office storage room.",
+                options: [
+                    { text: "Immediately try to hook them up to the breakroom TV and invite people to play.", type: "childlike", emoji: "🎮" },
+                    { text: "Smile at the nostalgia, but put the box back and return to my desk.", type: "adult", emoji: "🕰️" },
+                    { text: "Take my favorites to keep at my desk and tell others they aren't allowed to touch them.", type: "childish", emoji: "🛑" }
+                ]
+            },
+            {
+                category: "Creativity",
+                question: "You're assigned a task completely outside your comfort zone with no clear instructions.",
+                options: [
+                    { text: "Panic quietly and hope someone else volunteers to take over.", type: "childish", emoji: "😰" },
+                    { text: "Get genuinely thrilled — a blank page is the best kind of challenge.", type: "childlike", emoji: "🎨" },
+                    { text: "Break it into a checklist, research best practices, and start step one.", type: "adult", emoji: "🗂️" }
+                ]
+            },
+            {
+                category: "Conflict",
+                question: "A close colleague forgets your birthday even though you reminded them last week.",
+                options: [
+                    { text: "Feel a flash of hurt, then shrug — everyone gets busy, plan to grab coffee later.", type: "childlike", emoji: "☺️" },
+                    { text: "Give a dry 'no worries' but bring it up passive-aggressively for the next month.", type: "childish", emoji: "🫤" },
+                    { text: "Mention it briefly and move on without dwelling on it.", type: "adult", emoji: "🙂" }
+                ]
+            },
+            {
+                category: "Work",
+                question: "The office WiFi goes down for an hour with no explanation.",
+                options: [
+                    { text: "Use it as an excuse to take a proper walk outside and clear my head.", type: "childlike", emoji: "🌳" },
+                    { text: "Switch to offline tasks and reply to a few overdue messages via phone data.", type: "adult", emoji: "📶" },
+                    { text: "Loudly announce that this company can't do anything right.", type: "childish", emoji: "📢" }
+                ]
+            },
+            {
+                category: "Creativity",
+                question: "Your team wins a small internal award for a project you worked hard on.",
+                options: [
+                    { text: "Feel proud, thank everyone by name, and quietly note what to improve next time.", type: "adult", emoji: "🏅" },
+                    { text: "Do a little happy dance, take a photo with the trophy, and text your friends immediately.", type: "childlike", emoji: "🕺" },
+                    { text: "Feel like it should've been a bigger prize and mention that to a few people.", type: "childish", emoji: "🏆" }
+                ]
+            },
+            {
+                category: "Social",
+                question: "A new intern joins and asks you a very basic question you've answered a hundred times.",
+                options: [
+                    { text: "Sigh visibly and give the shortest possible answer.", type: "childish", emoji: "🙄" },
+                    { text: "Explain it like it's the first time you've ever thought about it too — genuinely enjoy teaching.", type: "childlike", emoji: "🌱" },
+                    { text: "Answer clearly, then point them to the documentation for next time.", type: "adult", emoji: "📄" }
+                ]
+            }
+        ];
+
+        // --- STATE VARIABLES ---
+        let currentQuestionIndex = 0;
+        let scores = { childish: 0, childlike: 0, adult: 0 };
+        let confettiInterval;
+        let currentResultPersona = null;
+        let currentPercents = { childlike: 0, adult: 0, childish: 0 };
+
+        // --- DOM ELEMENTS ---
+        const startScreen = document.getElementById('start-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        const resultScreen = document.getElementById('result-screen');
+        const questionText = document.getElementById('question-text');
+        const questionCategory = document.getElementById('question-category');
+        const optionsContainer = document.getElementById('options-container');
+        const questionCounter = document.getElementById('question-counter');
+        const progressBar = document.getElementById('progress-bar');
+
+        document.getElementById('q-total-label').innerText = questions.length;
+
+        const categoryColors = {
+            Work: "bg-indigo-100 text-indigo-700",
+            Creativity: "bg-purple-100 text-purple-700",
+            Social: "bg-teal-100 text-teal-700",
+            Conflict: "bg-amber-100 text-amber-700"
+        };
+
+        // --- VISUAL EFFECTS ---
+        function triggerEmojiBurst(x, y, type) {
+            const emojis = {
+                childish: ['😡', '😭', '😤', '🍼', '👎', '⛈️'],
+                childlike: ['✨', '🤩', '🎈', '🎨', '🚀', '🌟'],
+                adult: ['💼', '☕', '📈', '📝', '🤝', '🕰️']
+            };
+
+            const pool = emojis[type];
+            const numParticles = 12;
+
+            for (let i = 0; i < numParticles; i++) {
+                const el = document.createElement('div');
+                el.innerText = pool[Math.floor(Math.random() * pool.length)];
+                el.className = 'particle';
+
+                el.style.left = (x - 16) + 'px';
+                el.style.top = (y - 16) + 'px';
+
+                const angle = Math.random() * Math.PI * 2;
+                const distance = 50 + Math.random() * 150;
+                const tx = Math.cos(angle) * distance;
+                const ty = Math.sin(angle) * distance - 50;
+                const rot = (Math.random() * 360) + 'deg';
+
+                el.style.setProperty('--tx', tx + 'px');
+                el.style.setProperty('--ty', ty + 'px');
+                el.style.setProperty('--rot', rot);
+
+                document.body.appendChild(el);
+                setTimeout(() => el.remove(), 1000);
+            }
+        }
+
+        function startConfetti() {
+            const container = document.getElementById('confetti-container');
+            const colors = ['#FF9A9E', '#FECFEF', '#A1C4FD', '#C2E9FB', '#FBBF24', '#34D399'];
+
+            confettiInterval = setInterval(() => {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.top = '-10px';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+
+                if (Math.random() > 0.5) confetti.style.borderRadius = '50%';
+
+                const duration = Math.random() * 3 + 2;
+                confetti.style.animationDuration = duration + 's';
+
+                container.appendChild(confetti);
+                setTimeout(() => confetti.remove(), duration * 1000);
+            }, 100);
+        }
+
+        function stopConfetti() {
+            clearInterval(confettiInterval);
+            document.getElementById('confetti-container').innerHTML = '';
+        }
+
+        function showToast(msg) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast bg-gray-900 text-white text-sm font-semibold px-5 py-2.5 rounded-full shadow-lg absolute';
+            toast.innerText = msg;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 2000);
+        }
+
+        // --- CORE FUNCTIONS ---
+        function startGame() {
+            scores = { childish: 0, childlike: 0, adult: 0 };
+            currentQuestionIndex = 0;
+            stopConfetti();
+
+            startScreen.classList.replace('pop-in', 'slide-out');
+
+            setTimeout(() => {
+                startScreen.classList.add('hidden');
+                quizScreen.classList.remove('hidden');
+                startScreen.classList.replace('slide-out', 'pop-in');
+                loadQuestion();
+            }, 400);
+        }
+
+        function loadQuestion() {
+            const currentQ = questions[currentQuestionIndex];
+
+            questionCounter.innerText = `Q ${currentQuestionIndex + 1} / ${questions.length}`;
+            progressBar.style.width = `${((currentQuestionIndex) / questions.length) * 100}%`;
+
+            const qContainer = document.getElementById('question-container');
+            qContainer.classList.remove('slide-in');
+            void qContainer.offsetWidth;
+            qContainer.classList.add('slide-in');
+
+            questionCategory.innerText = currentQ.category;
+            questionCategory.className = `cat-badge mb-3 self-start ${categoryColors[currentQ.category] || 'bg-gray-100 text-gray-500'}`;
+
+            questionText.innerText = currentQ.question;
+            optionsContainer.innerHTML = '';
+
+            const shuffledOptions = [...currentQ.options].sort(() => Math.random() - 0.5);
+
+            shuffledOptions.forEach((option) => {
+                const btn = document.createElement('button');
+                btn.className = `option-card w-full text-left bg-white border-2 border-gray-100 rounded-2xl p-4 sm:p-5 flex items-center gap-4 cursor-pointer focus:outline-none focus:ring-4 focus:ring-blue-200`;
+
+                btn.innerHTML = `
+                    <div class="text-3xl sm:text-4xl bg-gray-50 rounded-xl p-2 shrink-0 shadow-inner">${option.emoji}</div>
+                    <div class="text-gray-700 font-semibold text-sm sm:text-base md:text-lg">${option.text}</div>
+                `;
+
+                btn.onclick = (e) => handleAnswer(e, option.type, btn);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function handleAnswer(event, type, selectedButton) {
+            triggerEmojiBurst(event.clientX, event.clientY, type);
+
+            const allButtons = optionsContainer.querySelectorAll('button');
+            allButtons.forEach(btn => {
+                btn.disabled = true;
+                btn.style.cursor = 'default';
+                btn.classList.add('opacity-70');
+            });
+
+            selectedButton.classList.remove('opacity-70');
+            selectedButton.classList.add('selected-option');
+
+            scores[type]++;
+
+            setTimeout(() => {
+                const qContainer = document.getElementById('question-container');
+                qContainer.classList.replace('slide-in', 'slide-out');
+
+                setTimeout(() => {
+                    currentQuestionIndex++;
+                    qContainer.classList.replace('slide-out', 'slide-in');
+
+                    if (currentQuestionIndex < questions.length) {
+                        loadQuestion();
+                    } else {
+                        showResults();
+                    }
+                }, 400);
+            }, 800);
+        }
+
+        // --- PERSONA LIBRARY (includes tie-break personas) ---
+        const personas = {
+            childish: {
+                icon: "😭",
+                title: "The <span class='text-pink-500'>Tantrum Toddler</span>",
+                desc: "Uh oh! Your inner child is throwing a bit of a tantrum. You tend to take things personally, get defensive with feedback, and let your ego take the wheel when things get tough. <strong>Tip:</strong> Try to separate your self-worth from your work. Embrace curiosity instead of defense!"
+            },
+            childlike: {
+                icon: "🌟",
+                title: "The <span class='text-blue-500'>Curious Explorer</span>",
+                desc: "Awesome! You have kept the magic alive. You face challenges like exciting puzzles, don't let ego block your learning, and bring pure, infectious enthusiasm to your team. You prove that growing up doesn't mean becoming boring!"
+            },
+            adult: {
+                icon: "👔",
+                title: "The <span class='text-gray-600'>Serious Grown-Up</span>",
+                desc: "You are incredibly professional, stable, and drama-free. While that makes you very reliable, you might be missing out on a little bit of fun. Don't be afraid to let your guard down and tap into your inner child's wonder once in a while!"
+            },
+            "childish-adult": {
+                icon: "🛡️",
+                title: "The <span class='text-orange-500'>Guarded Perfectionist</span>",
+                desc: "You hold it together on the surface — composed, capable, professional — but underneath, mistakes and criticism sting more than you let on. You're disciplined enough to mask it, yet the tension between control and hurt pride can wear you down. Letting curiosity soften that edge might help."
+            },
+            "childlike-adult": {
+                icon: "🎭",
+                title: "The <span class='text-purple-500'>Balanced Chameleon</span>",
+                desc: "You are a perfect mix! You know exactly when to bring the fun and creativity of youth, and when to buckle down and be the responsible adult in the room."
+            },
+            "childish-childlike": {
+                icon: "🎢",
+                title: "The <span class='text-rose-500'>Wild Card</span>",
+                desc: "You're all feeling, no filter — bursting with wonder and enthusiasm one moment, wounded pride the next. People love your energy, but the swings between joyful curiosity and defensive reactivity can be a lot to keep up with, for others and for you."
+            },
+            all: {
+                icon: "🌀",
+                title: "The <span class='text-indigo-500'>Undefined Enigma</span>",
+                desc: "Your responses were split evenly across all three — playful, professional, and prickly in equal measure. That means context drives you more than temperament: who's around and what's at stake changes which version of you shows up."
+            }
+        };
+
+        function determinePersona() {
+            const max = Math.max(scores.childlike, scores.adult, scores.childish);
+            const winners = Object.keys(scores).filter(k => scores[k] === max);
+
+            if (winners.length === 3) return "all";
+            if (winners.length === 1) return winners[0];
+            // Two-way tie — build a stable key regardless of order
+            const order = ["childish", "childlike", "adult"];
+            const sorted = order.filter(t => winners.includes(t));
+            return sorted.join("-");
+        }
+
+        function showResults() {
+            quizScreen.classList.add('hidden');
+            resultScreen.classList.remove('hidden');
+            resultScreen.classList.add('pop-in');
+
+            progressBar.style.width = '100%';
+            startConfetti();
+
+            const total = questions.length;
+            const pctChildlike = Math.round((scores.childlike / total) * 100);
+            const pctAdult = Math.round((scores.adult / total) * 100);
+            const pctChildish = Math.round((scores.childish / total) * 100);
+            currentPercents = { childlike: pctChildlike, adult: pctAdult, childish: pctChildish };
+
+            const titleEl = document.getElementById('result-title');
+            const descEl = document.getElementById('result-desc');
+            const iconEl = document.getElementById('result-icon');
+            const insightEl = document.getElementById('insight-strip');
+
+            setTimeout(() => {
+                document.getElementById('bar-childlike').style.width = pctChildlike + '%';
+                document.getElementById('pct-childlike').innerText = pctChildlike + '%';
+
+                document.getElementById('bar-adult').style.width = pctAdult + '%';
+                document.getElementById('pct-adult').innerText = pctAdult + '%';
+
+                document.getElementById('bar-childish').style.width = pctChildish + '%';
+                document.getElementById('pct-childish').innerText = pctChildish + '%';
+            }, 300);
+
+            const personaKey = determinePersona();
+            currentResultPersona = personaKey;
+            const persona = personas[personaKey];
+
+            iconEl.innerText = persona.icon;
+            titleEl.innerHTML = persona.title;
+            descEl.innerHTML = persona.desc;
+
+            // Insight strip: which category leaned which way
+            const catTally = {};
+            questions.forEach((q, i) => {}); // categories aren't tied to chosen type post-hoc without tracking; keep insight generic
+            insightEl.innerHTML = `
+                <p>📌 Strongest trait: <strong>${Math.max(pctChildlike, pctAdult, pctChildish)}%</strong> aligned with ${personaKey === 'all' ? 'no single' : 'your dominant'} response pattern.</p>
+                <p>🔁 Retake anytime — answer order and options are shuffled each round.</p>
+            `;
+        }
+
+        function shareResult() {
+            if (!currentResultPersona) return;
+            const persona = personas[currentResultPersona];
+            const plainTitle = persona.title.replace(/<[^>]+>/g, '');
+            const text = `I got "${plainTitle}" ${persona.icon} on the Childish vs Childlike quiz!\nChildlike: ${currentPercents.childlike}% | Adult: ${currentPercents.adult}% | Childish: ${currentPercents.childish}%`;
+
+            if (navigator.share) {
+                navigator.share({ title: 'Childish vs Childlike Quiz', text: text }).catch(() => {});
+            } else if (navigator.clipboard) {
+                navigator.clipboard.writeText(text).then(() => showToast('Result copied to clipboard! 📋'));
+            } else {
+                showToast(text);
+            }
+        }
+
+        function restartGame() {
+            resultScreen.classList.replace('pop-in', 'slide-out');
+            stopConfetti();
+
+            document.getElementById('bar-childlike').style.width = '0%';
+            document.getElementById('bar-adult').style.width = '0%';
+            document.getElementById('bar-childish').style.width = '0%';
+
+            setTimeout(() => {
+                resultScreen.classList.add('hidden');
+                startScreen.classList.remove('hidden');
+                startScreen.classList.replace('slide-out', 'pop-in');
+                resultScreen.classList.replace('slide-out', 'pop-in');
+            }, 400);
+        }
+    </script>
+</body>
+</html>
