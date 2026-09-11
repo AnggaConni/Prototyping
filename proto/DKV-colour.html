@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChromaLogic — The Science of Color Selection</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Display"', '"SF Pro Text"', '"Inter"', 'sans-serif'],
+                    },
+                    colors: {
+                        apple: {
+                            bg: '#f5f5f7',
+                            card: 'rgba(255, 255, 255, 0.72)',
+                            darkBg: '#000000',
+                            darkCard: 'rgba(28, 28, 30, 0.72)',
+                            accent: '#0071e3',
+                            accentHover: '#0077ed'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Apple-style glassmorphism & typography refinements */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+        .dark .glass-panel {
+            background: rgba(28, 28, 30, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .glass-nav {
+            background: rgba(245, 245, 247, 0.8);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+        .dark .glass-nav {
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+        /* Custom scrollbar for sidebar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.4);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(156, 163, 175, 0.6);
+        }
+    </style>
+</head>
+<body class="bg-[#f5f5f7] dark:bg-black text-slate-900 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-300">
+
+    <!-- Navigation Header -->
+    <header class="sticky top-0 z-50 glass-nav border-b border-slate-200/50 dark:border-slate-800/50 transition-colors duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 via-indigo-500 to-amber-400 flex items-center justify-center shadow-sm">
+                    <i data-lucide="palette" class="w-4 h-4 text-white"></i>
+                </div>
+                <span class="font-semibold text-lg tracking-tight">ChromaLogic <span class="text-xs font-normal text-slate-500 dark:text-slate-400 ml-1">Pro</span></span>
+            </div>
+
+            <div class="flex items-center space-x-3">
+                <!-- Language Toggle Button -->
+                <button id="langToggleBtn" onclick="toggleLanguage()" class="flex items-center space-x-1 px-3 py-1.5 rounded-full bg-slate-200/60 dark:bg-slate-800/80 hover:bg-slate-300/60 dark:hover:bg-slate-700/80 text-xs font-medium transition-all">
+                    <i data-lucide="globe" class="w-3.5 h-3.5"></i>
+                    <span id="langLabel">ID / EN</span>
+                </button>
+
+                <!-- Theme Toggle Button -->
+                <button id="themeToggleBtn" onclick="toggleTheme()" class="p-2 rounded-full bg-slate-200/60 dark:bg-slate-800/80 hover:bg-slate-300/60 dark:hover:bg-slate-700/80 text-slate-700 dark:text-slate-200 transition-all">
+                    <i data-lucide="moon" id="themeIcon" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Hero Introduction Section -->
+        <section class="mb-8 text-center max-w-3xl mx-auto">
+            <h1 id="heroTitle" class="text-3xl sm:text-4xl font-bold tracking-tight mb-3 bg-clip-text text-transparent bg-gradient-to-r from-slate-900 via-slate-800 to-slate-600 dark:from-white dark:via-slate-200 dark:to-slate-400">
+                Ilmu Memilih Warna dengan Presisi
+            </h1>
+            <p id="heroSubtitle" class="text-slate-600 dark:text-slate-400 text-base sm:text-lg leading-relaxed">
+                Warna bukan sekadar hiasan visual. Temukan penerapan psikologi warna, aturan harmoni, dan penelitian ilmiah untuk logo, ruang interior, cetakan, dan UI digital.
+            </p>
+        </section>
+
+        <!-- 2-Column Application Layout -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            
+            <!-- LEFT COLUMN: Selector, Palette Controls, & Academic Sources (5 Cols) -->
+            <div class="lg:col-span-5 space-y-6">
+                
+                <!-- Card 1: Context / Application Switcher -->
+                <div class="glass-panel rounded-3xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                    <label class="block text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3" id="labelUseCases">
+                        1. Pilih Peruntukan Visual
+                    </label>
+
+                    <div class="grid grid-cols-2 gap-3" id="useCaseGrid">
+                        <!-- Dynamic Use Case Buttons Rendered Here -->
+                    </div>
+                </div>
+
+                <!-- Card 2: Preset Palette & Intent Selection -->
+                <div class="glass-panel rounded-3xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                    <div class="flex items-center justify-between mb-3">
+                        <label class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider" id="labelPalettePreset">
+                            2. Pilih Kombinasi Harmoni Warna
+                        </label>
+                        <span id="ratioRuleBadge" class="text-[10px] font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">
+                            Aturan 60-30-10
+                        </span>
+                    </div>
+
+                    <div class="space-y-2.5" id="paletteListContainer">
+                        <!-- Dynamic Palette Items Rendered Here -->
+                    </div>
+                </div>
+
+                <!-- Card 3: Academic Research & Citations -->
+                <div class="glass-panel rounded-3xl p-6 shadow-sm hover:shadow-md transition-shadow border-l-4 border-l-blue-500">
+                    <div class="flex items-center space-x-2 text-blue-600 dark:text-blue-400 mb-3">
+                        <i data-lucide="book-open" class="w-4 h-4"></i>
+                        <h3 class="font-semibold text-sm" id="titleSources">Landasan Riset & Referensi Ilmiah</h3>
+                    </div>
+
+                    <div id="sourcesContent" class="space-y-4 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                        <!-- Dynamic Sources Rendered Here -->
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- RIGHT COLUMN: Interactive Visualizer & Live Preview (7 Cols) -->
+            <div class="lg:col-span-7 sticky top-20">
+                <div class="glass-panel rounded-3xl p-6 sm:p-8 shadow-xl overflow-hidden relative">
+                    
+                    <!-- Preview Header Bar -->
+                    <div class="flex items-center justify-between pb-4 mb-6 border-b border-slate-200/60 dark:border-slate-800/60">
+                        <div class="flex items-center space-x-2">
+                            <span class="w-3 h-3 rounded-full bg-red-400 inline-block"></span>
+                            <span class="w-3 h-3 rounded-full bg-yellow-400 inline-block"></span>
+                            <span class="w-3 h-3 rounded-full bg-green-400 inline-block"></span>
+                            <span class="text-xs font-medium text-slate-400 ml-2" id="previewCanvasLabel">Canvas Visualisasi Live</span>
+                        </div>
+
+                        <!-- Dark/Light Context Toggle for Canvas -->
+                        <div class="flex items-center bg-slate-200/80 dark:bg-slate-800/80 p-1 rounded-xl text-xs">
+                            <button id="mockBgLightBtn" onclick="setMockBg('light')" class="px-2.5 py-1 rounded-lg font-medium transition-all bg-white dark:bg-slate-700 shadow-sm text-slate-800 dark:text-slate-100">
+                                Light
+                            </button>
+                            <button id="mockBgDarkBtn" onclick="setMockBg('dark')" class="px-2.5 py-1 rounded-lg font-medium transition-all text-slate-500 dark:text-slate-400">
+                                Dark
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Canvas Visualizer Frame -->
+                    <div id="visualizationFrame" class="min-h-[380px] sm:min-h-[420px] rounded-2xl bg-slate-100 dark:bg-slate-900/90 p-6 flex flex-col justify-center items-center transition-all duration-500 relative overflow-hidden border border-slate-200/50 dark:border-slate-800/50">
+                        <!-- Dynamic Visual Mockup Content Injected Here -->
+                    </div>
+
+                    <!-- Color Ratio Breakdown Bar -->
+                    <div class="mt-6">
+                        <div class="flex justify-between text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">
+                            <span id="labelRatioBreakdown">Distribusi Proporsi Warna (60% - 30% - 10%)</span>
+                            <span id="palettePsychologyTag" class="italic text-slate-700 dark:text-slate-300 font-semibold"></span>
+                        </div>
+                        <div class="h-4 w-full rounded-full overflow-hidden flex shadow-inner bg-slate-200 dark:bg-slate-800" id="ratioBar">
+                            <div id="barDominant" class="h-full transition-all duration-500" style="width: 60%;"></div>
+                            <div id="barSecondary" class="h-full transition-all duration-500" style="width: 30%;"></div>
+                            <div id="barAccent" class="h-full transition-all duration-500" style="width: 10%;"></div>
+                        </div>
+
+                        <!-- Color Swatch Badges -->
+                        <div class="grid grid-cols-3 gap-3 mt-4 text-center text-xs" id="swatchDetails">
+                            <!-- Swatches rendered via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Practical Application Tips -->
+                    <div class="mt-6 pt-4 border-t border-slate-200/60 dark:border-slate-800/60">
+                        <h4 class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2" id="labelTipsTitle">
+                            Panduan Praktis
+                        </h4>
+                        <p id="practicalTipText" class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed italic">
+                            --
+                        </p>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-auto py-6 border-t border-slate-200/60 dark:border-slate-800/60 text-center text-xs text-slate-500 dark:text-slate-500">
+        <p id="footerText">ChromaLogic &copy; 2026 — Dibuat dengan Standar Desain Apple & Psikologi Warna Terapan.</p>
+    </footer>
+
+    <script>
+        // Application State
+        let currentLang = 'id'; // 'id' or 'en'
+        let currentCatIndex = 0; // Index of selected category in modular database
+        let currentPaletteIndex = 0;
+        let currentMockBg = 'light';
+
+        // Translation Dictionary (Only for static UI elements)
+        const i18n = {
+            id: {
+                heroTitle: "Ilmu Memilih Warna dengan Presisi",
+                heroSubtitle: "Warna bukan sekadar pilihan estetika. Temukan penerapan psikologi warna dan aturan rasio 60-30-10 yang didukung riset ilmiah.",
+                labelUseCases: "1. Pilih Konteks & Tema Program",
+                labelPalettePreset: "2. Pilih Harmoni Warna",
+                titleSources: "Landasan Riset & Referensi Ilmiah",
+                previewCanvasLabel: "Kanvas Visualisasi Real-Time",
+                labelRatioBreakdown: "Rasio Proporsi Warna (60% - 30% - 10%)",
+                labelTipsTitle: "Panduan Aplikasi Praktis",
+                footerText: "ChromaLogic © 2026 — Dirancang dengan Prinsip Human Interface Apple & Psikologi Warna.",
+                dominant: "Dominan (60%)",
+                secondary: "Sekunder (30%)",
+                accent: "Aksen (10%)",
+            },
+            en: {
+                heroTitle: "The Science of Precise Color Selection",
+                heroSubtitle: "Color is not just an aesthetic choice. Discover applied color psychology and the 60-30-10 rule backed by scientific research.",
+                labelUseCases: "1. Select Context & Program Theme",
+                labelPalettePreset: "2. Select Color Harmony",
+                titleSources: "Scientific Research & Citations",
+                previewCanvasLabel: "Live Visualizer Canvas",
+                labelRatioBreakdown: "Color Ratio Proportion (60% - 30% - 10%)",
+                labelTipsTitle: "Practical Application Guide",
+                footerText: "ChromaLogic © 2026 — Designed with Apple Human Interface Principles & Color Science.",
+                dominant: "Dominant (60%)",
+                secondary: "Secondary (30%)",
+                accent: "Accent (10%)",
+            }
+        };
+
+        // =========================================================================
+        // MODULAR DATABASE (JSON FORMAT)
+        // Cara Menambah Tema Baru: Copy salah satu blok { ... } dari array ini, 
+        // paste di bawahnya, dan ubah teks serta warnanya.
+        // Pilihan visualType: "logo", "interior", "publishing", "ui"
+        // =========================================================================
+        const appDatabase = [
+            
+            // --- 1. TEMA: INCLUSIVE GROWTH (Visual: LOGO) ---
+            {
+                id: "inclusive_growth",
+                icon: "users", 
+                visualType: "logo",
+                name: { id: "Logo: Inclusive Growth", en: "Logo: Inclusive Growth" },
+                desc: { id: "Program Sosial & Kesetaraan", en: "Social Equity Programs" },
+                sources: [
+                    {
+                        author: "Eva Heller (2000)",
+                        title: "Psychology of Color: How Colors Affect Reason and Feeling",
+                        desc: {
+                            id: "Warna institusional seperti biru dipadukan dengan ungu (martabat) atau oranye (energi) menciptakan kesan inklusif tanpa kehilangan wibawa.",
+                            en: "Institutional colors like blue paired with purple (dignity) or orange (energy) create an inclusive feel without losing authority."
+                        }
+                    },
+                    {
+                        author: "Color-in-Context Theory",
+                        title: "Advances in Experimental Social Psychology",
+                        desc: {
+                            id: "Hindari warna merah dominan karena memicu respon 'avoidance' (peringatan/bahaya) pada program yang butuh rasa aman dan penerimaan.",
+                            en: "Avoid dominant red as it triggers an 'avoidance' response (warning/danger) in programs needing safety and acceptance."
+                        }
+                    }
+                ],
+                palettes: [
+                    {
+                        name: { id: "Optimisme Sosial", en: "Social Optimism" },
+                        tag: { id: "Partisipatif & Nyata", en: "Participatory & Real" },
+                        c60: "#1e3a8a", // Institutional Blue
+                        c30: "#ea580c", // Vibrant Orange (Opportunity)
+                        c10: "#facc15", // Yellow (Hope)
+                        tip: {
+                            id: "Biru memberi legitimasi lembaga (60%). Oranye (30%) dan Kuning (10%) memancing partisipasi publik dan semangat kesetaraan.",
+                            en: "Blue provides institutional legitimacy (60%). Orange (30%) and Yellow (10%) encourage public participation and equity."
+                        }
+                    },
+                    {
+                        name: { id: "Harmoni Inklusif", en: "Inclusive Harmony" },
+                        tag: { id: "Kredibel & Setara", en: "Credible & Equal" },
+                        c60: "#0f172a", // Dark Slate
+                        c30: "#059669", // Emerald Green
+                        c10: "#9333ea", // Purple Accent
+                        tip: {
+                            id: "Slate (60%) untuk wibawa, Hijau (30%) untuk pertumbuhan (growth), dan Ungu (10%) untuk menyimbolkan martabat dan inklusi minoritas.",
+                            en: "Slate (60%) for authority, Green (30%) for growth, and Purple (10%) to symbolize dignity and minority inclusion."
+                        }
+                    }
+                ]
+            },
+
+            // --- 2. TEMA: CLIMATE ACTION (Visual: UI DASHBOARD) ---
+            {
+                id: "climate_action",
+                icon: "leaf", 
+                visualType: "ui",
+                name: { id: "UI: Climate Action", en: "UI: Climate Action" },
+                desc: { id: "Aplikasi Hijau & Lingkungan", en: "Green & Environmental Apps" },
+                sources: [
+                    {
+                        author: "Saito (1996)",
+                        title: "Comparative Studies on Color Preference in Japan and other Asian Regions",
+                        desc: {
+                            id: "Hijau hutan dan Biru lautan terbukti menurunkan detak jantung dan memicu persepsi 'bersih' (clean) dan 'berkelanjutan'.",
+                            en: "Forest greens and Ocean blues are proven to lower heart rates and trigger perceptions of 'cleanliness' and 'sustainability'."
+                        }
+                    },
+                    {
+                        author: "W3C WCAG 2.1 Standard",
+                        title: "Web Content Accessibility Guidelines",
+                        desc: {
+                            id: "Pastikan rasio kontras teks pada UI warna hijau mencapai minimal 4.5:1, karena hijau seringkali sulit dibaca jika dipasangkan dengan putih tanpa penggelapan.",
+                            en: "Ensure text contrast on green UI reaches at least 4.5:1, as green is often hard to read when paired with white without darkening."
+                        }
+                    }
+                ],
+                palettes: [
+                    {
+                        name: { id: "Eco-Tech Dashboard", en: "Eco-Tech Dashboard" },
+                        tag: { id: "Modern & Bersih", en: "Modern & Clean" },
+                        c60: "#f8fafc", // Clean Paper Background
+                        c30: "#064e3b", // Deep Forest Green UI cards
+                        c10: "#3b82f6", // Water Blue CTA
+                        tip: {
+                            id: "Background terang (60%) mempermudah baca data. Kartu hijau tua (30%) memberi konteks 'bumi', dengan tombol CTA biru air (10%).",
+                            en: "Light background (60%) eases data reading. Dark green cards (30%) give an 'earth' context, with water blue CTA buttons (10%)."
+                        }
+                    },
+                    {
+                        name: { id: "Carbon Alert Mode", en: "Carbon Alert Mode" },
+                        tag: { id: "Urgensi Terukur", en: "Measured Urgency" },
+                        c60: "#0f172a", // Dark Mode UI
+                        c30: "#334155", // Surface Slate
+                        c10: "#ef4444", // Alert Red Accent
+                        tip: {
+                            id: "Digunakan untuk dashboard emisi (Dark mode). Merah (10%) hanya dipakai sangat selektif untuk angka emisi kritis.",
+                            en: "Used for emission dashboards (Dark mode). Red (10%) is used very selectively for critical emission metrics only."
+                        }
+                    }
+                ]
+            },
+
+            // --- 3. TEMA: EDUKASI & LITERASI (Visual: PUBLIKASI) ---
+            {
+                id: "education_pub",
+                icon: "book-open", 
+                visualType: "publishing",
+                name: { id: "Publikasi: Edukasi", en: "Publishing: Education" },
+                desc: { id: "Modul, Buku & Riset", en: "Modules, Books & Research" },
+                sources: [
+                    {
+                        author: "Hidayetoglu, Yildirim, & Akalin (2012)",
+                        title: "The effect of color and light on indoor wayfinding and learning",
+                        desc: {
+                            id: "Warna hangat (seperti kuning) dalam porsi kecil merangsang memori dan aktivitas mental pembelajar, asalkan tidak mendominasi halaman.",
+                            en: "Warm colors (like yellow) in small doses stimulate memory and mental activity in learners, provided they do not dominate the page."
+                        }
+                    },
+                    {
+                        author: "Jan V. White (2002)",
+                        title: "Editing by Design",
+                        desc: {
+                            id: "Kontras tinggi (Hitam/Putih) esensial untuk badan teks (60%), sedangkan warna navigasi (30%) membantu pemahaman struktur bab materi.",
+                            en: "High contrast (Black/White) is essential for body text (60%), while navigation colors (30%) aid understanding of chapter structure."
+                        }
+                    }
+                ],
+                palettes: [
+                    {
+                        name: { id: "Modul Pembelajaran Aktif", en: "Active Learning Module" },
+                        tag: { id: "Fokus & Stimulasi", en: "Focus & Stimulation" },
+                        c60: "#ffffff", // Pure White paper
+                        c30: "#1e40af", // Focused Navy Blue text/headers
+                        c10: "#fbbf24", // Stimulating Amber highlights
+                        tip: {
+                            id: "Kertas putih (60%) bebas distraksi. Biru Navy (30%) untuk teks menjaga fokus membaca. Amber (10%) untuk kotak 'Penting/Catatan'.",
+                            en: "White paper (60%) is distraction-free. Navy Blue (30%) text maintains focus. Amber (10%) for 'Important/Notes' callout boxes."
+                        }
+                    }
+                ]
+            },
+
+            // --- 4. TEMA: FASILITAS KESEHATAN (Visual: INTERIOR) ---
+            {
+                id: "health_interior",
+                icon: "heart", 
+                visualType: "interior",
+                name: { id: "Interior: Kesehatan", en: "Interior: Healthcare" },
+                desc: { id: "Klinik & Ruang Pemulihan", en: "Clinics & Recovery Rooms" },
+                sources: [
+                    {
+                        author: "Roger Ulrich (1991)",
+                        title: "Evidence-Based Design for Healthcare",
+                        desc: {
+                            id: "Pasien di ruang dengan palet warna meniru alam (hijau daun pucat, biru langit) memiliki waktu rawat inap lebih singkat dan tingkat stres lebih rendah.",
+                            en: "Patients in rooms with nature-mimicking palettes (pale sage, sky blue) have shorter hospital stays and lower stress levels."
+                        }
+                    }
+                ],
+                palettes: [
+                    {
+                        name: { id: "Ruang Pemulihan (Healing)", en: "Healing Recovery Room" },
+                        tag: { id: "Steril & Menenangkan", en: "Sterile & Calming" },
+                        c60: "#f8fafc", // Soft White/Grey Wall
+                        c30: "#ccfbf1", // Pale Teal / Mint
+                        c10: "#0d9488", // Deep Teal Accent (Plant/Art)
+                        tip: {
+                            id: "Dinding dominan (60%) putih off-white yang tidak menyilaukan mata pasien. 30% Mint memberi efek relaksasi pada furnitur.",
+                            en: "Dominant walls (60%) in glare-free off-white. 30% Mint provides relaxation via furniture and partitions."
+                        }
+                    }
+                ]
+            },
+
+            // --- 5. TEMA: FINTECH & KEAMANAN (Visual: UI DASHBOARD) ---
+            {
+                id: "fintech_security",
+                icon: "shield-check", 
+                visualType: "ui",
+                name: { id: "UI: Fintech & Keamanan", en: "UI: Fintech & Security" },
+                desc: { id: "Aplikasi Finansial & Bank", en: "Financial & Banking Apps" },
+                sources: [
+                    {
+                        author: "Labrecque & Milne (2012)",
+                        title: "Exciting red and competent blue: the importance of color in marketing",
+                        desc: {
+                            id: "Warna biru terbukti secara empiris meningkatkan persepsi 'kompetensi' dan 'keandalan' merek, sangat krusial untuk sektor finansial yang mengelola risiko.",
+                            en: "Blue is empirically proven to increase brand perceptions of 'competence' and 'reliability', crucial for risk-managing financial sectors."
+                        }
+                    }
+                ],
+                palettes: [
+                    {
+                        name: { id: "Secure Trust", en: "Secure Trust" },
+                        tag: { id: "Aman & Kredibel", en: "Safe & Credible" },
+                        c60: "#ffffff", // Clean White
+                        c30: "#1e3a8a", // Navy Blue Trust
+                        c10: "#10b981", // Emerald Green (Success/Money)
+                        tip: {
+                            id: "Ruang putih (60%) memberi kejelasan data. Biru tua (30%) menanamkan rasa aman, dan Hijau (10%) untuk tombol CTA / notifikasi sukses.",
+                            en: "White space (60%) clarifies data. Dark blue (30%) instills security, and Green (10%) for CTA buttons / success states."
+                        }
+                    },
+                    {
+                        name: { id: "Premium Wealth", en: "Premium Wealth" },
+                        tag: { id: "Eksklusif & Stabil", en: "Exclusive & Stable" },
+                        c60: "#0f172a", // Dark Slate
+                        c30: "#1e293b", // Lighter Slate
+                        c10: "#fbbf24", // Gold/Amber
+                        tip: {
+                            id: "Palet gelap (60%) sering digunakan untuk layanan perbankan premium/prioritas, dengan aksen Emas (10%) untuk melambangkan kekayaan/prestise.",
+                            en: "Dark palettes (60%) are often used for premium/priority banking, with Gold accents (10%) symbolizing wealth and prestige."
+                        }
+                    }
+                ]
+            },
+
+            // --- 6. TEMA: KULINER & F&B (Visual: LOGO) ---
+            {
+                id: "food_beverage",
+                icon: "coffee", 
+                visualType: "logo",
+                name: { id: "Logo: Kuliner & F&B", en: "Logo: Culinary & F&B" },
+                desc: { id: "Restoran & Pesan Antar", en: "Restaurants & Delivery" },
+                sources: [
+                    {
+                        author: "Satyendra Singh (2006)",
+                        title: "Impact of color on marketing",
+                        desc: {
+                            id: "Kombinasi warna hangat (merah dan kuning) atau 'Ketchup and Mustard Theory' terbukti mempercepat detak jantung dan merangsang nafsu makan.",
+                            en: "Warm color combinations (red and yellow) or the 'Ketchup and Mustard Theory' are proven to speed up heart rate and stimulate appetite."
+                        }
+                    },
+                    {
+                        author: "Charles Spence (2015)",
+                        title: "On the psychological impact of food colour",
+                        desc: {
+                            id: "Warna kemasan atau logo mempengaruhi ekspektasi rasa. Hijau dan coklat diasosiasikan dengan bahan organik, sehat, dan alami.",
+                            en: "Packaging or logo color influences taste expectations. Green and brown are associated with organic, healthy, and natural ingredients."
+                        }
+                    }
+                ],
+                palettes: [
+                    {
+                        name: { id: "Appetite Stimulator", en: "Appetite Stimulator" },
+                        tag: { id: "Cepat & Menggugah", en: "Fast & Appetizing" },
+                        c60: "#dc2626", // Red
+                        c30: "#facc15", // Yellow
+                        c10: "#ffffff", // White
+                        tip: {
+                            id: "Merah (60%) menarik perhatian seketika dan merangsang lapar. Kuning (30%) memberi kesan ramah/cepat. Cocok untuk Fast Food.",
+                            en: "Red (60%) grabs instant attention and stimulates hunger. Yellow (30%) gives a friendly/fast vibe. Ideal for Fast Food."
+                        }
+                    },
+                    {
+                        name: { id: "Organic & Artisan", en: "Organic & Artisan" },
+                        tag: { id: "Sehat & Alami", en: "Healthy & Natural" },
+                        c60: "#166534", // Dark Green
+                        c30: "#d97706", // Earthy Orange/Brown
+                        c10: "#fef3c7", // Cream
+                        tip: {
+                            id: "Hijau gelap (60%) untuk persepsi 'plant-based'/sehat, dengan oranye tanah (30%) yang memberi kesan hangat dan artisan.",
+                            en: "Dark green (60%) for 'plant-based'/healthy perception, with earthy orange (30%) giving a warm, artisan feel."
+                        }
+                    }
+                ]
+            },
+
+            // --- 7. TEMA: BRAND MEWAH (Visual: PUBLIKASI) ---
+            {
+                id: "luxury_premium",
+                icon: "gem", 
+                visualType: "publishing",
+                name: { id: "Publikasi: Brand Mewah", en: "Publishing: Luxury Brand" },
+                desc: { id: "Katalog & Editorial", en: "Catalogs & Editorial" },
+                sources: [
+                    {
+                        author: "Amare & Manning (2012)",
+                        title: "The Language of Visuals",
+                        desc: {
+                            id: "Penggunaan ekstensif warna hitam, putih, dan 'negative space' menyampaikan kesan sofistikasi, nilai tinggi, dan eksklusivitas tanpa perlu kata-kata.",
+                            en: "Extensive use of black, white, and negative space conveys sophistication, high value, and exclusivity without needing words."
+                        }
+                    }
+                ],
+                palettes: [
+                    {
+                        name: { id: "Minimalist Noir", en: "Minimalist Noir" },
+                        tag: { id: "Elegan & Eksklusif", en: "Elegant & Exclusive" },
+                        c60: "#000000", // True Black
+                        c30: "#ffffff", // Pure White
+                        c10: "#9ca3af", // Silver/Gray
+                        tip: {
+                            id: "Dominasi hitam (60%) pada sampul/katalog memancarkan wibawa dan misteri. Putih (30%) untuk keterbacaan, Perak (10%) untuk aksen premium.",
+                            en: "Dominant black (60%) on covers exudes authority and mystery. White (30%) for legibility, Silver (10%) for premium accents."
+                        }
+                    }
+                ]
+            }
+
+            // [TAMBAHKAN TEMA BARU DI SINI DENGAN FORMAT YANG SAMA]
+        ];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderUseCases();
+            renderPalettes();
+            renderSources();
+            renderVisualization();
+            updateStaticText();
+            lucide.createIcons();
+        });
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'id' ? 'en' : 'id';
+            document.getElementById('langLabel').innerText = currentLang === 'id' ? 'ID / EN' : 'EN / ID';
+            updateStaticText();
+            renderUseCases();
+            renderPalettes();
+            renderSources();
+            renderVisualization();
+        }
+
+        function toggleTheme() {
+            document.documentElement.classList.toggle('dark');
+            const icon = document.getElementById('themeIcon');
+            if (document.documentElement.classList.contains('dark')) {
+                icon.setAttribute('data-lucide', 'sun');
+            } else {
+                icon.setAttribute('data-lucide', 'moon');
+            }
+            lucide.createIcons();
+        }
+
+        function setMockBg(type) {
+            currentMockBg = type;
+            const lightBtn = document.getElementById('mockBgLightBtn');
+            const darkBtn = document.getElementById('mockBgDarkBtn');
+            
+            if (type === 'light') {
+                lightBtn.className = "px-2.5 py-1 rounded-lg font-medium transition-all bg-white dark:bg-slate-700 shadow-sm text-slate-800 dark:text-slate-100";
+                darkBtn.className = "px-2.5 py-1 rounded-lg font-medium transition-all text-slate-500 dark:text-slate-400";
+            } else {
+                darkBtn.className = "px-2.5 py-1 rounded-lg font-medium transition-all bg-slate-900 text-white shadow-sm";
+                lightBtn.className = "px-2.5 py-1 rounded-lg font-medium transition-all text-slate-500 dark:text-slate-400";
+            }
+            renderVisualization();
+        }
+
+        function updateStaticText() {
+            const lang = i18n[currentLang];
+            document.getElementById('heroTitle').innerText = lang.heroTitle;
+            document.getElementById('heroSubtitle').innerText = lang.heroSubtitle;
+            document.getElementById('labelUseCases').innerText = lang.labelUseCases;
+            document.getElementById('labelPalettePreset').innerText = lang.labelPalettePreset;
+            document.getElementById('titleSources').innerText = lang.titleSources;
+            document.getElementById('previewCanvasLabel').innerText = lang.previewCanvasLabel;
+            document.getElementById('labelRatioBreakdown').innerText = lang.labelRatioBreakdown;
+            document.getElementById('labelTipsTitle').innerText = lang.labelTipsTitle;
+            document.getElementById('footerText').innerHTML = lang.footerText;
+        }
+
+        function renderUseCases() {
+            const container = document.getElementById('useCaseGrid');
+            
+            container.innerHTML = appDatabase.map((item, idx) => {
+                const isActive = currentCatIndex === idx;
+                return `
+                    <button onclick="selectCategory(${idx})" class="p-3.5 rounded-2xl text-left transition-all flex flex-col justify-between border ${
+                        isActive 
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20' 
+                        : 'bg-slate-100/80 dark:bg-slate-800/60 hover:bg-slate-200/80 dark:hover:bg-slate-700/60 border-transparent text-slate-800 dark:text-slate-200'
+                    }">
+                        <div class="flex items-center justify-between w-full mb-2">
+                            <i data-lucide="${item.icon}" class="w-5 h-5 ${isActive ? 'text-white' : 'text-blue-500'}"></i>
+                            ${isActive ? '<span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>' : ''}
+                        </div>
+                        <div>
+                            <div class="font-semibold text-xs mb-0.5">${item.name[currentLang]}</div>
+                            <div class="text-[10px] opacity-80 line-clamp-1">${item.desc[currentLang]}</div>
+                        </div>
+                    </button>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        function selectCategory(index) {
+            currentCatIndex = index;
+            currentPaletteIndex = 0; // Reset palette index when changing category
+            renderUseCases();
+            renderPalettes();
+            renderSources();
+            renderVisualization();
+        }
+
+        function renderPalettes() {
+            const container = document.getElementById('paletteListContainer');
+            const currentCatData = appDatabase[currentCatIndex];
+            
+            container.innerHTML = currentCatData.palettes.map((pal, idx) => {
+                const isActive = currentPaletteIndex === idx;
+                return `
+                    <div onclick="selectPalette(${idx})" class="p-3 rounded-2xl cursor-pointer transition-all border ${
+                        isActive 
+                        ? 'bg-white dark:bg-slate-800 border-blue-500 shadow-sm ring-2 ring-blue-500/20' 
+                        : 'bg-slate-100/50 dark:bg-slate-800/30 border-slate-200/40 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800/60'
+                    }">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="font-medium text-xs text-slate-800 dark:text-slate-200">${pal.name[currentLang]}</span>
+                            <span class="text-[10px] text-slate-400 font-mono">${pal.tag[currentLang]}</span>
+                        </div>
+                        <div class="flex h-3.5 rounded-lg overflow-hidden border border-black/5 dark:border-white/10">
+                            <div style="background-color: ${pal.c60}; flex: 6;" title="Dominant 60%"></div>
+                            <div style="background-color: ${pal.c30}; flex: 3;" title="Secondary 30%"></div>
+                            <div style="background-color: ${pal.c10}; flex: 1;" title="Accent 10%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function selectPalette(idx) {
+            currentPaletteIndex = idx;
+            renderPalettes();
+            renderVisualization();
+        }
+
+        function renderSources() {
+            const container = document.getElementById('sourcesContent');
+            const sources = appDatabase[currentCatIndex].sources;
+            
+            container.innerHTML = sources.map(src => `
+                <div class="border-b border-slate-200/50 dark:border-slate-800/50 pb-3 last:border-0 last:pb-0">
+                    <div class="font-semibold text-slate-800 dark:text-slate-200 flex items-baseline justify-between">
+                        <span>${src.author}</span>
+                    </div>
+                    <div class="text-[11px] font-medium text-slate-500 dark:text-slate-400 italic mb-1">"${src.title}"</div>
+                    <p class="text-[11px] text-slate-600 dark:text-slate-300 leading-normal">${src.desc[currentLang]}</p>
+                </div>
+            `).join('');
+        }
+
+        function renderVisualization() {
+            const frame = document.getElementById('visualizationFrame');
+            const currentCatData = appDatabase[currentCatIndex];
+            const palette = currentCatData.palettes[currentPaletteIndex];
+            const visualType = currentCatData.visualType;
+            const langDict = i18n[currentLang];
+
+            // Set frame background depending on Mock Toggle
+            if (currentMockBg === 'dark') {
+                frame.style.backgroundColor = '#090d16';
+            } else {
+                frame.style.backgroundColor = '#f1f5f9';
+            }
+
+            // Render specific visualization based on JSON 'visualType'
+            if (visualType === 'logo') {
+                frame.innerHTML = `
+                    <div class="flex flex-col items-center justify-center p-6 text-center transition-all duration-500 scale-100 hover:scale-105">
+                        <div class="w-24 h-24 rounded-3xl p-0.5 shadow-2xl flex items-center justify-center mb-6 relative" style="background: linear-gradient(135deg, ${palette.c60}, ${palette.c30})">
+                            <div class="w-full h-full rounded-[22px] flex items-center justify-center relative overflow-hidden" style="background-color: ${palette.c60}">
+                                <svg class="w-14 h-14" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="50" cy="50" r="38" stroke="${palette.c30}" stroke-width="8" opacity="0.4"/>
+                                    <path d="M30 65 L50 25 L70 65" stroke="${palette.c30}" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <circle cx="50" cy="45" r="10" fill="${palette.c10}"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <h2 class="text-2xl font-bold tracking-tight mb-1" style="color: ${currentMockBg === 'dark' ? '#ffffff' : palette.c60}">
+                            PROGRAM LOGO
+                        </h2>
+                        <span class="text-xs font-semibold tracking-widest uppercase px-3 py-1 rounded-full" style="background-color: ${palette.c30}22; color: ${palette.c30}">
+                            ${palette.tag[currentLang]}
+                        </span>
+                    </div>
+                `;
+            } else if (visualType === 'interior') {
+                frame.innerHTML = `
+                    <div class="w-full max-w-md h-64 rounded-2xl overflow-hidden shadow-2xl relative border border-black/10">
+                        <div class="w-full h-2/3 relative flex items-center justify-center transition-colors duration-500" style="background-color: ${palette.c60}">
+                            <div class="w-20 h-24 rounded-lg bg-white p-2 shadow-md flex items-center justify-center border">
+                                <div class="w-full h-full rounded flex items-center justify-center" style="background-color: ${palette.c10}">
+                                    <i data-lucide="activity" class="w-6 h-6 text-white"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="w-full h-1/3 relative flex items-center justify-around px-8 transition-colors duration-500" style="background-color: ${palette.c30}">
+                            <div class="w-40 h-10 -mt-8 rounded-t-xl shadow-lg flex justify-center items-center font-medium text-[10px] text-white/90" style="background-color: ${palette.c30}">
+                                Main Object (30%)
+                            </div>
+                            <div class="w-8 h-8 -mt-8 rounded-full shadow-md flex items-center justify-center" style="background-color: ${palette.c10}">
+                                <div class="w-2 h-2 rounded-full bg-white"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (visualType === 'publishing') {
+                frame.innerHTML = `
+                    <div class="w-52 h-72 rounded-xl shadow-2xl p-5 flex flex-col justify-between transition-colors duration-500 relative border" style="background-color: ${palette.c60}">
+                        <div>
+                            <div class="text-[9px] font-bold tracking-widest uppercase mb-1" style="color: ${palette.c10}">MODULE / REPORT</div>
+                            <div class="text-xl font-extrabold leading-tight tracking-tight" style="color: ${palette.c30}">COVER TITLE</div>
+                            <div class="w-8 h-1 rounded-full mt-2" style="background-color: ${palette.c10}"></div>
+                        </div>
+                        <div class="my-auto space-y-2">
+                            <div class="h-16 rounded-lg opacity-20" style="background-color: ${palette.c30}"></div>
+                            <div class="h-2 w-3/4 rounded" style="background-color: ${palette.c30}"></div>
+                            <div class="h-2 w-1/2 rounded opacity-60" style="background-color: ${palette.c30}"></div>
+                        </div>
+                    </div>
+                `;
+            } else if (visualType === 'ui') {
+                frame.innerHTML = `
+                    <div class="w-60 h-80 rounded-[32px] p-3 shadow-2xl border-4 border-slate-800 transition-colors duration-500 relative overflow-hidden" style="background-color: ${palette.c60}">
+                        <div class="w-20 h-3 bg-slate-800 rounded-b-xl mx-auto mb-3"></div>
+                        <div class="rounded-2xl p-4 shadow-lg mb-3" style="background-color: ${palette.c30}">
+                            <div class="text-xs font-semibold text-white/70 mb-1">Impact Metric</div>
+                            <div class="text-xl font-bold text-white mb-3">84.5%</div>
+                            <button class="w-full py-2 rounded-xl font-semibold text-xs text-white shadow-md transition-transform active:scale-95 flex items-center justify-center space-x-1" style="background-color: ${palette.c10}">
+                                <span>Take Action</span>
+                                <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="h-8 rounded-xl opacity-15" style="background-color: ${palette.c30}"></div>
+                            <div class="h-8 rounded-xl opacity-15" style="background-color: ${palette.c30}"></div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Update Ratio Bar Colors
+            document.getElementById('barDominant').style.backgroundColor = palette.c60;
+            document.getElementById('barSecondary').style.backgroundColor = palette.c30;
+            document.getElementById('barAccent').style.backgroundColor = palette.c10;
+
+            // Update Psychology Tag and Practical Tip Text
+            document.getElementById('palettePsychologyTag').innerText = palette.tag[currentLang];
+            document.getElementById('practicalTipText').innerText = palette.tip[currentLang];
+
+            // Render Color Swatches Data
+            document.getElementById('swatchDetails').innerHTML = `
+                <div class="p-2 rounded-xl bg-slate-200/60 dark:bg-slate-800/60">
+                    <div class="w-4 h-4 rounded-full mx-auto mb-1 border" style="background-color: ${palette.c60}"></div>
+                    <div class="font-semibold text-slate-700 dark:text-slate-300">${langDict.dominant}</div>
+                    <div class="font-mono text-[10px] text-slate-500">${palette.c60}</div>
+                </div>
+                <div class="p-2 rounded-xl bg-slate-200/60 dark:bg-slate-800/60">
+                    <div class="w-4 h-4 rounded-full mx-auto mb-1 border" style="background-color: ${palette.c30}"></div>
+                    <div class="font-semibold text-slate-700 dark:text-slate-300">${langDict.secondary}</div>
+                    <div class="font-mono text-[10px] text-slate-500">${palette.c30}</div>
+                </div>
+                <div class="p-2 rounded-xl bg-slate-200/60 dark:bg-slate-800/60">
+                    <div class="w-4 h-4 rounded-full mx-auto mb-1 border" style="background-color: ${palette.c10}"></div>
+                    <div class="font-semibold text-slate-700 dark:text-slate-300">${langDict.accent}</div>
+                    <div class="font-mono text-[10px] text-slate-500">${palette.c10}</div>
+                </div>
+            `;
+
+            lucide.createIcons();
+        }
+    </script>
+</body>
+</html>
