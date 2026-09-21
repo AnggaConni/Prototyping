@@ -30,6 +30,9 @@
     </script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Color science & export libraries -->
+    <script src="https://colorjs.io/dist/color.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <style>
         /* Apple-style glassmorphism & typography refinements */
         body {
@@ -149,6 +152,64 @@
                     </div>
                 </div>
 
+
+                <!-- Card: Color Science Laboratory -->
+                <div class="glass-panel rounded-3xl p-6 shadow-sm hover:shadow-md transition-shadow" id="colorLabCard">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-2 text-blue-600 dark:text-blue-400">
+                            <i data-lucide="flask-conical" class="w-4 h-4"></i>
+                            <h3 class="font-semibold text-sm" id="colorLabTitle">Color Science Laboratory</h3>
+                        </div>
+                        <span class="text-[10px] font-medium px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">Lab / LCH / OKLCH</span>
+                    </div>
+
+                    <div class="flex items-center gap-3 mb-4">
+                        <input id="labColorInput" type="color" value="#1e3a8a" class="w-12 h-12 rounded-xl border-0 bg-transparent cursor-pointer" aria-label="Select color">
+                        <div class="flex-1">
+                            <label for="labHexInput" class="block text-[10px] uppercase tracking-wider font-semibold text-slate-400 dark:text-slate-500 mb-1" id="labHexLabel">HEX colour</label>
+                            <input id="labHexInput" type="text" value="#1E3A8A" maxlength="7"
+                                class="w-full px-3 py-2 rounded-xl bg-slate-100/80 dark:bg-slate-800/70 border border-slate-200/60 dark:border-slate-700 text-xs font-mono uppercase outline-none focus:ring-2 focus:ring-blue-500/30"
+                                spellcheck="false">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 text-[11px] mb-4">
+                        <div class="rounded-2xl bg-slate-100/70 dark:bg-slate-800/60 p-3">
+                            <div class="text-slate-400 dark:text-slate-500 mb-1" id="labLchLabel">LCH</div>
+                            <div id="labLchValue" class="font-mono text-slate-800 dark:text-slate-200">—</div>
+                        </div>
+                        <div class="rounded-2xl bg-slate-100/70 dark:bg-slate-800/60 p-3">
+                            <div class="text-slate-400 dark:text-slate-500 mb-1" id="labOklchLabel">OKLCH</div>
+                            <div id="labOklchValue" class="font-mono text-slate-800 dark:text-slate-200">—</div>
+                        </div>
+                    </div>
+
+                    <div class="rounded-2xl bg-slate-100/70 dark:bg-slate-800/60 p-3 mb-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 dark:text-slate-500" id="labContrastTitle">Accessibility contrast</span>
+                            <span id="labContrastSummary" class="text-[10px] font-semibold">—</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div id="contrastWhite" class="rounded-xl px-3 py-2 text-center">
+                                <div class="text-[10px] opacity-70 mb-1">White text</div>
+                                <div class="font-mono font-semibold">—</div>
+                            </div>
+                            <div id="contrastBlack" class="rounded-xl px-3 py-2 text-center">
+                                <div class="text-[10px] opacity-70 mb-1">Black text</div>
+                                <div class="font-mono font-semibold">—</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 dark:text-slate-500" id="labScaleTitle">Perceptual LCH scale</span>
+                            <span class="text-[10px] text-slate-400 dark:text-slate-500">5 steps</span>
+                        </div>
+                        <div id="labScale" class="grid grid-cols-5 gap-1.5"></div>
+                    </div>
+                </div>
+
                 <!-- Card 3: Academic Research & Citations -->
                 <div class="glass-panel rounded-3xl p-6 shadow-sm hover:shadow-md transition-shadow border-l-4 border-l-blue-500">
                     <div class="flex items-center space-x-2 text-blue-600 dark:text-blue-400 mb-3">
@@ -176,8 +237,14 @@
                             <span class="text-xs font-medium text-slate-400 ml-2" id="previewCanvasLabel">Canvas Visualisasi Live</span>
                         </div>
 
-                        <!-- Dark/Light Context Toggle for Canvas -->
-                        <div class="flex items-center bg-slate-200/80 dark:bg-slate-800/80 p-1 rounded-xl text-xs">
+                        <!-- Preview Tools -->
+                        <div class="flex items-center gap-2">
+                            <button id="exportVisualizerBtn" onclick="exportVisualizer()" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-all text-[10px] font-semibold shadow-sm">
+                                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                                <span id="exportVisualizerLabel">Export PNG</span>
+                            </button>
+                            <!-- Dark/Light Context Toggle for Canvas -->
+                            <div class="flex items-center bg-slate-200/80 dark:bg-slate-800/80 p-1 rounded-xl text-xs">
                             <button id="mockBgLightBtn" onclick="setMockBg('light')" class="px-2.5 py-1 rounded-lg font-medium transition-all bg-white dark:bg-slate-700 shadow-sm text-slate-800 dark:text-slate-100">
                                 Light
                             </button>
@@ -253,6 +320,16 @@
                 dominant: "Dominan (60%)",
                 secondary: "Sekunder (30%)",
                 accent: "Aksen (10%)",
+
+                labTitle: "Color Science Laboratory",
+                labHexLabel: "HEX colour",
+                labLchLabel: "LCH",
+                labOklchLabel: "OKLCH",
+                labContrastTitle: "Accessibility contrast",
+                labScaleTitle: "Perceptual LCH scale",
+                exportVisualizerLabel: "Export PNG",
+                contrastGood: "Kontras kuat",
+                contrastMixed: "Periksa kontras",
             },
             en: {
                 heroTitle: "The Science of Precise Color Selection",
@@ -267,8 +344,142 @@
                 dominant: "Dominant (60%)",
                 secondary: "Secondary (30%)",
                 accent: "Accent (10%)",
+
+                labTitle: "Color Science Laboratory",
+                labHexLabel: "HEX colour",
+                labLchLabel: "LCH",
+                labOklchLabel: "OKLCH",
+                labContrastTitle: "Accessibility contrast",
+                labScaleTitle: "Perceptual LCH scale",
+                exportVisualizerLabel: "Export PNG",
+                contrastGood: "Strong contrast",
+                contrastMixed: "Check contrast",
             }
         };
+
+
+        // =========================================================================
+        // COLOR SCIENCE LAB
+        // =========================================================================
+
+        function normalizeHex(value) {
+            const hex = String(value || '').trim().toUpperCase();
+            return /^#[0-9A-F]{6}$/.test(hex) ? hex : null;
+        }
+
+        function hexToRgb(hex) {
+            const clean = hex.replace('#', '');
+            return {
+                r: parseInt(clean.slice(0, 2), 16) / 255,
+                g: parseInt(clean.slice(2, 4), 16) / 255,
+                b: parseInt(clean.slice(4, 6), 16) / 255
+            };
+        }
+
+        function relativeLuminance(hex) {
+            const rgb = hexToRgb(hex);
+            const linearize = v => v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+            return 0.2126 * linearize(rgb.r) + 0.7152 * linearize(rgb.g) + 0.0722 * linearize(rgb.b);
+        }
+
+        function contrastRatio(hexA, hexB) {
+            const a = relativeLuminance(hexA);
+            const b = relativeLuminance(hexB);
+            const lighter = Math.max(a, b);
+            const darker = Math.min(a, b);
+            return (lighter + 0.05) / (darker + 0.05);
+        }
+
+        function colorToHex(color) {
+            try {
+                const coords = color.to('srgb').coords.map(v => Math.max(0, Math.min(1, v)));
+                return '#' + coords.map(v => Math.round(v * 255).toString(16).padStart(2, '0')).join('').toUpperCase();
+            } catch {
+                return '#000000';
+            }
+        }
+
+        function updateColorLab() {
+            const colorInput = document.getElementById('labColorInput');
+            const hexInput = document.getElementById('labHexInput');
+            if (!colorInput || !hexInput || typeof Color === 'undefined') return;
+
+            const hex = normalizeHex(hexInput.value) || colorInput.value.toUpperCase();
+            colorInput.value = hex;
+            hexInput.value = hex;
+
+            try {
+                const color = new Color(hex);
+                const lch = color.to('lch').coords;
+                const oklch = color.to('oklch').coords;
+
+                document.getElementById('labLchValue').textContent = `L ${lch[0].toFixed(1)} · C ${lch[1].toFixed(1)} · H ${Number(lch[2]).toFixed(1)}°`;
+                document.getElementById('labOklchValue').textContent = `L ${oklch[0].toFixed(3)} · C ${oklch[1].toFixed(3)} · H ${Number(oklch[2]).toFixed(1)}°`;
+
+                const whiteRatio = contrastRatio(hex, '#FFFFFF');
+                const blackRatio = contrastRatio(hex, '#000000');
+                const whitePass = whiteRatio >= 4.5;
+                const blackPass = blackRatio >= 4.5;
+
+                const whiteEl = document.getElementById('contrastWhite');
+                const blackEl = document.getElementById('contrastBlack');
+                whiteEl.style.backgroundColor = hex;
+                whiteEl.style.color = '#FFFFFF';
+                whiteEl.innerHTML = `<div class="text-[10px] opacity-80 mb-1">White text</div><div class="font-mono font-semibold">${whiteRatio.toFixed(2)}:1 ${whitePass ? '✓' : '·'}</div>`;
+                blackEl.style.backgroundColor = hex;
+                blackEl.style.color = '#000000';
+                blackEl.innerHTML = `<div class="text-[10px] opacity-60 mb-1">Black text</div><div class="font-mono font-semibold">${blackRatio.toFixed(2)}:1 ${blackPass ? '✓' : '·'}</div>`;
+
+                document.getElementById('labContrastSummary').textContent =
+                    (whitePass || blackPass) ? i18n[currentLang].contrastGood : i18n[currentLang].contrastMixed;
+
+                const range = color.range('#FFFFFF', { space: 'lch', outputSpace: 'srgb' });
+                document.getElementById('labScale').innerHTML = [0, 0.25, 0.5, 0.75, 1].map(step => {
+                    const generated = colorToHex(range(step));
+                    return `<button type="button" onclick="setLabColor('${generated}')"
+                        title="${generated}" class="h-10 rounded-lg border border-black/5 dark:border-white/10 transition-transform hover:scale-105"
+                        style="background-color:${generated}"></button>`;
+                }).join('');
+            } catch {
+                document.getElementById('labLchValue').textContent = 'Invalid colour';
+                document.getElementById('labOklchValue').textContent = '—';
+            }
+        }
+
+        function setLabColor(hex) {
+            const normalized = normalizeHex(hex);
+            if (!normalized) return;
+            document.getElementById('labColorInput').value = normalized;
+            document.getElementById('labHexInput').value = normalized;
+            updateColorLab();
+        }
+
+        async function exportVisualizer() {
+            const target = document.getElementById('visualizationFrame');
+            const button = document.getElementById('exportVisualizerBtn');
+            if (!target || typeof html2canvas === 'undefined') return;
+
+            const originalText = button.innerText;
+            button.disabled = true;
+            button.innerText = currentLang === 'id' ? 'Membuat…' : 'Rendering…';
+
+            try {
+                const canvas = await html2canvas(target, {
+                    backgroundColor: currentMockBg === 'dark' ? '#090d16' : '#f1f5f9',
+                    scale: Math.min(window.devicePixelRatio || 1, 2),
+                    useCORS: true
+                });
+                const link = document.createElement('a');
+                link.download = 'chromalogic-visualization.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            } catch (error) {
+                console.error('Export failed:', error);
+            } finally {
+                button.disabled = false;
+                button.innerText = originalText;
+            }
+        }
 
         // =========================================================================
         // MODULAR DATABASE (JSON FORMAT)
@@ -587,6 +798,13 @@
             renderSources();
             renderVisualization();
             updateStaticText();
+            document.getElementById('labColorInput')?.addEventListener('input', event => setLabColor(event.target.value));
+            document.getElementById('labHexInput')?.addEventListener('change', event => {
+                const normalized = normalizeHex(event.target.value);
+                if (normalized) setLabColor(normalized);
+                else event.target.value = document.getElementById('labColorInput').value.toUpperCase();
+            });
+            updateColorLab();
             lucide.createIcons();
         });
 
@@ -594,6 +812,7 @@
             currentLang = currentLang === 'id' ? 'en' : 'id';
             document.getElementById('langLabel').innerText = currentLang === 'id' ? 'ID / EN' : 'EN / ID';
             updateStaticText();
+            updateColorLab();
             renderUseCases();
             renderPalettes();
             renderSources();
