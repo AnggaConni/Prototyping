@@ -1,152 +1,362 @@
 
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Angga Conni Saputra - Innovation Hub</title>
+    <meta name="description" content="Angga Conni Saputra — Innovation Hub for prototypes, design experiments and digital systems.">
+    <title>Angga Conni Saputra — Innovation Hub</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>.line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }</style>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+    <style>
+        html { scroll-behavior: smooth; }
+        body { background:
+            radial-gradient(circle at 10% 10%, rgba(59,130,246,.08), transparent 28%),
+            radial-gradient(circle at 90% 15%, rgba(245,158,11,.08), transparent 25%),
+            #f8fafc;
+        }
+        .hero-grid {
+            background-image:
+                linear-gradient(rgba(15,23,42,.045) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(15,23,42,.045) 1px, transparent 1px);
+            background-size: 34px 34px;
+        }
+        .line-clamp-2 { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+        .resource-card { box-shadow: 0 10px 30px rgba(15,23,42,.05); }
+        .glass { background: rgba(255,255,255,.78); backdrop-filter: blur(18px); }
+    </style>
 </head>
-<body class="bg-gray-900 text-gray-100 font-sans antialiased min-h-screen flex flex-col">
-    <header class="bg-gray-800/50 border-b border-gray-700 py-12 px-6">
-        <div class="max-w-5xl mx-auto flex flex-col md:flex-row gap-8 items-center md:items-start">
-            <div class="flex-1 text-center md:text-left">
-                <h1 class="text-4xl md:text-5xl font-bold text-white mb-2 tracking-tight">ANGGA CONNI SAPUTRA</h1>
-                <p class="text-xl text-blue-400 font-medium mb-4">Strategic Innovation Specialist & Systems Architect</p>
-                <div class="flex flex-wrap gap-4 justify-center md:justify-start">
-                    <a href="https://linkedin.com/in/anggaconni/" target="_blank" class="flex items-center gap-2 bg-[#0A66C2] hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
-                        <i class="fab fa-linkedin"></i> LinkedIn
-                    </a>
+<body class="text-slate-900 antialiased">
+    <header class="relative overflow-hidden border-b border-slate-200 bg-white/80">
+        <div class="absolute inset-0 hero-grid opacity-70"></div>
+        <div class="relative max-w-6xl mx-auto px-6 py-16 md:py-20">
+            <nav class="flex items-center justify-between mb-14">
+                <a href="#" class="flex items-center gap-3 font-bold tracking-tight text-slate-900">
+                    <span class="w-10 h-10 rounded-2xl bg-slate-900 text-white flex items-center justify-center shadow-lg">
+                        <i class="fas fa-cubes text-sm"></i>
+                    </span>
+                    <span>Innovation Hub</span>
+                </a>
+                <a href="https://linkedin.com/in/anggaconni/" target="_blank" rel="noopener noreferrer"
+                   class="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-slate-200 bg-white/90 hover:bg-slate-50 text-sm font-semibold transition">
+                    <i class="fab fa-linkedin text-[#0A66C2]"></i> LinkedIn
+                </a>
+            </nav>
+
+            <div class="grid lg:grid-cols-[1.3fr_.7fr] gap-10 items-end">
+                <div>
+                    <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-slate-200 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 mb-6">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        Experimental systems & prototypes
+                    </div>
+                    <h1 class="text-4xl md:text-6xl font-black tracking-tight leading-[1.02] text-slate-950">
+                        ANGGA CONNI<br class="hidden md:block"> SAPUTRA
+                    </h1>
+                    <p class="mt-5 text-lg md:text-xl text-slate-500 max-w-2xl leading-8">
+                        Strategic Innovation Specialist & Systems Architect exploring how ideas become useful digital tools.
+                    </p>
                 </div>
+
+                <div class="glass rounded-3xl border border-white/80 shadow-xl p-6 md:p-7">
+                    <div class="text-xs uppercase tracking-[0.18em] font-semibold text-slate-400 mb-4">At a glance</div>
+                    <div class="grid grid-cols-2 gap-5">
+                        <div>
+                            <div class="text-3xl font-black text-slate-900">10</div>
+                            <div class="text-sm text-slate-500 mt-1">Active prototypes</div>
+                        </div>
+                        <div>
+                            <div class="text-3xl font-black text-slate-900">1</div>
+                            <div class="text-sm text-slate-500 mt-1">Pitch decks</div>
+                        </div>
+                    </div>
+                    <div class="mt-6 pt-5 border-t border-slate-200">
+                        <p class="text-sm text-slate-500 leading-6">A browser-first lab for testing ideas, interfaces, workflows and decision-support concepts.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap gap-3 mt-10">
+                <a href="#prototypes" class="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-slate-900 text-white hover:bg-slate-800 font-semibold transition">
+                    Explore prototypes <i class="fas fa-arrow-down text-xs"></i>
+                </a>
+                <a href="#pitchdecks" class="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-white border border-slate-200 hover:bg-slate-50 font-semibold transition">
+                    View pitch decks
+                </a>
             </div>
         </div>
     </header>
 
-    <main class="flex-grow w-full max-w-5xl mx-auto px-6 py-12 space-y-16">
-        <section>
-            <div class="flex justify-between items-center mb-8 border-b border-gray-700 pb-4">
-                <h2 class="text-2xl font-bold text-white"><i class="fas fa-lightbulb text-yellow-400 mr-2"></i> Donor Pitch Decks</h2>
-                <span class="text-sm bg-gray-800 px-3 py-1 rounded-full text-gray-400 border border-gray-700">1 decks</span>
+    <main class="max-w-6xl mx-auto px-6 py-14 md:py-18">
+        <section id="prototypes" class="scroll-mt-10">
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-7">
+                <div>
+                    <div class="text-xs uppercase tracking-[0.18em] font-semibold text-blue-600 mb-2">01 · Build & test</div>
+                    <h2 class="text-3xl font-black tracking-tight text-slate-950">Active Prototypes</h2>
+                    <p class="text-slate-500 mt-2">Interactive experiments across policy, design, education and digital systems.</p>
+                </div>
+                <span class="inline-flex w-fit items-center px-3 py-1.5 rounded-full bg-white border border-slate-200 text-sm font-semibold text-slate-500">10 apps</span>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 
-        <a href="pitchdeck/Coast Mapping.html" target="_blank" class="bg-gray-800 border border-gray-700 hover:border-yellow-500 rounded-xl p-6 flex flex-col items-center text-center justify-center min-h-[180px] group cursor-pointer transition-all transform hover:-translate-y-2 hover:shadow-2xl hover:shadow-yellow-900/20 decoration-none">
-            <i class="fas fa-chalkboard-user text-4xl text-gray-500 group-hover:text-yellow-400 mb-4 transition-colors"></i>
-            <h3 class="text-lg font-bold text-gray-200 group-hover:text-white mb-2">Ocean Literacy - Pitch Deck</h3>
-            <p class="text-sm text-gray-400 line-clamp-2">Click to view this resource.</p>
-            <span class="text-xs font-semibold text-yellow-400 mt-4 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                Open Resource <i class="fas fa-external-link-alt"></i>
-            </span>
+        <a href="proto/Unified Beneficiary Registry & Deduplication Demo.html" target="_blank" rel="noopener noreferrer"
+           class="resource-card group bg-white border border-slate-200 rounded-3xl p-6 flex flex-col justify-between min-h-[205px] cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:border-blue-200 hover:shadow-blue-100">
+            <div>
+                <div class="flex items-start justify-between gap-3 mb-5">
+                    <div class="w-11 h-11 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center transition-all duration-300 group-hover:bg-slate-900">
+                        <i class="fas fa-file-code text-lg text-slate-300 group-hover:text-blue-600 transition-colors"></i>
+                    </div>
+                    <span class="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400 group-hover:text-slate-500">Prototype</span>
+                </div>
+                <h3 class="text-[17px] leading-snug font-bold text-slate-800 group-hover:text-slate-950 mb-2">Unified Beneficiary Registry Engine — IDM Prototype</h3>
+                <p class="text-sm leading-6 text-slate-500 line-clamp-2">Click to view this resource.</p>
+            </div>
+            <div class="mt-6 flex items-center justify-between">
+                <span class="text-xs font-semibold text-blue-600">Open resource</span>
+                <span class="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all">
+                    <i class="fas fa-arrow-up-right-from-square text-[10px]"></i>
+                </span>
+            </div>
+        </a>
+    
+        <a href="proto/UNICEF Sample.html" target="_blank" rel="noopener noreferrer"
+           class="resource-card group bg-white border border-slate-200 rounded-3xl p-6 flex flex-col justify-between min-h-[205px] cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:border-blue-200 hover:shadow-blue-100">
+            <div>
+                <div class="flex items-start justify-between gap-3 mb-5">
+                    <div class="w-11 h-11 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center transition-all duration-300 group-hover:bg-slate-900">
+                        <i class="fas fa-file-code text-lg text-slate-300 group-hover:text-blue-600 transition-colors"></i>
+                    </div>
+                    <span class="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400 group-hover:text-slate-500">Prototype</span>
+                </div>
+                <h3 class="text-[17px] leading-snug font-bold text-slate-800 group-hover:text-slate-950 mb-2">EdTech &amp; AI Governance Readiness Index</h3>
+                <p class="text-sm leading-6 text-slate-500 line-clamp-2">Click to view this resource.</p>
+            </div>
+            <div class="mt-6 flex items-center justify-between">
+                <span class="text-xs font-semibold text-blue-600">Open resource</span>
+                <span class="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all">
+                    <i class="fas fa-arrow-up-right-from-square text-[10px]"></i>
+                </span>
+            </div>
+        </a>
+    
+        <a href="proto/Stakeholder-Mapping.html" target="_blank" rel="noopener noreferrer"
+           class="resource-card group bg-white border border-slate-200 rounded-3xl p-6 flex flex-col justify-between min-h-[205px] cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:border-blue-200 hover:shadow-blue-100">
+            <div>
+                <div class="flex items-start justify-between gap-3 mb-5">
+                    <div class="w-11 h-11 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center transition-all duration-300 group-hover:bg-slate-900">
+                        <i class="fas fa-file-code text-lg text-slate-300 group-hover:text-blue-600 transition-colors"></i>
+                    </div>
+                    <span class="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400 group-hover:text-slate-500">Prototype</span>
+                </div>
+                <h3 class="text-[17px] leading-snug font-bold text-slate-800 group-hover:text-slate-950 mb-2">Comprehensive Stakeholder Mapping Tool</h3>
+                <p class="text-sm leading-6 text-slate-500 line-clamp-2">Click to view this resource.</p>
+            </div>
+            <div class="mt-6 flex items-center justify-between">
+                <span class="text-xs font-semibold text-blue-600">Open resource</span>
+                <span class="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all">
+                    <i class="fas fa-arrow-up-right-from-square text-[10px]"></i>
+                </span>
+            </div>
+        </a>
+    
+        <a href="proto/opportunitycost.html" target="_blank" rel="noopener noreferrer"
+           class="resource-card group bg-white border border-slate-200 rounded-3xl p-6 flex flex-col justify-between min-h-[205px] cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:border-blue-200 hover:shadow-blue-100">
+            <div>
+                <div class="flex items-start justify-between gap-3 mb-5">
+                    <div class="w-11 h-11 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center transition-all duration-300 group-hover:bg-slate-900">
+                        <i class="fas fa-file-code text-lg text-slate-300 group-hover:text-blue-600 transition-colors"></i>
+                    </div>
+                    <span class="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400 group-hover:text-slate-500">Prototype</span>
+                </div>
+                <h3 class="text-[17px] leading-snug font-bold text-slate-800 group-hover:text-slate-950 mb-2">Opportunity Cost Calculator</h3>
+                <p class="text-sm leading-6 text-slate-500 line-clamp-2">Click to view this resource.</p>
+            </div>
+            <div class="mt-6 flex items-center justify-between">
+                <span class="text-xs font-semibold text-blue-600">Open resource</span>
+                <span class="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all">
+                    <i class="fas fa-arrow-up-right-from-square text-[10px]"></i>
+                </span>
+            </div>
+        </a>
+    
+        <a href="proto/kidsart.html" target="_blank" rel="noopener noreferrer"
+           class="resource-card group bg-white border border-slate-200 rounded-3xl p-6 flex flex-col justify-between min-h-[205px] cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:border-blue-200 hover:shadow-blue-100">
+            <div>
+                <div class="flex items-start justify-between gap-3 mb-5">
+                    <div class="w-11 h-11 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center transition-all duration-300 group-hover:bg-slate-900">
+                        <i class="fas fa-file-code text-lg text-slate-300 group-hover:text-blue-600 transition-colors"></i>
+                    </div>
+                    <span class="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400 group-hover:text-slate-500">Prototype</span>
+                </div>
+                <h3 class="text-[17px] leading-snug font-bold text-slate-800 group-hover:text-slate-950 mb-2">Art Canvas - Lukis &amp; Warnai</h3>
+                <p class="text-sm leading-6 text-slate-500 line-clamp-2">Click to view this resource.</p>
+            </div>
+            <div class="mt-6 flex items-center justify-between">
+                <span class="text-xs font-semibold text-blue-600">Open resource</span>
+                <span class="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all">
+                    <i class="fas fa-arrow-up-right-from-square text-[10px]"></i>
+                </span>
+            </div>
+        </a>
+    
+        <a href="proto/DKV-colour.html" target="_blank" rel="noopener noreferrer"
+           class="resource-card group bg-white border border-slate-200 rounded-3xl p-6 flex flex-col justify-between min-h-[205px] cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:border-blue-200 hover:shadow-blue-100">
+            <div>
+                <div class="flex items-start justify-between gap-3 mb-5">
+                    <div class="w-11 h-11 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center transition-all duration-300 group-hover:bg-slate-900">
+                        <i class="fas fa-file-code text-lg text-slate-300 group-hover:text-blue-600 transition-colors"></i>
+                    </div>
+                    <span class="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400 group-hover:text-slate-500">Prototype</span>
+                </div>
+                <h3 class="text-[17px] leading-snug font-bold text-slate-800 group-hover:text-slate-950 mb-2">ChromaLogic — The Science of Color Selection</h3>
+                <p class="text-sm leading-6 text-slate-500 line-clamp-2">Click to view this resource.</p>
+            </div>
+            <div class="mt-6 flex items-center justify-between">
+                <span class="text-xs font-semibold text-blue-600">Open resource</span>
+                <span class="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all">
+                    <i class="fas fa-arrow-up-right-from-square text-[10px]"></i>
+                </span>
+            </div>
+        </a>
+    
+        <a href="proto/coverletter.html" target="_blank" rel="noopener noreferrer"
+           class="resource-card group bg-white border border-slate-200 rounded-3xl p-6 flex flex-col justify-between min-h-[205px] cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:border-blue-200 hover:shadow-blue-100">
+            <div>
+                <div class="flex items-start justify-between gap-3 mb-5">
+                    <div class="w-11 h-11 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center transition-all duration-300 group-hover:bg-slate-900">
+                        <i class="fas fa-file-code text-lg text-slate-300 group-hover:text-blue-600 transition-colors"></i>
+                    </div>
+                    <span class="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400 group-hover:text-slate-500">Prototype</span>
+                </div>
+                <h3 class="text-[17px] leading-snug font-bold text-slate-800 group-hover:text-slate-950 mb-2">Cover Letter Maker Pro</h3>
+                <p class="text-sm leading-6 text-slate-500 line-clamp-2">Click to view this resource.</p>
+            </div>
+            <div class="mt-6 flex items-center justify-between">
+                <span class="text-xs font-semibold text-blue-600">Open resource</span>
+                <span class="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all">
+                    <i class="fas fa-arrow-up-right-from-square text-[10px]"></i>
+                </span>
+            </div>
+        </a>
+    
+        <a href="proto/cintaa.html" target="_blank" rel="noopener noreferrer"
+           class="resource-card group bg-white border border-slate-200 rounded-3xl p-6 flex flex-col justify-between min-h-[205px] cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:border-blue-200 hover:shadow-blue-100">
+            <div>
+                <div class="flex items-start justify-between gap-3 mb-5">
+                    <div class="w-11 h-11 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center transition-all duration-300 group-hover:bg-slate-900">
+                        <i class="fas fa-file-code text-lg text-slate-300 group-hover:text-blue-600 transition-colors"></i>
+                    </div>
+                    <span class="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400 group-hover:text-slate-500">Prototype</span>
+                </div>
+                <h3 class="text-[17px] leading-snug font-bold text-slate-800 group-hover:text-slate-950 mb-2">Important Survey</h3>
+                <p class="text-sm leading-6 text-slate-500 line-clamp-2">Click to view this resource.</p>
+            </div>
+            <div class="mt-6 flex items-center justify-between">
+                <span class="text-xs font-semibold text-blue-600">Open resource</span>
+                <span class="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all">
+                    <i class="fas fa-arrow-up-right-from-square text-[10px]"></i>
+                </span>
+            </div>
+        </a>
+    
+        <a href="proto/childish.html" target="_blank" rel="noopener noreferrer"
+           class="resource-card group bg-white border border-slate-200 rounded-3xl p-6 flex flex-col justify-between min-h-[205px] cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:border-blue-200 hover:shadow-blue-100">
+            <div>
+                <div class="flex items-start justify-between gap-3 mb-5">
+                    <div class="w-11 h-11 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center transition-all duration-300 group-hover:bg-slate-900">
+                        <i class="fas fa-file-code text-lg text-slate-300 group-hover:text-blue-600 transition-colors"></i>
+                    </div>
+                    <span class="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400 group-hover:text-slate-500">Prototype</span>
+                </div>
+                <h3 class="text-[17px] leading-snug font-bold text-slate-800 group-hover:text-slate-950 mb-2">Childish vs Childlike: The Quiz</h3>
+                <p class="text-sm leading-6 text-slate-500 line-clamp-2">Click to view this resource.</p>
+            </div>
+            <div class="mt-6 flex items-center justify-between">
+                <span class="text-xs font-semibold text-blue-600">Open resource</span>
+                <span class="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all">
+                    <i class="fas fa-arrow-up-right-from-square text-[10px]"></i>
+                </span>
+            </div>
+        </a>
+    
+        <a href="proto/AIDA.html" target="_blank" rel="noopener noreferrer"
+           class="resource-card group bg-white border border-slate-200 rounded-3xl p-6 flex flex-col justify-between min-h-[205px] cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:border-blue-200 hover:shadow-blue-100">
+            <div>
+                <div class="flex items-start justify-between gap-3 mb-5">
+                    <div class="w-11 h-11 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center transition-all duration-300 group-hover:bg-slate-900">
+                        <i class="fas fa-file-code text-lg text-slate-300 group-hover:text-blue-600 transition-colors"></i>
+                    </div>
+                    <span class="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400 group-hover:text-slate-500">Prototype</span>
+                </div>
+                <h3 class="text-[17px] leading-snug font-bold text-slate-800 group-hover:text-slate-950 mb-2">Policy Communication Analyzer — AIDA · Thought Leadership · Policy Score · Predictive Model</h3>
+                <p class="text-sm leading-6 text-slate-500 line-clamp-2">Click to view this resource.</p>
+            </div>
+            <div class="mt-6 flex items-center justify-between">
+                <span class="text-xs font-semibold text-blue-600">Open resource</span>
+                <span class="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all">
+                    <i class="fas fa-arrow-up-right-from-square text-[10px]"></i>
+                </span>
+            </div>
         </a>
     
             </div>
         </section>
 
-        <section>
-            <div class="flex justify-between items-center mb-8 border-b border-gray-700 pb-4">
-                <h2 class="text-2xl font-bold text-white"><i class="fas fa-flask text-blue-400 mr-2"></i> Active Prototypes</h2>
-                <span class="text-sm bg-gray-800 px-3 py-1 rounded-full text-gray-400 border border-gray-700">10 apps</span>
+        <section id="pitchdecks" class="scroll-mt-10 mt-20">
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-7">
+                <div>
+                    <div class="text-xs uppercase tracking-[0.18em] font-semibold text-amber-600 mb-2">02 · Communicate the idea</div>
+                    <h2 class="text-3xl font-black tracking-tight text-slate-950">Donor Pitch Decks</h2>
+                    <p class="text-slate-500 mt-2">Concept communication materials and presentation prototypes.</p>
+                </div>
+                <span class="inline-flex w-fit items-center px-3 py-1.5 rounded-full bg-white border border-slate-200 text-sm font-semibold text-slate-500">1 decks</span>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 
-        <a href="proto/Unified Beneficiary Registry & Deduplication Demo.html" target="_blank" class="bg-gray-800 border border-gray-700 hover:border-blue-500 rounded-xl p-6 flex flex-col items-center text-center justify-center min-h-[180px] group cursor-pointer transition-all transform hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-900/20 decoration-none">
-            <i class="fas fa-file-code text-4xl text-gray-500 group-hover:text-blue-400 mb-4 transition-colors"></i>
-            <h3 class="text-lg font-bold text-gray-200 group-hover:text-white mb-2">Unified Beneficiary Registry Engine — IDM Prototype</h3>
-            <p class="text-sm text-gray-400 line-clamp-2">Click to view this resource.</p>
-            <span class="text-xs font-semibold text-blue-400 mt-4 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                Open Resource <i class="fas fa-external-link-alt"></i>
-            </span>
+        <a href="pitchdeck/Coast Mapping.html" target="_blank" rel="noopener noreferrer"
+           class="resource-card group bg-white border border-slate-200 rounded-3xl p-6 flex flex-col justify-between min-h-[205px] cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:border-amber-200 hover:shadow-amber-100">
+            <div>
+                <div class="flex items-start justify-between gap-3 mb-5">
+                    <div class="w-11 h-11 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center transition-all duration-300 group-hover:bg-slate-900">
+                        <i class="fas fa-chalkboard-user text-lg text-slate-300 group-hover:text-amber-500 transition-colors"></i>
+                    </div>
+                    <span class="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400 group-hover:text-slate-500">Prototype</span>
+                </div>
+                <h3 class="text-[17px] leading-snug font-bold text-slate-800 group-hover:text-slate-950 mb-2">Ocean Literacy - Pitch Deck</h3>
+                <p class="text-sm leading-6 text-slate-500 line-clamp-2">Click to view this resource.</p>
+            </div>
+            <div class="mt-6 flex items-center justify-between">
+                <span class="text-xs font-semibold text-amber-600">Open resource</span>
+                <span class="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all">
+                    <i class="fas fa-arrow-up-right-from-square text-[10px]"></i>
+                </span>
+            </div>
         </a>
     
-        <a href="proto/UNICEF Sample.html" target="_blank" class="bg-gray-800 border border-gray-700 hover:border-blue-500 rounded-xl p-6 flex flex-col items-center text-center justify-center min-h-[180px] group cursor-pointer transition-all transform hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-900/20 decoration-none">
-            <i class="fas fa-file-code text-4xl text-gray-500 group-hover:text-blue-400 mb-4 transition-colors"></i>
-            <h3 class="text-lg font-bold text-gray-200 group-hover:text-white mb-2">EdTech & AI Governance Readiness Index</h3>
-            <p class="text-sm text-gray-400 line-clamp-2">Click to view this resource.</p>
-            <span class="text-xs font-semibold text-blue-400 mt-4 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                Open Resource <i class="fas fa-external-link-alt"></i>
-            </span>
-        </a>
-    
-        <a href="proto/Stakeholder-Mapping.html" target="_blank" class="bg-gray-800 border border-gray-700 hover:border-blue-500 rounded-xl p-6 flex flex-col items-center text-center justify-center min-h-[180px] group cursor-pointer transition-all transform hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-900/20 decoration-none">
-            <i class="fas fa-file-code text-4xl text-gray-500 group-hover:text-blue-400 mb-4 transition-colors"></i>
-            <h3 class="text-lg font-bold text-gray-200 group-hover:text-white mb-2">Comprehensive Stakeholder Mapping Tool</h3>
-            <p class="text-sm text-gray-400 line-clamp-2">Click to view this resource.</p>
-            <span class="text-xs font-semibold text-blue-400 mt-4 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                Open Resource <i class="fas fa-external-link-alt"></i>
-            </span>
-        </a>
-    
-        <a href="proto/opportunitycost.html" target="_blank" class="bg-gray-800 border border-gray-700 hover:border-blue-500 rounded-xl p-6 flex flex-col items-center text-center justify-center min-h-[180px] group cursor-pointer transition-all transform hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-900/20 decoration-none">
-            <i class="fas fa-file-code text-4xl text-gray-500 group-hover:text-blue-400 mb-4 transition-colors"></i>
-            <h3 class="text-lg font-bold text-gray-200 group-hover:text-white mb-2">Opportunity Cost Calculator</h3>
-            <p class="text-sm text-gray-400 line-clamp-2">Click to view this resource.</p>
-            <span class="text-xs font-semibold text-blue-400 mt-4 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                Open Resource <i class="fas fa-external-link-alt"></i>
-            </span>
-        </a>
-    
-        <a href="proto/kidsart.html" target="_blank" class="bg-gray-800 border border-gray-700 hover:border-blue-500 rounded-xl p-6 flex flex-col items-center text-center justify-center min-h-[180px] group cursor-pointer transition-all transform hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-900/20 decoration-none">
-            <i class="fas fa-file-code text-4xl text-gray-500 group-hover:text-blue-400 mb-4 transition-colors"></i>
-            <h3 class="text-lg font-bold text-gray-200 group-hover:text-white mb-2">Art Canvas - Lukis & Warnai</h3>
-            <p class="text-sm text-gray-400 line-clamp-2">Click to view this resource.</p>
-            <span class="text-xs font-semibold text-blue-400 mt-4 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                Open Resource <i class="fas fa-external-link-alt"></i>
-            </span>
-        </a>
-    
-        <a href="proto/DKV-colour.html" target="_blank" class="bg-gray-800 border border-gray-700 hover:border-blue-500 rounded-xl p-6 flex flex-col items-center text-center justify-center min-h-[180px] group cursor-pointer transition-all transform hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-900/20 decoration-none">
-            <i class="fas fa-file-code text-4xl text-gray-500 group-hover:text-blue-400 mb-4 transition-colors"></i>
-            <h3 class="text-lg font-bold text-gray-200 group-hover:text-white mb-2">ChromaLogic — The Science of Color Selection</h3>
-            <p class="text-sm text-gray-400 line-clamp-2">Click to view this resource.</p>
-            <span class="text-xs font-semibold text-blue-400 mt-4 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                Open Resource <i class="fas fa-external-link-alt"></i>
-            </span>
-        </a>
-    
-        <a href="proto/coverletter.html" target="_blank" class="bg-gray-800 border border-gray-700 hover:border-blue-500 rounded-xl p-6 flex flex-col items-center text-center justify-center min-h-[180px] group cursor-pointer transition-all transform hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-900/20 decoration-none">
-            <i class="fas fa-file-code text-4xl text-gray-500 group-hover:text-blue-400 mb-4 transition-colors"></i>
-            <h3 class="text-lg font-bold text-gray-200 group-hover:text-white mb-2">Cover Letter Maker Pro</h3>
-            <p class="text-sm text-gray-400 line-clamp-2">Click to view this resource.</p>
-            <span class="text-xs font-semibold text-blue-400 mt-4 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                Open Resource <i class="fas fa-external-link-alt"></i>
-            </span>
-        </a>
-    
-        <a href="proto/cintaa.html" target="_blank" class="bg-gray-800 border border-gray-700 hover:border-blue-500 rounded-xl p-6 flex flex-col items-center text-center justify-center min-h-[180px] group cursor-pointer transition-all transform hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-900/20 decoration-none">
-            <i class="fas fa-file-code text-4xl text-gray-500 group-hover:text-blue-400 mb-4 transition-colors"></i>
-            <h3 class="text-lg font-bold text-gray-200 group-hover:text-white mb-2">Important Survey</h3>
-            <p class="text-sm text-gray-400 line-clamp-2">Click to view this resource.</p>
-            <span class="text-xs font-semibold text-blue-400 mt-4 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                Open Resource <i class="fas fa-external-link-alt"></i>
-            </span>
-        </a>
-    
-        <a href="proto/childish.html" target="_blank" class="bg-gray-800 border border-gray-700 hover:border-blue-500 rounded-xl p-6 flex flex-col items-center text-center justify-center min-h-[180px] group cursor-pointer transition-all transform hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-900/20 decoration-none">
-            <i class="fas fa-file-code text-4xl text-gray-500 group-hover:text-blue-400 mb-4 transition-colors"></i>
-            <h3 class="text-lg font-bold text-gray-200 group-hover:text-white mb-2">Childish vs Childlike: The Quiz</h3>
-            <p class="text-sm text-gray-400 line-clamp-2">Click to view this resource.</p>
-            <span class="text-xs font-semibold text-blue-400 mt-4 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                Open Resource <i class="fas fa-external-link-alt"></i>
-            </span>
-        </a>
-    
-        <a href="proto/AIDA.html" target="_blank" class="bg-gray-800 border border-gray-700 hover:border-blue-500 rounded-xl p-6 flex flex-col items-center text-center justify-center min-h-[180px] group cursor-pointer transition-all transform hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-900/20 decoration-none">
-            <i class="fas fa-file-code text-4xl text-gray-500 group-hover:text-blue-400 mb-4 transition-colors"></i>
-            <h3 class="text-lg font-bold text-gray-200 group-hover:text-white mb-2">Policy Communication Analyzer — AIDA · Thought Leadership · Policy Score · Predictive Model</h3>
-            <p class="text-sm text-gray-400 line-clamp-2">Click to view this resource.</p>
-            <span class="text-xs font-semibold text-blue-400 mt-4 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                Open Resource <i class="fas fa-external-link-alt"></i>
-            </span>
-        </a>
-    
+            </div>
+        </section>
+
+        <section class="mt-20 rounded-[2rem] bg-slate-900 text-white p-8 md:p-10 overflow-hidden relative">
+            <div class="absolute -right-20 -top-20 w-64 h-64 rounded-full bg-blue-500/20 blur-3xl"></div>
+            <div class="absolute -left-20 -bottom-20 w-64 h-64 rounded-full bg-amber-400/10 blur-3xl"></div>
+            <div class="relative grid md:grid-cols-[1fr_auto] gap-8 items-center">
+                <div>
+                    <div class="text-xs uppercase tracking-[0.18em] text-slate-400 font-semibold mb-3">Prototype philosophy</div>
+                    <h3 class="text-2xl md:text-3xl font-black">Explore quickly. Test visibly. Refine continuously.</h3>
+                    <p class="mt-3 text-slate-400 max-w-2xl leading-7">These prototypes are intentionally experimental: they turn concepts into something people can click, inspect, challenge and improve.</p>
+                </div>
+                <a href="https://github.com/AnggaConni/Prototyping" target="_blank" rel="noopener noreferrer"
+                   class="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-white text-slate-900 hover:bg-slate-100 font-bold transition">
+                    <i class="fab fa-github"></i> View repository
+                </a>
             </div>
         </section>
     </main>
 
-    <footer class="text-center py-6 text-gray-600 text-sm border-t border-gray-800 mt-auto">
-        &copy; 2026 Angga Conni Saputra.
+    <footer class="max-w-6xl mx-auto px-6 py-10 text-sm text-slate-400">
+        <div class="border-t border-slate-200 pt-6 flex flex-col md:flex-row gap-2 justify-between">
+            <span>© 2026 Angga Conni Saputra</span>
+            <span>Innovation Hub · Browser-first experiments</span>
+        </div>
     </footer>
 </body>
 </html>
