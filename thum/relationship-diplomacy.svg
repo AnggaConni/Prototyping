@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675">
+<defs>
+ <linearGradient id="g" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#0f172a"/><stop offset="1" stop-color="#1d4ed8"/></linearGradient>
+ <filter id="s"><feDropShadow dx="0" dy="10" stdDeviation="14" flood-opacity=".18"/></filter>
+</defs>
+<rect width="1200" height="675" rx="34" fill="url(#g)"/>
+<circle cx="90" cy="90" r="180" fill="#60a5fa" opacity=".1"/><circle cx="1110" cy="590" r="250" fill="#22c55e" opacity=".08"/>
+<text x="600" y="72" text-anchor="middle" font-family="system-ui,Segoe UI" font-size="17" font-weight="800" letter-spacing="4" fill="#bfdbfe">RELATIONSHIP • DIPLOMACY • DECISION MODEL</text>
+<text x="600" y="132" text-anchor="middle" font-family="system-ui,Segoe UI" font-size="42" font-weight="900" fill="#fff">BASELINE + EFFORT + TRUST</text>
+<text x="600" y="174" text-anchor="middle" font-family="system-ui,Segoe UI" font-size="25" font-weight="800" fill="#dbeafe">− DAMAGE − COST</text>
+<g filter="url(#s)">
+<rect x="80" y="245" width="300" height="260" rx="28" fill="#fff"/>
+<circle cx="155" cy="315" r="38" fill="#dbeafe"/><text x="155" y="325" text-anchor="middle" font-size="30">A</text>
+<text x="220" y="310" font-family="system-ui,Segoe UI" font-size="20" font-weight="900" fill="#162033">OPTION A</text>
+<text x="220" y="338" font-family="system-ui,Segoe UI" font-size="13" fill="#64748b">baseline • history • repair</text>
+<text x="115" y="395" font-family="system-ui,Segoe UI" font-size="14" fill="#475569">Damage</text><text x="330" y="395" text-anchor="end" font-size="18" font-weight="900" fill="#dc3545">−</text>
+<text x="115" y="430" font-family="system-ui,Segoe UI" font-size="14" fill="#475569">Repair / effort</text><text x="330" y="430" text-anchor="end" font-size="18" font-weight="900" fill="#2563eb">+</text>
+<text x="115" y="465" font-family="system-ui,Segoe UI" font-size="14" fill="#475569">Trust</text><text x="330" y="465" text-anchor="end" font-size="18" font-weight="900" fill="#16a34a">+</text>
+</g>
+<g filter="url(#s)">
+<rect x="820" y="245" width="300" height="260" rx="28" fill="#fff"/>
+<circle cx="895" cy="315" r="38" fill="#dcfce7"/><text x="895" y="325" text-anchor="middle" font-size="30">B</text>
+<text x="960" y="310" font-family="system-ui,Segoe UI" font-size="20" font-weight="900" fill="#162033">OPTION B</text>
+<text x="960" y="338" font-family="system-ui,Segoe UI" font-size="13" fill="#64748b">baseline • history • effort</text>
+<text x="855" y="395" font-family="system-ui,Segoe UI" font-size="14" fill="#475569">Stable history</text><text x="1070" y="395" text-anchor="end" font-size="18" font-weight="900" fill="#16a34a">+</text>
+<text x="855" y="430" font-family="system-ui,Segoe UI" font-size="14" fill="#475569">Effort</text><text x="1070" y="430" text-anchor="end" font-size="18" font-weight="900" fill="#2563eb">+</text>
+<text x="855" y="465" font-family="system-ui,Segoe UI" font-size="14" fill="#475569">Friction</text><text x="1070" y="465" text-anchor="end" font-size="18" font-weight="900" fill="#dc3545">−</text>
+</g>
+<path d="M385 375 C505 270 695 270 815 375" fill="none" stroke="#93c5fd" stroke-width="6"/>
+<path d="M815 405 C695 510 505 510 385 405" fill="none" stroke="#86efac" stroke-width="6"/>
+<rect x="425" y="316" width="350" height="118" rx="28" fill="#0b1220" stroke="#475569"/>
+<text x="600" y="353" text-anchor="middle" font-family="system-ui,Segoe UI" font-size="14" font-weight="900" fill="#93c5fd" letter-spacing="2">THE CORE QUESTION</text>
+<text x="600" y="385" text-anchor="middle" font-family="system-ui,Segoe UI" font-size="22" font-weight="900" fill="#fff">What changes the choice?</text>
+<text x="600" y="413" text-anchor="middle" font-family="system-ui,Segoe UI" font-size="12" fill="#94a3b8">value • history • effort • repair • constraints</text>
+<text x="600" y="600" text-anchor="middle" font-family="system-ui,Segoe UI" font-size="16" fill="#dbeafe">A conceptual analogy — not a universal formula for people or states.</text>
+</svg>
